@@ -18,7 +18,7 @@ import re
 import warnings
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Optional, TYPE_CHECKING, Union
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 from scalecodec.constants import TYPE_DECOMP_MAX_RECURSIVE
 from scalecodec.exceptions import RemainingScaleBytesNotEmptyException, InvalidScaleTypeValueException
@@ -49,11 +49,11 @@ class RuntimeConfigurationObject:
     """
 
     @classmethod
-    def all_subclasses(cls, class_):
+    def all_subclasses(cls, class_) -> set:
         return set(class_.__subclasses__()).union(
             [s for c in class_.__subclasses__() for s in cls.all_subclasses(c)])
 
-    def __init__(self, config_id=None, ss58_format=None, only_primitives_on_init=False, implements_scale_info=False):
+    def __init__(self, config_id: Optional[str] = None, ss58_format: Optional[int] = None, only_primitives_on_init: bool = False, implements_scale_info: bool = False):
         self.config_id = config_id
         self.type_registry = {'types': {}, 'runtime_api': {}}
         self.__initial_state = False
@@ -65,12 +65,12 @@ class RuntimeConfigurationObject:
         self.ss58_format = ss58_format
         self.implements_scale_info = implements_scale_info
         self.arrow_match_re = re.compile(r'^([^<]*)<(.+)>$')
-        self.bracket_match_re = re.compile(r'^\[([A-Za-z0-9]+); ([0-9]+)\]$')
+        self.bracket_match_re = re.compile(r'^\[([A-Za-z0-9]+); ([0-9]+)]$')
         self._dynamic_class_cache: dict = {}
 
     @classmethod
     @lru_cache(maxsize=128)
-    def convert_type_string(cls, name):
+    def convert_type_string(cls, name: str) -> str:
 
         name = re.sub(r'T::', "", name)
         name = re.sub(r'^T::', "", name, flags=re.IGNORECASE)
@@ -174,7 +174,7 @@ class RuntimeConfigurationObject:
 
         return decoder_class
 
-    def create_scale_object(self, type_string, data: Optional['ScaleBytes'] = None, **kwargs) -> 'ScaleType':
+    def create_scale_object(self, type_string: Union[str, dict], data: Optional['ScaleBytes'] = None, **kwargs) -> 'ScaleType':
         """
         Creates a new `ScaleType` object with given type_string, for example 'u32', 'Bytes' or 'scale_info::2'
         (scale_info:: prefixed types are defined in the `PortableRegistry` object of the runtime metadata.)
@@ -196,7 +196,7 @@ class RuntimeConfigurationObject:
 
         raise NotImplementedError('Decoder class for "{}" not found'.format(type_string))
 
-    def clear_type_registry(self):
+    def clear_type_registry(self) -> None:
 
         if not self.__initial_state:
             self.type_registry = {'types': {}, 'runtime_api': {}}
@@ -214,7 +214,7 @@ class RuntimeConfigurationObject:
 
         self.__initial_state = True
 
-    def update_type_registry_types(self, types_dict):
+    def update_type_registry_types(self, types_dict: dict) -> None:
         from scalecodec.types import Enum, Struct, Set, Tuple
 
         self.__initial_state = False
@@ -285,7 +285,7 @@ class RuntimeConfigurationObject:
 
             self.type_registry['types'][type_string.lower()] = decoder_class
 
-    def update_type_registry(self, type_registry):
+    def update_type_registry(self, type_registry: dict) -> None:
 
         # Set runtime ID if set
         self.active_spec_version_id = type_registry.get('runtime_id')
@@ -301,7 +301,7 @@ class RuntimeConfigurationObject:
         if 'types' in type_registry:
             self.update_type_registry_types(type_registry.get('types'))
 
-    def set_active_spec_version_id(self, spec_version_id):
+    def set_active_spec_version_id(self, spec_version_id: int) -> None:
 
         if spec_version_id != self.active_spec_version_id:
 
@@ -510,7 +510,7 @@ class RuntimeConfigurationObject:
 
         return decoder_class
 
-    def update_from_scale_info_types(self, scale_info_types: list, prefix: str = None):
+    def update_from_scale_info_types(self, scale_info_types: list, prefix: Optional[str] = None) -> None:
 
         if prefix is None:
             prefix = 'scale_info'
@@ -535,7 +535,7 @@ class RuntimeConfigurationObject:
                     path_string = '::'.join(scale_info_type['type'].value['path']).lower()
                     self.type_registry['types'][path_string] = decoder_class
 
-    def add_portable_registry(self, metadata: 'GenericMetadataVersioned', prefix=None):
+    def add_portable_registry(self, metadata: 'GenericMetadataVersioned', prefix: Optional[str] = None) -> None:
 
         if prefix is None:
             prefix = 'scale_info'
@@ -585,7 +585,7 @@ class RuntimeConfigurationObject:
         except NotImplementedError:
             pass
 
-    def add_contract_metadata_dict_to_type_registry(self, metadata_dict):
+    def add_contract_metadata_dict_to_type_registry(self, metadata_dict: dict):
         # TODO
         prefix = f"ink::{metadata_dict['source']['hash']}"
         return self.update_from_scale_info_types(metadata_dict['types'], prefix=prefix)
@@ -597,15 +597,15 @@ class ScaleDecoder(ABC):
     Base class for all SCALE decoding/encoding
     """
 
-    type_string = None
+    type_string: Optional[str] = None
 
-    type_mapping = None
+    type_mapping: Any = None
 
-    sub_type = None
+    sub_type: Optional[str] = None
 
-    runtime_config = None
+    runtime_config: Optional['RuntimeConfigurationObject'] = None
 
-    def __init__(self, data: ScaleBytes, sub_type: str = None, runtime_config: RuntimeConfigurationObject = None):
+    def __init__(self, data: ScaleBytes, sub_type: Optional[str] = None, runtime_config: Optional[RuntimeConfigurationObject] = None):
         """
         Constructs an SCALE codec class capable of encoding and decoding SCALE-bytes
 
@@ -631,15 +631,15 @@ class ScaleDecoder(ABC):
             # if no runtime config is provided, fallback on singleton
             self.runtime_config = RuntimeConfiguration()
 
-        self.data = data
+        self.data: Optional[ScaleBytes] = data
 
-        self.value_object = None
-        self.value_serialized = None
+        self.value_object: Any = None
+        self.value_serialized: Any = None
 
-        self.decoded = False
+        self.decoded: bool = False
 
-        self.data_start_offset = None
-        self.data_end_offset = None
+        self.data_start_offset: Optional[int] = None
+        self.data_end_offset: Optional[int] = None
 
     @property
     def value(self):
@@ -678,7 +678,7 @@ class ScaleDecoder(ABC):
 
             cls.type_mapping = type_mapping
 
-    def get_next_bytes(self, length) -> bytearray:
+    def get_next_bytes(self, length: int) -> bytearray:
         """
         Retrieve `length` amount of bytes of the SCALE-bytes stream
 
@@ -748,7 +748,7 @@ class ScaleDecoder(ABC):
         """
         raise NotImplementedError
 
-    def decode(self, data: ScaleBytes = None, check_remaining=True):
+    def decode(self, data: Optional[ScaleBytes] = None, check_remaining: bool = True) -> Any:
         """
         Decodes available SCALE-bytes according to type specification of this ScaleType
 
@@ -800,7 +800,7 @@ class ScaleDecoder(ABC):
     def __repr__(self):
         return "<{}(value={})>".format(self.__class__.__name__, self.serialize())
 
-    def encode(self, value=None) -> ScaleBytes:
+    def encode(self, value: Any = None) -> ScaleBytes:
         """
         Encodes the serialized `value` representation of current `ScaleType` to a `ScaleBytes` stream
 
@@ -876,12 +876,12 @@ class ScaleDecoder(ABC):
         raise NotImplementedError('Decoder class for "{}" not found'.format(type_string))
 
     # TODO rename to decode_type (confusing when encoding is introduced)
-    def process_type(self, type_string, **kwargs):
+    def process_type(self, type_string: Union[str, dict], **kwargs) -> 'ScaleType':
         obj = self.runtime_config.create_scale_object(type_string, self.data, **kwargs)
         obj.decode(check_remaining=False)
         return obj
 
-    def serialize(self):
+    def serialize(self) -> Any:
         """
         Returns a serialized representation of current ScaleType
 
@@ -906,7 +906,7 @@ class ScaleType(ScaleDecoder, ABC):
     """
     scale_info_type: 'GenericRegistryType' = None
 
-    def __init__(self, data=None, sub_type=None, metadata=None, runtime_config=None):
+    def __init__(self, data: Optional[ScaleBytes] = None, sub_type: Optional[str] = None, metadata: Optional['GenericMetadataVersioned'] = None, runtime_config: Optional[RuntimeConfigurationObject] = None):
         """
 
         Initializes an `ScaleType`
