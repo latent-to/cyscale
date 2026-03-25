@@ -22,7 +22,6 @@ from scalecodec.type_registry import load_type_registry_preset, load_type_regist
 
 
 class TestMetadataRegistry(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         cls.runtime_config = RuntimeConfigurationObject()
@@ -30,85 +29,84 @@ class TestMetadataRegistry(unittest.TestCase):
 
         module_path = os.path.dirname(__file__)
         cls.metadata_fixture_dict = load_type_registry_file(
-            os.path.join(module_path, 'fixtures', 'metadata_hex.json')
+            os.path.join(module_path, "fixtures", "metadata_hex.json")
         )
 
     def test_metadata_registry_v9(self):
         metadata_obj = self.runtime_config.create_scale_object(
-            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict['V9'])
+            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict["V9"])
         )
         metadata_obj.decode()
         self.assertEqual(metadata_obj.value_object[1].index, 9)
         self.assertIsNone(metadata_obj.portable_registry)
-        self.assertGreater(len(metadata_obj[1][1]['modules']), 0)
-        self.assertGreater(len(metadata_obj.value[1]['V9']['modules']), 0)
+        self.assertGreater(len(metadata_obj[1][1]["modules"]), 0)
+        self.assertGreater(len(metadata_obj.value[1]["V9"]["modules"]), 0)
         self.assertGreater(len(metadata_obj.call_index.items()), 0)
 
         self.assertEqual(len(metadata_obj.get_signed_extensions().items()), 0)
 
     def test_metadata_registry_v10(self):
         metadata_obj = self.runtime_config.create_scale_object(
-            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict['V10'])
+            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict["V10"])
         )
         metadata_obj.decode()
         self.assertEqual(metadata_obj.value_object[1].index, 10)
         self.assertIsNone(metadata_obj.portable_registry)
-        self.assertGreater(len(metadata_obj[1][1]['modules']), 0)
-        self.assertGreater(len(metadata_obj.value[1]['V10']['modules']), 0)
+        self.assertGreater(len(metadata_obj[1][1]["modules"]), 0)
+        self.assertGreater(len(metadata_obj.value[1]["V10"]["modules"]), 0)
         self.assertGreater(len(metadata_obj.call_index.items()), 0)
 
         self.assertEqual(len(metadata_obj.get_signed_extensions().items()), 0)
 
     def test_metadata_registry_v11(self):
         metadata_obj = self.runtime_config.create_scale_object(
-            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict['V11'])
+            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict["V11"])
         )
         metadata_obj.decode()
         self.assertEqual(metadata_obj.value_object[1].index, 11)
         self.assertIsNone(metadata_obj.portable_registry)
-        self.assertGreater(len(metadata_obj[1][1]['modules']), 0)
-        self.assertGreater(len(metadata_obj.value[1]['V11']['modules']), 0)
+        self.assertGreater(len(metadata_obj[1][1]["modules"]), 0)
+        self.assertGreater(len(metadata_obj.value[1]["V11"]["modules"]), 0)
         self.assertGreater(len(metadata_obj.call_index.items()), 0)
 
         self.assertGreater(len(metadata_obj.get_signed_extensions().items()), 0)
 
     def test_metadata_registry_v12(self):
         metadata_obj = self.runtime_config.create_scale_object(
-            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict['V12'])
+            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict["V12"])
         )
         metadata_obj.decode()
         self.assertEqual(metadata_obj.value_object[1].index, 12)
         self.assertIsNone(metadata_obj.portable_registry)
-        self.assertGreater(len(metadata_obj[1][1]['modules']), 0)
-        self.assertGreater(len(metadata_obj.value[1]['V12']['modules']), 0)
+        self.assertGreater(len(metadata_obj[1][1]["modules"]), 0)
+        self.assertGreater(len(metadata_obj.value[1]["V12"]["modules"]), 0)
         self.assertGreater(len(metadata_obj.call_index.items()), 0)
 
         self.assertGreater(len(metadata_obj.get_signed_extensions().items()), 0)
 
     def test_metadata_registry_v13(self):
-
         metadata_obj = self.runtime_config.create_scale_object(
-            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict['V13'])
+            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict["V13"])
         )
         metadata_obj.decode()
         self.assertEqual(metadata_obj.value_object[1].index, 13)
         self.assertIsNone(metadata_obj.portable_registry)
-        self.assertGreater(len(metadata_obj[1][1]['modules']), 0)
-        self.assertGreater(len(metadata_obj.value[1]['V13']['modules']), 0)
+        self.assertGreater(len(metadata_obj[1][1]["modules"]), 0)
+        self.assertGreater(len(metadata_obj.value[1]["V13"]["modules"]), 0)
         self.assertGreater(len(metadata_obj.call_index.items()), 0)
 
         self.assertGreater(len(metadata_obj.get_signed_extensions().items()), 0)
 
     def test_metadata_registry_decode_v14(self):
         metadata_obj = self.runtime_config.create_scale_object(
-            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict['V14'])
+            "MetadataVersioned", data=ScaleBytes(self.metadata_fixture_dict["V14"])
         )
         metadata_obj.decode()
         self.assertEqual(metadata_obj.value_object[1].index, 14)
         self.assertIsNotNone(metadata_obj.portable_registry)
 
-        self.assertGreater(len(metadata_obj[1][1]['pallets']), 0)
-        self.assertGreater(len(metadata_obj.value[1]['V14']['pallets']), 0)
+        self.assertGreater(len(metadata_obj[1][1]["pallets"]), 0)
+        self.assertGreater(len(metadata_obj.value[1]["V14"]["pallets"]), 0)
 
         self.assertGreater(len(metadata_obj.get_signed_extensions().items()), 0)
 
@@ -129,8 +127,7 @@ class TestMetadataRegistry(unittest.TestCase):
 
 
 class TestMetadataTypes(unittest.TestCase):
-
-    metadata_version = 'karura_test'
+    metadata_version = "karura_test"
 
     @classmethod
     def setUpClass(cls):
@@ -139,11 +136,12 @@ class TestMetadataTypes(unittest.TestCase):
 
         module_path = os.path.dirname(__file__)
         cls.metadata_fixture_dict = load_type_registry_file(
-            os.path.join(module_path, 'fixtures', 'metadata_hex.json')
+            os.path.join(module_path, "fixtures", "metadata_hex.json")
         )
 
         cls.metadata_obj = cls.runtime_config.create_scale_object(
-            "MetadataVersioned", data=ScaleBytes(cls.metadata_fixture_dict[cls.metadata_version])
+            "MetadataVersioned",
+            data=ScaleBytes(cls.metadata_fixture_dict[cls.metadata_version]),
         )
         cls.metadata_obj.decode()
 
@@ -157,7 +155,7 @@ class TestMetadataTypes(unittest.TestCase):
         param_type_obj = self.runtime_config.create_scale_object(param_type_string[0])
 
         type_info = param_type_obj.generate_type_decomposition()
-        self.assertEqual('u32', type_info)
+        self.assertEqual("u32", type_info)
 
     def test_storage_function_type_decomposition_complex(self):
         pallet = self.metadata_obj.get_metadata_pallet("Tokens")
@@ -167,7 +165,5 @@ class TestMetadataTypes(unittest.TestCase):
         param_type_obj = self.runtime_config.create_scale_object(param_type_string[0])
 
         type_info = param_type_obj.generate_type_decomposition()
-        self.assertIn('Token', type_info)
-        self.assertEqual('ACA', type_info['Token'][0])
-
-
+        self.assertIn("Token", type_info)
+        self.assertEqual("ACA", type_info["Token"][0])

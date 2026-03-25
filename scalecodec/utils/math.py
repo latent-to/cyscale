@@ -17,7 +17,7 @@
 #  math.py
 
 """Some simple math-related utility functions not present in the standard
-   library.
+library.
 """
 
 from math import ceil, log2

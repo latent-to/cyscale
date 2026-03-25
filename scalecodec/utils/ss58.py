@@ -16,11 +16,12 @@
 #
 #  ss58.py
 
-""" SS58 is a simple address format designed for Substrate based chains.
-    Encoding/decoding according to specification on
-    https://github.com/paritytech/substrate/wiki/External-Address-Format-(SS58)
+"""SS58 is a simple address format designed for Substrate based chains.
+Encoding/decoding according to specification on
+https://github.com/paritytech/substrate/wiki/External-Address-Format-(SS58)
 
 """
+
 from typing import Optional, Union
 
 import base58
@@ -43,20 +44,23 @@ def ss58_decode(address: str, valid_ss58_format: Optional[int] = None) -> str:
     """
 
     # Check if address is already decoded
-    if address.startswith('0x'):
+    if address.startswith("0x"):
         return address
 
-    if address == '':
+    if address == "":
         raise ValueError("Empty address provided")
 
-    checksum_prefix = b'SS58PRE'
+    checksum_prefix = b"SS58PRE"
 
     address_decoded = base58.b58decode(address)
 
     if address_decoded[0] & 0b0100_0000:
         ss58_format_length = 2
-        ss58_format = ((address_decoded[0] & 0b0011_1111) << 2) | (address_decoded[1] >> 6) | \
-                      ((address_decoded[1] & 0b0011_1111) << 8)
+        ss58_format = (
+            ((address_decoded[0] & 0b0011_1111) << 2)
+            | (address_decoded[1] >> 6)
+            | ((address_decoded[1] & 0b0011_1111) << 8)
+        )
     else:
         ss58_format_length = 1
         ss58_format = address_decoded[0]
@@ -70,7 +74,13 @@ def ss58_decode(address: str, valid_ss58_format: Optional[int] = None) -> str:
     # Determine checksum length according to length of address string
     if len(address_decoded) in [3, 4, 6, 10]:
         checksum_length = 1
-    elif len(address_decoded) in [5, 7, 11, 34 + ss58_format_length, 35 + ss58_format_length]:
+    elif len(address_decoded) in [
+        5,
+        7,
+        11,
+        34 + ss58_format_length,
+        35 + ss58_format_length,
+    ]:
         checksum_length = 2
     elif len(address_decoded) in [8, 12]:
         checksum_length = 3
@@ -92,7 +102,9 @@ def ss58_decode(address: str, valid_ss58_format: Optional[int] = None) -> str:
     if checksum[0:checksum_length] != address_decoded[-checksum_length:]:
         raise ValueError("Invalid checksum")
 
-    return address_decoded[ss58_format_length:len(address_decoded)-checksum_length].hex()
+    return address_decoded[
+        ss58_format_length : len(address_decoded) - checksum_length
+    ].hex()
 
 
 def ss58_encode(address: Union[str, bytes], ss58_format: int = 42) -> str:
@@ -108,7 +120,7 @@ def ss58_encode(address: Union[str, bytes], ss58_format: int = 42) -> str:
     -------
     str
     """
-    checksum_prefix = b'SS58PRE'
+    checksum_prefix = b"SS58PRE"
 
     if ss58_format < 0 or ss58_format > 16383 or ss58_format in [46, 47]:
         raise ValueError("Invalid value for ss58_format")
@@ -116,7 +128,7 @@ def ss58_encode(address: Union[str, bytes], ss58_format: int = 42) -> str:
     if type(address) is bytes or type(address) is bytearray:
         address_bytes = address
     else:
-        address_bytes = bytes.fromhex(address.replace('0x', ''))
+        address_bytes = bytes.fromhex(address.replace("0x", ""))
 
     if len(address_bytes) in [32, 33]:
         # Checksum size is 2 bytes for public key
@@ -130,10 +142,12 @@ def ss58_encode(address: Union[str, bytes], ss58_format: int = 42) -> str:
     if ss58_format < 64:
         ss58_format_bytes = bytes([ss58_format])
     else:
-        ss58_format_bytes = bytes([
-            ((ss58_format & 0b0000_0000_1111_1100) >> 2) | 0b0100_0000,
-            (ss58_format >> 8) | ((ss58_format & 0b0000_0000_0000_0011) << 6)
-        ])
+        ss58_format_bytes = bytes(
+            [
+                ((ss58_format & 0b0000_0000_1111_1100) >> 2) | 0b0100_0000,
+                (ss58_format >> 8) | ((ss58_format & 0b0000_0000_0000_0011) << 6),
+            ]
+        )
 
     input_bytes = ss58_format_bytes + address_bytes
     checksum = blake2b(checksum_prefix + input_bytes).digest()
@@ -155,21 +169,23 @@ def ss58_encode_account_index(account_index: int, ss58_format: int = 42) -> str:
     str
     """
 
-    if 0 <= account_index <= 2 ** 8 - 1:
-        account_idx_encoder = RuntimeConfiguration().create_scale_object('u8')
-    elif 2 ** 8 <= account_index <= 2 ** 16 - 1:
-        account_idx_encoder = RuntimeConfiguration().create_scale_object('u16')
-    elif 2 ** 16 <= account_index <= 2 ** 32 - 1:
-        account_idx_encoder = RuntimeConfiguration().create_scale_object('u32')
-    elif 2 ** 32 <= account_index <= 2 ** 64 - 1:
-        account_idx_encoder = RuntimeConfiguration().create_scale_object('u64')
+    if 0 <= account_index <= 2**8 - 1:
+        account_idx_encoder = RuntimeConfiguration().create_scale_object("u8")
+    elif 2**8 <= account_index <= 2**16 - 1:
+        account_idx_encoder = RuntimeConfiguration().create_scale_object("u16")
+    elif 2**16 <= account_index <= 2**32 - 1:
+        account_idx_encoder = RuntimeConfiguration().create_scale_object("u32")
+    elif 2**32 <= account_index <= 2**64 - 1:
+        account_idx_encoder = RuntimeConfiguration().create_scale_object("u64")
     else:
         raise ValueError("Value too large for an account index")
 
     return ss58_encode(account_idx_encoder.encode(account_index).data, ss58_format)
 
 
-def ss58_decode_account_index(address: str, valid_ss58_format: Optional[int] = None) -> int:
+def ss58_decode_account_index(
+    address: str, valid_ss58_format: Optional[int] = None
+) -> int:
     """
     Decodes given SS58 encoded address to an AccountIndex
 
@@ -186,21 +202,37 @@ def ss58_decode_account_index(address: str, valid_ss58_format: Optional[int] = N
     account_index_bytes = ss58_decode(address, valid_ss58_format)
 
     if len(account_index_bytes) == 2:
-        return RuntimeConfiguration().create_scale_object(
-            'u8', data=ScaleBytes('0x{}'.format(account_index_bytes))
-        ).decode()
+        return (
+            RuntimeConfiguration()
+            .create_scale_object(
+                "u8", data=ScaleBytes("0x{}".format(account_index_bytes))
+            )
+            .decode()
+        )
     if len(account_index_bytes) == 4:
-        return RuntimeConfiguration().create_scale_object(
-            'u16', data=ScaleBytes('0x{}'.format(account_index_bytes))
-        ).decode()
+        return (
+            RuntimeConfiguration()
+            .create_scale_object(
+                "u16", data=ScaleBytes("0x{}".format(account_index_bytes))
+            )
+            .decode()
+        )
     if len(account_index_bytes) == 8:
-        return RuntimeConfiguration().create_scale_object(
-            'u32', data=ScaleBytes('0x{}'.format(account_index_bytes))
-        ).decode()
+        return (
+            RuntimeConfiguration()
+            .create_scale_object(
+                "u32", data=ScaleBytes("0x{}".format(account_index_bytes))
+            )
+            .decode()
+        )
     if len(account_index_bytes) == 16:
-        return RuntimeConfiguration().create_scale_object(
-            'u64', data=ScaleBytes('0x{}'.format(account_index_bytes))
-        ).decode()
+        return (
+            RuntimeConfiguration()
+            .create_scale_object(
+                "u64", data=ScaleBytes("0x{}".format(account_index_bytes))
+            )
+            .decode()
+        )
     else:
         raise ValueError("Invalid account index length")
 
@@ -221,7 +253,7 @@ def is_valid_ss58_address(value: str, valid_ss58_format: Optional[int] = None) -
     """
 
     # Return False in case a public key is provided
-    if value.startswith('0x'):
+    if value.startswith("0x"):
         return False
 
     try:
@@ -247,8 +279,11 @@ def get_ss58_format(ss58_address: str) -> int:
     address_decoded = base58.b58decode(ss58_address)
 
     if address_decoded[0] & 0b0100_0000:
-        ss58_format = ((address_decoded[0] & 0b0011_1111) << 2) | (address_decoded[1] >> 6) | \
-                      ((address_decoded[1] & 0b0011_1111) << 8)
+        ss58_format = (
+            ((address_decoded[0] & 0b0011_1111) << 2)
+            | (address_decoded[1] >> 6)
+            | ((address_decoded[1] & 0b0011_1111) << 8)
+        )
     else:
         ss58_format = address_decoded[0]
 
