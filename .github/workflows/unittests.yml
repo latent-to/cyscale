@@ -20,9 +20,13 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install and build
+    - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install ".[test]"
+        pip install Cython setuptools wheel
+    - name: Build Cython extensions
+      run: python setup.py build_ext --inplace
+    - name: Install test dependencies
+      run: pip install pytest
     - name: Test with pytest
       run: pytest
