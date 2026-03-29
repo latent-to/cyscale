@@ -88,15 +88,13 @@ def run(fn, n: int) -> float:
 
 
 def header(title: str):
-    print(f"\n{'─' * 64}")
-    print(f"  {title}")
-    print(f"{'─' * 64}")
-    print(f"  {'Benchmark':<44}  {'µs/call':>9}  {'calls':>8}")
-    print(f"  {'─' * 44}  {'─' * 9}  {'─' * 8}")
+    print(f"\n### {title}\n")
+    print(f"| {'Benchmark':<44} | {'µs/call':>9} | {'calls':>9} |")
+    print(f"|{'-' * 46}|{'-' * 11}:|{'-' * 11}:|")
 
 
 def row(name: str, us: float, n: int, results: dict):
-    print(f"  {name:<44}  {us:>9.2f}  {n:>8,}", flush=True)
+    print(f"| {name:<44} | {us:>9.2f} | {n:>9,} |", flush=True)
     results[name] = us
 
 
@@ -332,7 +330,8 @@ def bench_batch_decode(results: dict):
     rc.set_active_spec_version_id(1045)
     rc.ss58_format = 42
 
-    header("BATCH_DECODE — batch vs individual decode loop (SS58 included)")
+    has_batch = hasattr(rc, "batch_decode")
+    header("BATCH_DECODE — cyscale batch_decode vs py-scale-codec loop")
 
     account_ba = bytes(_hex_to_ba("01" * 32))
     u32_ba = bytes(_hex_to_ba("01020304"))
@@ -342,48 +341,59 @@ def bench_batch_decode(results: dict):
         type_strings = ["AccountId"] * count
         bytes_list = [account_ba] * count
 
-        row(
-            f"batch_decode AccountId ×{count:,}",
-            run(lambda ts=type_strings, bl=bytes_list: rc.batch_decode(ts, bl), n),
+        loop_us = run(
+            lambda ts=type_strings, bl=bytes_list: [
+                rc.create_scale_object(t, ScaleBytes(b)).decode()
+                for t, b in zip(ts, bl)
+            ],
             n,
-            results,
         )
-        row(
-            f"loop decode   AccountId ×{count:,}",
-            run(
-                lambda ts=type_strings, bl=bytes_list: [
-                    rc.create_scale_object(t, ScaleBytes(b)).decode()
-                    for t, b in zip(ts, bl)
-                ],
+        if has_batch:
+            row(
+                f"batch_decode AccountId ×{count:,}",
+                run(lambda ts=type_strings, bl=bytes_list: rc.batch_decode(ts, bl), n),
                 n,
-            ),
-            n,
-            results,
-        )
+                results,
+            )
+            row(f"loop decode   AccountId ×{count:,}", loop_us, n, results)
+        else:
+            # py-scale-codec: record loop time under the batch_decode key so
+            # --compare shows cyscale batch_decode vs this loop baseline
+            row(f"batch_decode AccountId ×{count:,}", loop_us, n, results)
 
     # Mixed types (closer to real query_map workload)
     count = 100
     n = 5_000
     mixed_types = ["AccountId", "u32", "u128"] * (count // 3) + ["AccountId"]
     mixed_bytes = [account_ba, u32_ba, u128_ba] * (count // 3) + [account_ba]
-    row(
-        f"batch_decode mixed (AccountId/u32/u128) ×{count}",
-        run(lambda: rc.batch_decode(mixed_types, mixed_bytes), n),
+
+    mixed_loop_us = run(
+        lambda: [
+            rc.create_scale_object(t, ScaleBytes(b)).decode()
+            for t, b in zip(mixed_types, mixed_bytes)
+        ],
         n,
-        results,
     )
-    row(
-        f"loop decode   mixed (AccountId/u32/u128) ×{count}",
-        run(
-            lambda: [
-                rc.create_scale_object(t, ScaleBytes(b)).decode()
-                for t, b in zip(mixed_types, mixed_bytes)
-            ],
+    if has_batch:
+        row(
+            f"batch_decode mixed (AccountId/u32/u128) ×{count}",
+            run(lambda: rc.batch_decode(mixed_types, mixed_bytes), n),
             n,
-        ),
-        n,
-        results,
-    )
+            results,
+        )
+        row(
+            f"loop decode   mixed (AccountId/u32/u128) ×{count}",
+            mixed_loop_us,
+            n,
+            results,
+        )
+    else:
+        row(
+            f"batch_decode mixed (AccountId/u32/u128) ×{count}",
+            mixed_loop_us,
+            n,
+            results,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -405,17 +415,17 @@ def main():
     if args.compare:
         with open(args.compare) as f:
             baseline = json.load(f)
-        print(f"\n{'─' * 64}")
-        print(f"  Speedup vs {os.path.basename(args.compare)}")
-        print(f"{'─' * 64}")
-        print(f"  {'Benchmark':<44}  {'baseline':>9}  {'current':>9}  {'speedup':>8}")
-        print(f"  {'─' * 44}  {'─' * 9}  {'─' * 9}  {'─' * 8}")
+        print(f"\n### Speedup vs {os.path.basename(args.compare)}\n")
+        print(
+            f"| {'Benchmark':<44} | {'baseline':>9} | {'current':>9} | {'speedup':>8} |"
+        )
+        print(f"|{'-' * 46}|{'-' * 11}:|{'-' * 11}:|{'-' * 10}:|")
         for name, cur in results.items():
             if name in baseline:
                 ratio = baseline[name] / cur
-                marker = " ◀ slower" if ratio < 0.95 else ""
+                marker = " ◀" if ratio < 0.95 else ""
                 print(
-                    f"  {name:<44}  {baseline[name]:>9.2f}  {cur:>9.2f}  {ratio:>7.2f}x{marker}"
+                    f"| {name:<44} | {baseline[name]:>9.2f} | {cur:>9.2f} | {ratio:>7.2f}×{marker:2} |"
                 )
 
     if args.save_baseline:

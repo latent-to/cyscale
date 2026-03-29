@@ -21,63 +21,62 @@ All timings are µs per call; speedup = py ÷ cy.
 
 ### Primitives and small types
 
-| Benchmark                   | py (µs) | cy (µs) | speedup |
-|-----------------------------|---------|---------|---------|
-| u8 decode                   | 2.18    | 1.29    | 1.68×   |
-| u16 decode                  | 2.12    | 1.40    | 1.52×   |
-| u32 decode                  | 2.10    | 1.37    | 1.53×   |
-| u64 decode                  | 2.14    | 1.39    | 1.54×   |
-| u128 decode                 | 2.11    | 1.37    | 1.53×   |
-| Compact\<u32\> decode       | 6.94    | 4.94    | 1.40×   |
-| bool decode                 | 2.10    | 1.33    | 1.58×   |
-| H256 decode                 | 2.14    | 1.37    | 1.57×   |
-| AccountId decode (SS58 format 42)  | 8.91    | 8.84    | 1.01×   |
-| Str decode                  | 9.20    | 6.37    | 1.44×   |
-| (u32, u64, bool) decode     | 16.11   | 10.69   | 1.51×   |
-| u32 encode                  | 1.65    | 0.98    | 1.68×   |
-| u64 encode                  | 1.68    | 0.98    | 1.71×   |
-| Compact\<u32\> encode       | 6.47    | 4.53    | 1.43×   |
-| H256 encode                 | 1.77    | 1.04    | 1.70×   |
+| Benchmark                                    | py (µs) | cy (µs) | speedup |
+|----------------------------------------------|--------:|--------:|--------:|
+| u8 decode                                    |    3.01 |    1.82 |  1.66×  |
+| u16 decode                                   |    2.99 |    1.88 |  1.59×  |
+| u32 decode                                   |    3.11 |    1.91 |  1.63×  |
+| u64 decode                                   |    3.09 |    1.92 |  1.61×  |
+| u128 decode                                  |    2.91 |    1.93 |  1.51×  |
+| Compact\<u32\> decode                        |    9.59 |    7.20 |  1.33×  |
+| bool decode                                  |    2.93 |    1.81 |  1.62×  |
+| H256 decode                                  |    2.93 |    1.89 |  1.55×  |
+| AccountId decode (SS58 format 42)            |   11.45 |    8.69 |  1.32×  |
+| Str decode                                   |   12.89 |    9.16 |  1.41×  |
+| (u32, u64, bool) decode                      |   21.96 |   17.33 |  1.27×  |
+| u32 encode                                   |    2.34 |    1.87 |  1.25×  |
+| u64 encode                                   |    2.33 |    1.88 |  1.24×  |
+| Compact\<u32\> encode                        |    8.85 |    6.37 |  1.39×  |
+| H256 encode                                  |    2.47 |    1.50 |  1.64×  |
 
 ### Large payloads
 
 | Benchmark                                       | py (µs)    | cy (µs)    | speedup |
-|-------------------------------------------------|------------|------------|---------|
-| Vec\<u32\> decode (64 elements)                 | 160.57     | 105.46     | 1.52×   |
-| Vec\<u32\> decode (1,024 elements)              | 2,329.76   | 1,574.94   | 1.48×   |
-| Vec\<u32\> decode (16,384 elements)             | 37,470.39  | 24,791.11  | 1.51×   |
-| Bytes decode (1 KB)                             | 10.35      | 7.65       | 1.35×   |
-| Bytes decode (64 KB)                            | 46.01      | 45.50      | 1.01×   |
-| Bytes decode (512 KB)                           | 270.51     | 290.45     | 0.93×   |
-| Vec\<EventRecord\> decode (5 events, V10)       | 215.79     | 145.50     | 1.48×   |
-| MetadataVersioned decode (V10, 85 KB)           | 47,144.57  | 33,035.40  | 1.43×   |
-| MetadataVersioned decode (V13, 219 KB)          | 102,974.25 | 73,624.13  | 1.40×   |
-| MetadataVersioned decode (V14, 300 KB)          | 284,478.38 | 199,015.58 | 1.43×   |
-| Bittensor metadata + portable registry (254 KB) | 332,447.63 | 229,223.60 | 1.45×   |
+|-------------------------------------------------|-----------:|-----------:|--------:|
+| Vec\<u32\> decode (64 elements)                 |     224.20 |     151.88 |  1.48×  |
+| Vec\<u32\> decode (1,024 elements)              |   3,217.32 |   2,195.01 |  1.47×  |
+| Vec\<u32\> decode (16,384 elements)             |  50,396.95 |  34,540.86 |  1.46×  |
+| Bytes decode (1 KB)                             |      14.67 |      11.07 |  1.33×  |
+| Bytes decode (64 KB)                            |      64.15 |      67.08 |  0.96×  |
+| Bytes decode (512 KB)                           |     379.99 |     426.56 |  0.89×  |
+| Vec\<EventRecord\> decode (5 events, V10)       |     301.10 |     209.99 |  1.43×  |
+| MetadataVersioned decode (V10, 85 KB)           |  64,958.83 |  47,140.33 |  1.38×  |
+| MetadataVersioned decode (V13, 219 KB)          | 143,029.99 | 103,979.60 |  1.38×  |
+| MetadataVersioned decode (V14, 300 KB)          | 390,902.34 | 284,024.69 |  1.38×  |
+| Bittensor metadata + portable registry (254 KB) | 443,089.47 | 325,681.88 |  1.36×  |
 
-Primitives and small types see **~1.4–1.7× speedup**. Large metadata decoding
-sees **~1.4–1.5× speedup** — the gain compounds across thousands of recursive
+Primitives and small types see **~1.25–1.65× speedup**. Large metadata decoding
+sees **~1.35–1.50× speedup** — the gain compounds across thousands of recursive
 decode calls. Raw bulk byte operations (`Bytes`/`Vec<u8>`) above ~64 KB are
 dominated by `memcpy` and show no meaningful difference.
 
-`AccountId` with SS58 encoding shows ~1× speedup because the cost is dominated
-by the Python `ss58_encode` call, not the SCALE decode itself.
+`AccountId` with SS58 encoding shows a **1.32× speedup** — the SS58 encoding
+itself (`ss58_encode`) is pure Python and dominates, limiting gains in that path.
 
 ### batch_decode (cyscale-only API)
 
 `batch_decode(type_strings, bytes_list)` amortises Python dispatch overhead
-across a list of decodes. For uniform `AccountId` workloads, gains are modest
-(SS58 dominates); for mixed-type batches the dispatch savings become visible.
+across a list of decodes. The baseline below is a py-scale-codec decode loop,
+which is the equivalent operation without this API.
 Note: `bt_decode` is excluded from this comparison because it does not perform
-SS58 encoding — including it without that post-processing step would be an
-unfair comparison.
+SS58 encoding — including it without that post-processing step would be unfair.
 
-| Benchmark                                       | batch (µs) | loop (µs) | speedup |
-|-------------------------------------------------|------------|-----------|---------|
-| AccountId ×10                                   | 87.3       | 92.1      | 1.06×   |
-| AccountId ×100                                  | 870.1      | 897.6     | 1.03×   |
-| AccountId ×1,000                                | 8693.5     | 8954.4    | 1.03×   |
-| Mixed (AccountId / u32 / u128) ×100             | 303.9      | 444.5     | 1.46×   |
+| Benchmark                                       | py loop (µs) | cy batch (µs) | speedup |
+|-------------------------------------------------|-------------:|--------------:|--------:|
+| AccountId ×10                                   |       116.66 |         59.47 |  1.96×  |
+| AccountId ×100                                  |     1,159.47 |        597.85 |  1.94×  |
+| AccountId ×1,000                                |    11,530.59 |      5,943.51 |  1.94×  |
+| Mixed (AccountId / u32 / u128) ×100             |       599.73 |        208.69 |  2.87×  |
 
 To reproduce, run:
 
