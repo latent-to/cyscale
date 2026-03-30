@@ -45,6 +45,7 @@ exclude = ["contrib", "docs", "tests", "test"]
 
 [tool.setuptools.package-data]
 "scalecodec.type_registry" = ["*.json"]
+"scalecodec" = ["*.pyi", "py.typed"]
 
 [dependency-groups]
 dev = [
