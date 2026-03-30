@@ -983,6 +983,10 @@
         [
           "V14",
           "MetadataV14"
+        ],
+        [
+          "V15",
+          "MetadataV15"
         ]
       ]
     },
@@ -1021,6 +1025,81 @@
         ]
       ]
     },
+    "MetadataV15": {
+      "type": "struct",
+      "type_mapping": [
+        ["types", "PortableRegistry"],
+        ["pallets", "Vec<PalletMetadataV15>"],
+        ["extrinsic", "ExtrinsicMetadataV15"],
+        ["runtime_type", "SiLookupTypeId"],
+        ["apis", "Vec<RuntimeApiMetadataV15>"],
+        ["outer_enums", "OuterEnumsMetadataV15"],
+        ["custom", "CustomMetadataV15"]
+      ]
+    },
+    "ExtrinsicMetadataV15": {
+      "type": "struct",
+      "type_mapping": [
+        ["version", "u8"],
+        ["address_ty", "SiLookupTypeId"],
+        ["call_ty", "SiLookupTypeId"],
+        ["signature_ty", "SiLookupTypeId"],
+        ["extra_ty", "SiLookupTypeId"],
+        ["signed_extensions", "Vec<SignedExtensionMetadataV14>"]
+      ]
+    },
+    "RuntimeApiMetadataV15": {
+      "type": "struct",
+      "type_mapping": [
+        ["name", "Text"],
+        ["methods", "Vec<RuntimeApiMethodMetadataV15>"],
+        ["docs", "Vec<Text>"]
+      ]
+    },
+    "RuntimeApiMethodMetadataV15": {
+      "type": "struct",
+      "type_mapping": [
+        ["name", "Text"],
+        ["inputs", "Vec<RuntimeApiMethodParamMetadataV15>"],
+        ["output", "SiLookupTypeId"],
+        ["docs", "Vec<Text>"]
+      ]
+    },
+    "RuntimeApiMethodParamMetadataV15": {
+      "type": "struct",
+      "type_mapping": [
+        ["name", "Text"],
+        ["ty", "SiLookupTypeId"]
+      ]
+    },
+    "OuterEnumsMetadataV15": {
+      "type": "struct",
+      "type_mapping": [
+        ["call_enum_ty", "SiLookupTypeId"],
+        ["event_enum_ty", "SiLookupTypeId"],
+        ["error_enum_ty", "SiLookupTypeId"]
+      ]
+    },
+    "CustomMetadataV15": {
+      "type": "struct",
+      "type_mapping": [
+        ["map", "Vec<CustomMetadataEntryV15>"]
+      ]
+    },
+    "CustomMetadataEntryV15": {
+      "type": "struct",
+      "type_mapping": [
+        ["key", "Text"],
+        ["value", "CustomValueMetadataV15"]
+      ]
+    },
+    "CustomValueMetadataV15": {
+      "type": "struct",
+      "type_mapping": [
+        ["ty", "SiLookupTypeId"],
+        ["value", "Bytes"]
+      ]
+    },
     "PalletMetadataV14": {
       "type": "struct",
       "base_class": "ScaleInfoPalletMetadata",
@@ -1053,6 +1132,20 @@
           "index",
           "u8"
         ]
+      ]
+    },
+    "PalletMetadataV15": {
+      "type": "struct",
+      "base_class": "ScaleInfoPalletMetadata",
+      "type_mapping": [
+        ["name", "Text"],
+        ["storage", "Option<StorageMetadataV14>"],
+        ["calls", "Option<PalletCallMetadataV14>"],
+        ["event", "Option<PalletEventMetadataV14>"],
+        ["constants", "Vec<PalletConstantMetadataV14>"],
+        ["error", "Option<PalletErrorMetadataV14>"],
+        ["index", "u8"],
+        ["docs", "Vec<Text>"]
       ]
     },
     "SiLookupTypeId": "Compact<u32>",
