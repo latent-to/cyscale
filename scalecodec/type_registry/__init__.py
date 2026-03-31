@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from typing import Optional
 
 import requests
@@ -52,8 +53,13 @@ def load_type_registry_preset(
     if use_remote_preset is True:
         result = requests.get(f"{ONLINE_BASE_URL}{name}.json")
 
-        if result.status_code == 200:
+        if result.ok:
             return result.json()
+        else:
+            logging.error(
+                f"Failed to retrieve type registry preset {name}: {result.text}"
+            )
+            return None
     else:
         module_path = os.path.dirname(__file__)
         path = os.path.join(module_path, "{}.json".format(name))
