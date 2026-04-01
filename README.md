@@ -24,37 +24,36 @@ All timings are µs per call; speedup = py ÷ cy.
 
 | Benchmark                                    | py (µs) | cy (µs) | speedup |
 |----------------------------------------------|--------:|--------:|--------:|
-| u8 decode                                    |      3.01 |      1.38 |    2.19×   |
-| u16 decode                                   |      2.99 |      1.41 |    2.11×   |
-| u32 decode                                   |      3.11 |      1.43 |    2.17×   |
-| u64 decode                                   |      3.09 |      1.41 |    2.20×   |
-| u128 decode                                  |      2.91 |      1.42 |    2.05×   |
-| Compact<u32> decode                          |      9.59 |      5.23 |    1.83×   |
-| bool decode                                  |      2.93 |      1.38 |    2.12×   |
-| H256 decode                                  |      2.93 |      1.38 |    2.13×   |
-| AccountId decode (SS58 format 42)            |     11.45 |      6.61 |    1.73×   |
-| Str decode                                   |     12.89 |      6.55 |    1.97×   |
-| (u32, u64, bool) decode                      |     21.96 |     13.79 |    1.59×   |
-| u32 encode                                   |      2.34 |      0.98 |    2.40×   |
-| u64 encode                                   |      2.33 |      1.12 |    2.07×   |
-| Compact<u32> encode                          |      8.85 |      5.00 |    1.77×   |
-| H256 encode                                  |      2.47 |      1.21 |    2.05×   |
-
+| u8 decode                                    |      3.01 |      1.16 |    2.60×   |
+| u16 decode                                   |      2.99 |      1.25 |    2.40×   |
+| u32 decode                                   |      3.11 |      1.26 |    2.47×   |
+| u64 decode                                   |      3.09 |      1.22 |    2.53×   |
+| u128 decode                                  |      2.91 |      1.22 |    2.39×   |
+| Compact<u32> decode                          |      9.59 |      4.38 |    2.19×   |
+| bool decode                                  |      2.93 |      1.18 |    2.48×   |
+| H256 decode                                  |      2.93 |      1.21 |    2.41×   |
+| AccountId decode (SS58 format 42)            |     11.45 |      6.11 |    1.87×   |
+| Str decode                                   |     12.89 |      5.82 |    2.22×   |
+| (u32, u64, bool) decode                      |     21.96 |      5.59 |    3.93×   |
+| u32 encode                                   |      2.34 |      1.10 |    2.13×   |
+| u64 encode                                   |      2.33 |      1.20 |    1.93×   |
+| Compact<u32> encode                          |      8.85 |      4.42 |    2.00×   |
+| H256 encode                                  |      2.47 |      1.01 |    2.44×   |
 ### Large payloads
 
 | Benchmark                                       | py (µs)    | cy (µs)    | speedup |
 |-------------------------------------------------|-----------:|-----------:|--------:|
-| Vec<u32> decode (64 elements)                |    224.20 |    113.06 |    1.98×   |
-| Vec<u32> decode (1,024 elements)             |   3217.32 |   1723.46 |    1.87×   |
-| Vec<u32> decode (16,384 elements)            |  50396.95 |  26573.48 |    1.90×   |
-| Bytes decode (1 KB)                          |     14.67 |      8.03 |    1.83×   |
-| Bytes decode (64 KB)                         |     64.15 |     49.19 |    1.30×   |
-| Bytes decode (512 KB)                        |    379.99 |    317.16 |    1.20×   |
-| Vec<EventRecord> decode (5 events, V10)      |    301.10 |    164.02 |    1.84×   |
-| MetadataVersioned decode (V10, 85 KB)        |  64958.83 |  34674.34 |    1.87×   |
-| MetadataVersioned decode (V13, 219 KB)       | 143029.99 |  77123.36 |    1.85×   |
-| MetadataVersioned decode (V14, 300 KB)       | 390902.34 | 208318.31 |    1.88×   |
-| Bittensor metadata + portable registry (254 KB) | 443089.47 | 246430.67 |    1.80×   |
+| Vec<u32> decode (64 elements)                |    224.20 |     98.13 |    2.28×   |
+| Vec<u32> decode (1,024 elements)             |   3217.32 |   1423.46 |    2.26×   |
+| Vec<u32> decode (16,384 elements)            |  50396.95 |  22435.45 |    2.25×   |
+| Bytes decode (1 KB)                          |     14.67 |      6.87 |    2.14×   |
+| Bytes decode (64 KB)                         |     64.15 |     45.05 |    1.42×   |
+| Bytes decode (512 KB)                        |    379.99 |    300.14 |    1.27×   |
+| Vec<EventRecord> decode (5 events, V10)      |    301.10 |    135.32 |    2.23×   |
+| MetadataVersioned decode (V10, 85 KB)        |  64958.83 |  29839.68 |    2.18×   |
+| MetadataVersioned decode (V13, 219 KB)       | 143029.99 |  65651.69 |    2.18×   |
+| MetadataVersioned decode (V14, 300 KB)       | 390902.34 | 183644.98 |    2.13×   |
+| Bittensor metadata + portable registry (254 KB) | 443089.47 | 212345.78 |    2.09×   |
 
 Primitives and small types see **~1.25–1.65× speedup**. Large metadata decoding
 sees **~1.35–1.50× speedup** — the gain compounds across thousands of recursive
@@ -74,10 +73,10 @@ SS58 encoding — including it without that post-processing step would be unfair
 
 | Benchmark                       | py loop (µs) | cy batch (µs) | speedup |
 |---------------------------------|-------------:|--------------:|--------:|
-| AccountId ×10                   |    116.66 |     44.90 |    2.60×   |
-| AccountId ×100                  |   1159.47 |    445.88 |    2.60×   |
-| AccountId ×1,000                |  11530.59 |   4488.41 |    2.57×   |
-| Mixed (AccountId/u32/u128) ×100 |    599.73 |    159.51 |    3.76×   |
+| batch_decode AccountId ×10      |    116.66 |     42.07 |    2.77×   |
+| batch_decode AccountId ×100     |   1159.47 |    415.44 |    2.79×   |
+| batch_decode AccountId ×1,000   |  11530.59 |   4112.27 |    2.80×   |
+| Mixed (AccountId/u32/u128) ×100 |    599.73 |    147.75 |    4.06×   |
 
 To reproduce, run:
 
