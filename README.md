@@ -55,13 +55,13 @@ All timings are µs per call; speedup = py ÷ cy.
 | MetadataVersioned decode (V14, 300 KB)       | 390902.34 | 183644.98 |    2.13×   |
 | Bittensor metadata + portable registry (254 KB) | 443089.47 | 212345.78 |    2.09×   |
 
-Primitives and small types see **~1.25–1.65× speedup**. Large metadata decoding
-sees **~1.35–1.50× speedup** — the gain compounds across thousands of recursive
+Primitives and small types see **~2.0–2.6× speedup**. Large metadata decoding
+sees **~2.1–2.3× speedup** — the gain compounds across thousands of recursive
 decode calls. Raw bulk byte operations (`Bytes`/`Vec<u8>`) above ~64 KB are
-dominated by `memcpy` and show no meaningful difference.
+dominated by `memcpy` and see a reduced **~1.3–1.4× speedup**.
 
-`AccountId` with SS58 encoding shows a **1.32× speedup** — the SS58 encoding
-itself (`ss58_encode`) is pure Python and dominates, limiting gains in that path.
+`AccountId` with SS58 encoding shows a **1.87× speedup** — the SS58 encoding
+itself (`ss58_encode`) is pure Python and limits gains in that path.
 
 ### batch_decode (cyscale-only API)
 
