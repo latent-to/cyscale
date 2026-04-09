@@ -42,6 +42,10 @@ class ScaleType(ScaleDecoder[T_co], ABC, Generic[T_co]):
         runtime_config: Optional["RuntimeConfigurationObject"] = None,
         **kwargs: Any,
     ) -> None: ...
+    @classmethod
+    def generate_type_decomposition(
+        cls, _recursion_level: int = 0, max_recursion: int = ...
+    ) -> Any: ...
 
 class RuntimeConfigurationObject:
     config_id: Optional[str]
