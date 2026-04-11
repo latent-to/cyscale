@@ -1,6 +1,7 @@
 # cython: language_level=3, boundscheck=False, wraparound=False, cdivision=True, nonecheck=False
 
 import struct as _struct
+from abc import ABC
 from typing import Union
 
 from scalecodec._scale_bytes cimport ScaleBytes
@@ -30,7 +31,17 @@ def _fast_i128(data): return int.from_bytes(data[:16], 'little', signed=True)
 def _fast_i256(data): return int.from_bytes(data[:32], 'little', signed=True)
 
 
-class U8(ScalePrimitive):
+class ScaleIntPrimitive(ScalePrimitive, ABC):
+    """Base for integer SCALE primitives — supports int() and __index__ protocol."""
+
+    def __int__(self):
+        return int(self.value)
+
+    def __index__(self):
+        return int(self.value)
+
+
+class U8(ScaleIntPrimitive):
     """
     Unsigned 8-bit int type, encoded in little-endian (LE) format
     """
@@ -49,7 +60,7 @@ class U8(ScalePrimitive):
             raise ValueError('{} out of range for u8'.format(value))
 
 
-class U16(ScalePrimitive):
+class U16(ScaleIntPrimitive):
     """
     Unsigned 16-bit int type, encoded in little-endian (LE) format
     """
@@ -69,7 +80,7 @@ class U16(ScalePrimitive):
             raise ValueError('{} out of range for u16'.format(value))
 
 
-class U32(ScalePrimitive):
+class U32(ScaleIntPrimitive):
     """
     Unsigned 32-bit int type, encoded in little-endian (LE) format
     """
@@ -92,7 +103,7 @@ class U32(ScalePrimitive):
             raise ValueError('{} out of range for u32'.format(value))
 
 
-class U64(ScalePrimitive):
+class U64(ScaleIntPrimitive):
     """
     Unsigned 64-bit int type, encoded in little-endian (LE) format
     """
@@ -119,7 +130,7 @@ class U64(ScalePrimitive):
             raise ValueError('{} out of range for u64'.format(value))
 
 
-class U128(ScalePrimitive):
+class U128(ScaleIntPrimitive):
     """
     Unsigned 128-bit int type, encoded in little-endian (LE) format
     """
@@ -138,7 +149,7 @@ class U128(ScalePrimitive):
             raise ValueError('{} out of range for u128'.format(value))
 
 
-class U256(ScalePrimitive):
+class U256(ScaleIntPrimitive):
     """
     Unsigned 256-bit int type, encoded in little-endian (LE) format
     """
@@ -157,7 +168,7 @@ class U256(ScalePrimitive):
             raise ValueError('{} out of range for u256'.format(value))
 
 
-class I8(ScalePrimitive):
+class I8(ScaleIntPrimitive):
     """
     Signed 8-bit int type, encoded in little-endian (LE) format
     """
@@ -176,7 +187,7 @@ class I8(ScalePrimitive):
             raise ValueError('{} out of range for i8'.format(value))
 
 
-class I16(ScalePrimitive):
+class I16(ScaleIntPrimitive):
     """
     Signed 16-bit int type, encoded in little-endian (LE) format
     """
@@ -195,7 +206,7 @@ class I16(ScalePrimitive):
             raise ValueError('{} out of range for i16'.format(value))
 
 
-class I32(ScalePrimitive):
+class I32(ScaleIntPrimitive):
     """
     Signed 32-bit int type, encoded in little-endian (LE) format
     """
@@ -214,7 +225,7 @@ class I32(ScalePrimitive):
             raise ValueError('{} out of range for i32'.format(value))
 
 
-class I64(ScalePrimitive):
+class I64(ScaleIntPrimitive):
     """
     Signed 64-bit int type, encoded in little-endian (LE) format
     """
@@ -233,7 +244,7 @@ class I64(ScalePrimitive):
             raise ValueError('{} out of range for i64'.format(value))
 
 
-class I128(ScalePrimitive):
+class I128(ScaleIntPrimitive):
     """
     Signed 128-bit int type, encoded in little-endian (LE) format
     """
@@ -252,7 +263,7 @@ class I128(ScalePrimitive):
             raise ValueError('{} out of range for i128'.format(value))
 
 
-class I256(ScalePrimitive):
+class I256(ScaleIntPrimitive):
     """
     Signed 256-bit int type, encoded in little-endian (LE) format
     """

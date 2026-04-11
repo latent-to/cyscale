@@ -249,7 +249,7 @@ wheels = [
 
 [[package]]
 name = "cyscale"
-version = "0.1.7"
+version = "0.1.10"
 source = { editable = "." }
 dependencies = [
     { name = "base58" },
