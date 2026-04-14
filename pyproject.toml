@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cyscale"
-version = "0.1.11"
+version = "0.2.0"
 description = "Cython SCALE Codec Library"
 readme = "README.md"
 license = "Apache-2.0"
@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["scale", "codec", "polkascan", "polkadot", "substrate", "blockchain", "kusama", "cython", "bittensor"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
