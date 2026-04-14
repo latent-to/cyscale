@@ -38,10 +38,10 @@ jobs:
     - uses: actions/setup-python@v6
 
     - name: Install cibuildwheel
-      run: python -m pip install cibuildwheel==3.4.0
+      run: python -m pip install cibuildwheel==3.4.1[uv]
 
     - name: Build wheels
-      run: python -m cibuildwheel --output-dir wheelhouse
+      run: python -m cibuildwheel --output-dir wheelhouse --installer=uv
       env:
         CIBW_BUILD: cp310-* cp311-* cp312-* cp313-* cp314-*
         CIBW_BUILD_VERBOSITY: 1
