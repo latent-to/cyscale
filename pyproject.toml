@@ -28,7 +28,6 @@ requires-python = ">=3.10"
 dependencies = [
     "more-itertools",
     "base58>=2.0.1",
-    "requests>=2.24.0",
 ]
 
 [project.optional-dependencies]
@@ -51,4 +50,8 @@ exclude = ["contrib", "docs", "tests", "test"]
 dev = [
     "pytest>=9.0.2",
     "setuptools>=82.0.1",
+]
+
+requests = [
+    "requests>=2.24.0",
 ]

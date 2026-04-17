@@ -3,7 +3,7 @@ import json
 import logging
 from typing import Optional
 
-import requests
+lazy_requests = None
 
 SUPPORTED_TYPE_REGISTRY_PRESETS = (
     "canvas",
@@ -50,8 +50,19 @@ def load_type_registry_preset(
     if name not in SUPPORTED_TYPE_REGISTRY_PRESETS:
         raise ValueError(f'Unsupported type registry preset "{name}"')
 
+    global lazy_requests
     if use_remote_preset is True:
-        result = requests.get(f"{ONLINE_BASE_URL}{name}.json")
+        if lazy_requests is None:
+            try:
+                import requests
+            except ImportError:
+                raise Exception(
+                    "In order to use remote_preset, you must have requests installed. "
+                    "Install with `pip install requests` or `pip install cyscale[requests]`"
+                )
+            lazy_requests = requests
+
+        result = lazy_requests.get(f"{ONLINE_BASE_URL}{name}.json")
 
         if result.ok:
             return result.json()
