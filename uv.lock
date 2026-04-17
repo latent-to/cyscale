@@ -249,12 +249,11 @@ wheels = [
 
 [[package]]
 name = "cyscale"
-version = "0.2.2"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "base58" },
     { name = "more-itertools" },
-    { name = "requests" },
 ]
 
 [package.optional-dependencies]
@@ -271,6 +270,9 @@ dev = [
     { name = "pytest" },
     { name = "setuptools" },
 ]
+requests = [
+    { name = "requests" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -279,7 +281,6 @@ requires-dist = [
     { name = "cython", marker = "extra == 'cython'", specifier = ">=3.0" },
     { name = "more-itertools" },
     { name = "pytest", marker = "extra == 'test'" },
-    { name = "requests", specifier = ">=2.24.0" },
 ]
 provides-extras = ["test", "cython"]
 
@@ -288,6 +289,7 @@ dev = [
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "setuptools", specifier = ">=82.0.1" },
 ]
+requests = [{ name = "requests", specifier = ">=2.24.0" }]
 
 [[package]]
 name = "cython"
