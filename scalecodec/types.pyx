@@ -1793,7 +1793,14 @@ class HashMap(Map):
 
 
 class BTreeMap(Map):
-    pass
+    def process(self):
+        items = super().process()
+        return {key: value for key, value in items}
+
+    def process_encode(self, value):
+        if isinstance(value, dict):
+            value = list(value.items())
+        return super().process_encode(value)
 
 
 class BoundedBTreeMap(BTreeMap):
