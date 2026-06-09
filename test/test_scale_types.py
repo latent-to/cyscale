@@ -1002,6 +1002,29 @@ class TestScaleTypes(unittest.TestCase):
         )
         self.assertEqual([("1", 2), ("23", 24), ("28", 30), ("45", 80)], obj.decode())
 
+    def test_btreemap_encode_from_list(self):
+        obj = RuntimeConfiguration().create_scale_object("BTreeMap<Vec<u8>, u32>")
+        data = obj.encode([("1", 2), ("23", 24), ("28", 30), ("45", 80)])
+        self.assertEqual(
+            data.to_hex(), "0x10043102000000083233180000000832381e00000008343550000000"
+        )
+
+    def test_btreemap_encode_from_dict(self):
+        obj = RuntimeConfiguration().create_scale_object("BTreeMap<Vec<u8>, u32>")
+        data = obj.encode({"1": 2, "23": 24, "28": 30, "45": 80})
+        self.assertEqual(
+            data.to_hex(), "0x10043102000000083233180000000832381e00000008343550000000"
+        )
+
+    def test_btreemap_decode(self):
+        obj = RuntimeConfiguration().create_scale_object(
+            "BTreeMap<Vec<u8>, u32>",
+            data=ScaleBytes(
+                "0x10043102000000083233180000000832381e00000008343550000000"
+            ),
+        )
+        self.assertEqual({"1": 2, "23": 24, "28": 30, "45": 80}, obj.decode())
+
     def test_btreeset_encode(self):
         obj = RuntimeConfiguration().create_scale_object("BTreeSet<u32>")
         data = obj.encode([2, 24, 30, 80])
