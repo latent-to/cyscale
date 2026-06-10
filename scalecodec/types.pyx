@@ -1795,11 +1795,13 @@ class HashMap(Map):
 class BTreeMap(Map):
     def process(self):
         items = super().process()
-        return {key: value for key, value in items}
+        # key types like Vec<u32> decode to a list, which is unhashable
+        return {tuple(key) if isinstance(key, list) else key: value for key, value in items}
 
     def process_encode(self, value):
         if isinstance(value, dict):
-            value = list(value.items())
+            # tuple keys come from the list -> tuple conversion in process(); convert back
+            value = [(list(key) if isinstance(key, tuple) else key, item) for key, item in value.items()]
         return super().process_encode(value)
 
 

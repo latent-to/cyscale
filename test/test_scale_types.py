@@ -1025,6 +1025,19 @@ class TestScaleTypes(unittest.TestCase):
         )
         self.assertEqual({"1": 2, "23": 24, "28": 30, "45": 80}, obj.decode())
 
+    def test_btreemap_decode_list_key(self):
+        # Vec<u32> keys decode to lists, which are converted to tuples to stay hashable
+        obj = RuntimeConfiguration().create_scale_object(
+            "BTreeMap<Vec<u32>, u32>",
+            data=ScaleBytes("0x0408010000000200000005000000"),
+        )
+        self.assertEqual({(1, 2): 5}, obj.decode())
+
+    def test_btreemap_encode_tuple_key(self):
+        obj = RuntimeConfiguration().create_scale_object("BTreeMap<Vec<u32>, u32>")
+        data = obj.encode({(1, 2): 5})
+        self.assertEqual(data.to_hex(), "0x0408010000000200000005000000")
+
     def test_btreeset_encode(self):
         obj = RuntimeConfiguration().create_scale_object("BTreeSet<u32>")
         data = obj.encode([2, 24, 30, 80])
