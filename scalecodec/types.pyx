@@ -219,16 +219,22 @@ class Struct(ScaleType):
         else:
             _field_decoders = None
 
+        # Pass runtime_config explicitly: without it, the field object reads the
+        # CLASS attribute at access time, which `get_decoder_class` rebinds to
+        # whichever RuntimeConfigurationObject touched the (possibly shared)
+        # class last. With two configs alive in one process, a sub-decoder can
+        # silently resolve types in the wrong registry — and the cached
+        # `_field_decoders` fast path skips the rebind entirely.
         if _field_decoders is not None:
             for key, decoder_class in _field_decoders:
-                field_obj = decoder_class(data=data, metadata=metadata)
+                field_obj = decoder_class(data=data, metadata=metadata, runtime_config=rc)
                 field_obj.decode(check_remaining=False)
                 self.value_object[key] = field_obj
                 result[key] = field_obj.value
         else:
             for key, data_type in self.type_mapping:
                 dc = rc.get_decoder_class(data_type or 'Null')
-                field_obj = dc(data=data, metadata=metadata)
+                field_obj = dc(data=data, metadata=metadata, runtime_config=rc)
                 field_obj.decode(check_remaining=False)
                 self.value_object[key] = field_obj
                 result[key] = field_obj.value
@@ -630,8 +636,9 @@ class Vec(ScaleType):
 
         result = []
         metadata = self.metadata
+        rc = self.runtime_config
         for _ in range(element_count):
-            element = element_class(data=self.data, metadata=metadata)
+            element = element_class(data=self.data, metadata=metadata, runtime_config=rc)
             element.decode(check_remaining=False)
             self.elements.append(element)
             result.append(element.value)
@@ -917,7 +924,10 @@ class Enum(ScaleType):
                 decoder_class = rc.get_decoder_class(variant_type)
                 _enum_cache[_variant_key] = decoder_class
 
-            result_obj = decoder_class(data=self.data, metadata=self.metadata)
+            # runtime_config passed explicitly for the same reason as in
+            # Struct.process: the cached variant path must not depend on the
+            # class-attribute binding, which another config may have rebound.
+            result_obj = decoder_class(data=self.data, metadata=self.metadata, runtime_config=rc)
             result_obj.decode(check_remaining=False)
 
             self.value_object = (variant_name, result_obj)
