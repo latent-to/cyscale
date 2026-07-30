@@ -1,6 +1,6 @@
 from abc import ABC
 from re import Pattern
-from typing import Any, Generic, Optional, Type, TypeVar, Union, overload
+from typing import Any, Callable, Generic, Optional, Type, TypeVar, Union, overload
 from typing import Literal
 
 from scalecodec.constants import ScaleValue as ScaleValue
@@ -81,9 +81,14 @@ class RuntimeConfigurationObject:
     def get_decoder_class_for_scale_info_definition(
         self, type_string: str, scale_info_type: Any, prefix: str
     ) -> Optional[Type[ScaleType[Any]]]: ...
+    _value_decoder_cache: dict
     def batch_decode(
         self, type_strings: list[str], data_list: list[bytes]
     ) -> list[Any]: ...
+    def get_value_decoder(
+        self, type_string: str
+    ) -> Optional[Callable[[bytes], Any]]: ...
+    def _clear_value_decoder_cache(self) -> None: ...
     def update_type_registry(self, type_registry: dict) -> None: ...
     def update_type_registry_types(self, types_dict: dict) -> None: ...
     def update_from_scale_info_types(

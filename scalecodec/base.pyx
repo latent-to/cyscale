@@ -8,6 +8,9 @@ from typing import Any, Optional, TYPE_CHECKING, Union
 from scalecodec.constants import TYPE_DECOMP_MAX_RECURSIVE
 from scalecodec.exceptions import RemainingScaleBytesNotEmptyException, InvalidScaleTypeValueException
 from scalecodec._scale_bytes import ScaleBytes
+from scalecodec import _value_decode
+
+_VALUE_DECODER_MISSING = object()
 
 
 class _ScaleInfoTypeRef:
@@ -183,6 +186,7 @@ class RuntimeConfigurationObject:
         self.arrow_match_re = re.compile(r'^([^<]*)<(.+)>$')
         self.bracket_match_re = re.compile(r'^\[([A-Za-z0-9]+); ([0-9]+)]$')
         self._dynamic_class_cache: dict = {}
+        self._value_decoder_cache: dict = {}
 
     @classmethod
     @lru_cache(maxsize=128)
@@ -340,7 +344,7 @@ class RuntimeConfigurationObject:
         cdef dict local_cache = {}
         cdef int i
         cdef str ts
-        cdef object decoder_class, fast_fn, entry, obj
+        cdef object decoder_class, fast_fn, value_fn, entry, obj
 
         for i in range(n):
             ts = type_strings[i]
@@ -349,15 +353,19 @@ class RuntimeConfigurationObject:
                 decoder_class = self.get_decoder_class(ts)
                 if decoder_class is None:
                     raise NotImplementedError(f'Decoder class for "{ts}" not found')
+                value_fn = self.get_value_decoder(ts)
                 fast_fn = getattr(decoder_class, '_batch_decode', None)
-                entry = (decoder_class, fast_fn)
+                entry = (decoder_class, fast_fn, value_fn)
                 local_cache[ts] = entry
             else:
                 decoder_class = entry[0]
                 fast_fn = entry[1]
+                value_fn = entry[2]
 
             data = data_list[i]
-            if fast_fn is not None:
+            if value_fn is not None:
+                results[i] = value_fn(data)
+            elif fast_fn is not None:
                 results[i] = fast_fn(data)
             else:
                 obj = decoder_class(data=ScaleBytes(data))
@@ -365,6 +373,29 @@ class RuntimeConfigurationObject:
                 results[i] = obj.value
 
         return results
+
+    def get_value_decoder(self, type_string):
+        """
+        The compiled value-only decoder for `type_string`, or None when the type
+        is not supported by the value-decode fast path (see
+        `scalecodec._value_decode`). Compiled once per type and cached; the
+        cache is cleared whenever the type registry changes.
+        """
+        cache = self._value_decoder_cache
+        value_fn = cache.get(type_string, _VALUE_DECODER_MISSING)
+        if value_fn is _VALUE_DECODER_MISSING:
+            try:
+                value_fn = _value_decode.build_decoder(self, type_string)
+            except _value_decode.UnsupportedType:
+                value_fn = None
+            cache[type_string] = value_fn
+        return value_fn
+
+    def _clear_value_decoder_cache(self) -> None:
+        cache = self.__dict__.get('_value_decoder_cache')
+        if cache is not None:
+            cache.clear()
+        self.__dict__.pop('_value_node_cache', None)
 
     def create_scale_object(self, type_string: Union[str, dict], data: Optional['ScaleBytes'] = None, **kwargs) -> 'ScaleType':
         """
@@ -390,6 +421,8 @@ class RuntimeConfigurationObject:
 
     def clear_type_registry(self) -> None:
 
+        self._clear_value_decoder_cache()
+
         if not self._initial_state:
             self.type_registry = {'types': {}, 'runtime_api': {}}
 
@@ -408,6 +441,8 @@ class RuntimeConfigurationObject:
 
     def update_type_registry_types(self, types_dict: dict) -> None:
         from scalecodec.types import Enum, Struct, Set, Tuple
+
+        self._clear_value_decoder_cache()
 
         self._initial_state = False
 
@@ -723,6 +758,8 @@ class RuntimeConfigurationObject:
         return decoder_class
 
     def update_from_scale_info_types(self, scale_info_types: list, prefix: Optional[str] = None) -> None:
+
+        self._clear_value_decoder_cache()
 
         if prefix is None:
             prefix = 'scale_info'

@@ -11,6 +11,7 @@ _cython_compiler_directives = {
 
 _extensions = [
     Extension("scalecodec._scale_bytes", ["scalecodec/_scale_bytes.pyx"]),
+    Extension("scalecodec._value_decode", ["scalecodec/_value_decode.pyx"]),
     Extension("scalecodec._primitives", ["scalecodec/_primitives.pyx"]),
     Extension("scalecodec._compact", ["scalecodec/_compact.pyx"]),
     Extension("scalecodec.utils._math", ["scalecodec/utils/_math.pyx"]),
@@ -29,6 +30,7 @@ except ImportError:
     # Fall back to pre-generated .c files when Cython is not installed
     ext_modules = [
         Extension("scalecodec._scale_bytes", ["scalecodec/_scale_bytes.c"]),
+        Extension("scalecodec._value_decode", ["scalecodec/_value_decode.c"]),
         Extension("scalecodec._primitives", ["scalecodec/_primitives.c"]),
         Extension("scalecodec._compact", ["scalecodec/_compact.c"]),
         Extension("scalecodec.utils._math", ["scalecodec/utils/_math.c"]),
