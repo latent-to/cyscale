@@ -29,6 +29,8 @@ from cpython.bytes cimport PyBytes_FromStringAndSize
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, uint64_t
 from libc.string cimport memcpy
 
+from hashlib import blake2b
+
 from scalecodec.exceptions import (
     InvalidScaleTypeValueException,
     RemainingScaleBytesNotEmptyException,
@@ -79,6 +81,9 @@ DEF OP_F64 = 33
 DEF OP_HEXBYTES = 34       # compact length + raw bytes -> 0x-hex
 DEF OP_OPTION_BYTES = 35   # Option<Vec<u8>> with OptionBytes semantics
 DEF OP_SET = 36            # bitmask int -> list of set names
+DEF OP_MULTIADDR = 37      # MultiAddress with GenericMultiAddress result shapes
+DEF OP_CALL = 38           # runtime Call with GenericCall's serialized dict shape
+DEF OP_ERA = 39            # '00' (immortal) or (period, phase)
 
 
 cdef class _Node:
@@ -345,6 +350,59 @@ cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize
                 if v & mask > 0:
                     out.append(name)
         return out
+    elif op == OP_MULTIADDR:
+        _need(p, 1, buflen)
+        idx = buf[p]
+        pos[0] = p + 1
+        if idx >= len(nd.children) or nd.keys[idx] is None:
+            raise ValueError("Index '{}' not present in Enum type mapping".format(idx))
+        child = <_Node>nd.children[idx]
+        v = _dec(child, buf, buflen, pos) if child is not None else None
+        if idx == 0 or idx == 1:
+            # Id -> the ss58 address itself; Index -> the bare account index
+            return v
+        return {nd.keys[idx]: v}
+    elif op == OP_CALL:
+        # aux: {pallet_index: (pallet_name, {call_index: (call_name,
+        #        [(arg_name, converted_type_string, _Node), ...])})}
+        _need(p, 2, buflen)
+        v = (<dict>nd.aux).get(buf[p])
+        if v is None:
+            raise ValueError(f'Pallet with index {buf[p]} not found in Call table')
+        idx = buf[p + 1]
+        entry = (<dict>(<tuple>v)[1]).get(idx)
+        if entry is None:
+            raise ValueError(f"Index '{idx}' not present in Enum type mapping")
+        pos[0] = p + 2
+        out = []
+        for arg_name, arg_type, child in <list>(<tuple>entry)[1]:
+            out.append({
+                'name': arg_name,
+                'type': arg_type,
+                'value': _dec(<_Node>child, buf, buflen, pos),
+            })
+        raw = PyBytes_FromStringAndSize(<const char*>(buf + p), pos[0] - p)
+        return {
+            'call_index': '0x{:02x}{:02x}'.format(buf[p], idx),
+            'call_function': (<tuple>entry)[0],
+            'call_module': (<tuple>v)[0],
+            'call_args': out,
+            'call_hash': '0x' + blake2b(raw, digest_size=32).digest().hex(),
+        }
+    elif op == OP_ERA:
+        _need(p, 1, buflen)
+        if buf[p] == 0:
+            pos[0] = p + 1
+            return '00'
+        _need(p, 2, buflen)
+        pos[0] = p + 2
+        i = buf[p] + (buf[p + 1] << 8)   # encoded era, little-endian
+        count = 2 << (i % (1 << 4))      # period
+        total = (count >> 12) if (count >> 12) > 1 else 1  # quantize factor
+        i = (i >> 4) * total             # phase
+        if count >= 4 and i < count:
+            return (<object>count, <object>i)
+        raise ValueError('Invalid phase and period: {}, {}'.format(i, count))
 
     raise UnsupportedType(f'Unknown value-decode op {op}')
 
@@ -368,6 +426,25 @@ cdef class ValueDecoder:
                 f'Decoding value-decoder - Current offset: {pos} / length: {buflen}'
             )
         return result
+
+    def decode_at(self, data, Py_ssize_t offset):
+        """Decode one value starting at `offset` inside `data`.
+
+        Returns ``(value, new_offset)`` and — unlike ``__call__`` — does not
+        require the buffer to be fully consumed, so it can be used to decode a
+        component in the middle of a larger stream (e.g. the Call enum inside
+        an extrinsic).
+        """
+        cdef const unsigned char[:] mv = data
+        cdef Py_ssize_t buflen = mv.shape[0]
+        cdef const unsigned char* buf
+        cdef Py_ssize_t pos = offset
+        if buflen == 0:
+            buf = NULL
+        else:
+            buf = &mv[0]
+        result = _dec(self._node, buf, buflen, &pos)
+        return result, pos
 
 
 # --- compiler ------------------------------------------------------------------------
@@ -422,6 +499,9 @@ cdef _init_dispatch_tables():
         'map': T.Map.process,
         'btreeset': T.BTreeSet.process,
         'set': T.Set.process,
+        'multiaddress': T.GenericMultiAddress.process,
+        'generic_call': T.GenericCall.process,
+        'era': T.Era.process,
         'u8_class': P.U8,
     })
 
@@ -544,6 +624,33 @@ cdef _fill_node(_Node node, rc, cls, dict node_cache):
         node.children = children
         return
 
+    if process is _KNOWN['multiaddress']:
+        type_mapping = cls.type_mapping
+        if not type_mapping:
+            raise UnsupportedType(f'MultiAddress without type_mapping: {cls}')
+        keys = []
+        children = []
+        for entry in type_mapping:
+            variant_name, variant_type = entry[0], entry[1]
+            keys.append(variant_name)
+            if variant_type is None or variant_type == 'Null':
+                children.append(None)
+            else:
+                children.append(_build_node(rc, variant_type, node_cache))
+        node.op = OP_MULTIADDR
+        node.keys = keys
+        node.children = children
+        return
+
+    if process is _KNOWN['generic_call']:
+        node.op = OP_CALL
+        node.aux = _build_call_table(rc, cls, node_cache)
+        return
+
+    if process is _KNOWN['era']:
+        node.op = OP_ERA
+        return
+
     if process is _KNOWN['enum']:
         type_mapping = cls.type_mapping
         if type_mapping:
@@ -565,7 +672,12 @@ cdef _fill_node(_Node node, rc, cls, dict node_cache):
             node.op = OP_ENUM_VALUES
             node.aux = list(value_list)
             return
-        raise UnsupportedType(f'Enum without type_mapping or value_list: {cls}')
+        # uninhabited enum (e.g. Void): no variant can ever decode; any index
+        # raises, exactly like the classic path
+        node.op = OP_ENUM
+        node.keys = []
+        node.children = []
+        return
 
     if process is _KNOWN['null']:
         node.op = OP_NULL
@@ -631,3 +743,52 @@ cdef _Node _build_map_pairs_node(rc, cls, dict node_cache):
     vec_node.op = OP_VEC
     vec_node.children = [pair_node]
     return vec_node
+
+
+cdef dict _build_call_table(rc, cls, dict node_cache):
+    """Compile the GenericCall decode table from the registry's RuntimeCall enum.
+
+    Every name, converted type string, and sub-decoder is resolved once at
+    compile time, so decoding a call is two table lookups plus its args.
+    """
+    from scalecodec.base import RuntimeConfigurationObject
+    convert = RuntimeConfigurationObject.convert_type_string
+
+    sit = getattr(cls, 'scale_info_type', None)
+    if sit is None:
+        raise UnsupportedType(f'Call class without scale_info_type: {cls}')
+    d = sit['def']
+    if d[0] != 'variant':
+        raise UnsupportedType(f'Call registry def is not a variant: {cls}')
+
+    cdef dict table = {}
+    for variant in d[1].value_object['variants'].value_object:
+        vv = variant.value
+        fields = vv.get('fields') or []
+        if len(fields) != 1:
+            raise UnsupportedType(f'Call pallet variant {vv.get("name")!r} has unexpected shape')
+        inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")
+        inner_sit = getattr(inner_cls, 'scale_info_type', None)
+        if inner_sit is None or inner_sit['def'][0] != 'variant':
+            raise UnsupportedType(f'Pallet call enum for {vv.get("name")!r} is not a variant')
+
+        inner_table = {}
+        for call_variant in inner_sit['def'][1].value_object['variants'].value_object:
+            cv = call_variant.value
+            args = []
+            for f in cv.get('fields') or []:
+                if f.get('name') is None:
+                    raise UnsupportedType(
+                        f'Unnamed call arg in {vv.get("name")}.{cv.get("name")}'
+                    )
+                type_name = f.get('typeName')
+                args.append((
+                    f['name'],
+                    convert(type_name) if type_name is not None else None,
+                    _build_node(rc, f"scale_info::{f['type']}", node_cache),
+                ))
+            inner_table[cv['index']] = (cv['name'], args)
+
+        table[vv['index']] = (vv['name'], inner_table)
+
+    return table

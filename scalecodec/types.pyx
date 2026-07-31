@@ -1217,10 +1217,68 @@ class GenericCall(ScaleType):
     def process(self):
 
         if self.metadata.portable_registry:
+            call_start = self.data.offset
+
             pallet_index = self.process_type('U8')
 
             self.call_module = self.metadata.get_pallet_by_index(pallet_index.value)
             call_type_string = self.call_module['calls'].value_object.get_type_string()
+
+            # Fast path: decode the pallet's Call enum with the value decoder
+            # (plain values, no per-arg ScaleType objects). Heavy call args —
+            # e.g. the Vec payloads of set_weights — dominate extrinsic decode
+            # otherwise. Falls through to the classic path when the enum is not
+            # value-decodable or its shape is unexpected.
+            get_value_decoder = getattr(self.runtime_config, 'get_value_decoder', None)
+            value_fn = get_value_decoder(call_type_string) if get_value_decoder is not None else None
+            if value_fn is not None:
+                enum_start = self.data.offset
+                decoded, new_offset = value_fn.decode_at(self.data.data, enum_start)
+                variant_index = self.data.data[enum_start]
+                if isinstance(decoded, dict):
+                    args_by_name = decoded[next(iter(decoded))]
+                else:
+                    # unit variant (call without args)
+                    args_by_name = None
+
+                call_enum_cls = self.runtime_config.get_decoder_class(call_type_string)
+                call_function = call_enum_cls.scale_info_type['def'][1].get_variant_by_index(variant_index)
+                call_arg_fields = call_function['fields']
+
+                if len(call_arg_fields) == 0 or isinstance(args_by_name, dict):
+                    self.data.offset = new_offset
+                    self.call_index = "{:02x}{:02x}".format(pallet_index.value, variant_index)
+                    self.call_function = call_function
+                    self.call_args = call_arg_fields
+
+                    call_hash = blake2b(
+                        bytes(self.data.data[call_start:new_offset]), digest_size=32
+                    ).digest()
+
+                    call_args = []
+                    for call_arg in call_arg_fields:
+                        arg_name = call_arg.value['name']
+                        call_args.append({
+                            'name': arg_name,
+                            'type': self.convert_type(call_arg.value['typeName']),
+                            'value': args_by_name[arg_name],
+                        })
+
+                    self.value_object = {
+                        'call_index': f'0x{self.call_index}',
+                        'call_function': self.call_function,
+                        'call_module': self.call_module,
+                        'call_args': call_args,
+                        'call_hash': f'0x{call_hash.hex()}'
+                    }
+
+                    return {
+                        'call_index': f'0x{self.call_index}',
+                        'call_function': self.call_function.name,
+                        'call_module': self.call_module.name,
+                        'call_args': call_args,
+                        'call_hash': f'0x{call_hash.hex()}'
+                    }
 
             call_obj = self.process_type(call_type_string, metadata=self.metadata)
 
@@ -1230,7 +1288,13 @@ class GenericCall(ScaleType):
 
             self.call_args = self.call_function['fields']
 
-            call_hash = blake2b(self.get_used_bytes(), digest_size=32).digest()
+            # Hash exactly this call's bytes. (`get_used_bytes()` cannot be used
+            # mid-process: `data_end_offset` is still None, so its slice would run
+            # to the end of the buffer — for a call nested inside e.g. a batch,
+            # that wrongly included every sibling call after it.)
+            call_hash = blake2b(
+                bytes(self.data.data[call_start:self.data.offset]), digest_size=32
+            ).digest()
 
             call_args = []
 
@@ -2557,7 +2621,106 @@ class GenericExtrinsic(ScaleType):
     def extrinsic_hash(self):
         return blake2b(self.data.data, digest_size=32).digest()
 
+    def _build_fast_extrinsic_plan(self):
+        """Compile per-field value decoders for the extrinsic body, or False.
+
+        Built once per metadata (the classic path re-derives the signed
+        extensions and rebuilds ExtrinsicV4's type_mapping for every single
+        extrinsic). The 'Call' field is resolved through the extrinsic type's
+        registry params, since the plain 'Call' alias class carries no
+        registry link.
+        """
+        rc = self.runtime_config
+        metadata = self.metadata
+        get_vd = getattr(rc, 'get_value_decoder', None)
+        if get_vd is None or metadata is None:
+            return False
+        try:
+            if 'extrinsic' not in metadata[1][1]:
+                return False
+            signed_extensions = metadata.get_signed_extensions()
+            ext_def = metadata[1][1]['extrinsic'].value
+            call_ts = None
+            if 'call_ty' in ext_def:
+                # V15 metadata names the call type directly
+                call_ts = f"scale_info::{ext_def['call_ty']}"
+            else:
+                # V14: resolve it from the extrinsic type's params
+                ext_cls = rc.get_decoder_class(f"scale_info::{ext_def['ty']}")
+                for param in ext_cls.scale_info_type.value['params']:
+                    if param['name'] == 'Call':
+                        call_ts = f"scale_info::{param['type']}"
+                        break
+        except Exception:
+            return False
+        if call_ts is None or len(signed_extensions) == 0:
+            return False
+
+        field_types = [('address', 'Address'), ('signature', 'ExtrinsicSignature')]
+        if 'CheckMortality' in signed_extensions:
+            field_types.append(('era', signed_extensions['CheckMortality']['extrinsic']))
+        if 'CheckEra' in signed_extensions:
+            field_types.append(('era', signed_extensions['CheckEra']['extrinsic']))
+        if 'CheckNonce' in signed_extensions:
+            field_types.append(('nonce', signed_extensions['CheckNonce']['extrinsic']))
+        if 'ChargeTransactionPayment' in signed_extensions:
+            field_types.append(('tip', signed_extensions['ChargeTransactionPayment']['extrinsic']))
+        if 'ChargeAssetTxPayment' in signed_extensions:
+            field_types.append(('asset_id', signed_extensions['ChargeAssetTxPayment']['extrinsic']))
+        if 'CheckMetadataHash' in signed_extensions:
+            field_types.append(('mode', signed_extensions['CheckMetadataHash']['extrinsic']))
+        field_types.append(('call', call_ts))
+
+        signed_fields = []
+        for field_name, ts in field_types:
+            fn = get_vd(ts)
+            if fn is None:
+                signed_fields = None
+                break
+            signed_fields.append((field_name, fn))
+
+        call_fn = get_vd(call_ts)
+        unsigned_fields = [('call', call_fn)] if call_fn is not None else None
+        if signed_fields is None and unsigned_fields is None:
+            return False
+        return (signed_fields, unsigned_fields)
+
+    def _get_fast_extrinsic_plan(self):
+        metadata = self.metadata
+        if metadata is None:
+            return None
+        plan = metadata.__dict__.get('_fast_extrinsic_plan')
+        if plan is None:
+            plan = self._build_fast_extrinsic_plan()
+            metadata.__dict__['_fast_extrinsic_plan'] = plan
+        return None if plan is False else plan
+
     def process(self):
+        # Fast path: decode the entire body with compiled value decoders (plain
+        # values, no per-field ScaleType objects), same result shape as classic.
+        plan = self._get_fast_extrinsic_plan()
+        if plan is not None:
+            start_offset = self.data.offset
+            extrinsic_length = self.process_type('Compact<u32>').value
+            version = self.process_type('u8').value
+            self.signed = (version & 128) == 128
+            fields = plan[0] if self.signed else plan[1]
+            if fields is not None and (not self.signed or (version & 127) == 4):
+                value = {
+                    'extrinsic_hash': f'0x{self.extrinsic_hash.hex()}',
+                    'extrinsic_length': extrinsic_length,
+                }
+                offset = self.data.offset
+                data_bytes = self.data.data
+                for field_name, value_fn in fields:
+                    field_value, offset = value_fn.decode_at(data_bytes, offset)
+                    value[field_name] = field_value
+                self.data.offset = offset
+                self.value_object = value
+                return value
+            # unsupported extrinsic version: rewind and use the classic path
+            self.data.offset = start_offset
+
         self.value_object = {
             'extrinsic_length': self.process_type('Compact<u32>'),
         }

@@ -42,9 +42,18 @@ class TestValueDecodeEquivalence(unittest.TestCase):
             self.assertIsNotNone(self.rc.get_value_decoder(ts), ts)
 
     def test_unsupported_types_fall_back(self):
-        for ts in ('Era', 'Call', 'GenericMultiAddress'):
+        # a bare 'Call' (GenericCall without a linked registry type) cannot
+        # build its compile-time call table
+        for ts in ('Call',):
             if self.rc.get_decoder_class(ts) is not None:
                 self.assertIsNone(self.rc.get_value_decoder(ts), ts)
+
+    def test_era(self):
+        # immortal
+        self.assertEqual(self.roundtrip('Era', '00'), '00')
+        # mortal (period, phase)
+        self.assertEqual(self.roundtrip('Era', (64, 35)), (64, 35))
+        self.assertEqual(self.roundtrip('Era', (32768, 20000)), (32768, 20000))
 
     def test_unsigned_ints(self):
         for ts, values in {

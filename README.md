@@ -101,6 +101,37 @@ PYTHONPATH=. python benchmarks/bench.py --compare benchmarks/baseline_py.json
 | `Enum`         | A fixed number of variants, each mutually exclusive. Encoded as the first byte identifying the index of the variant.                                                           | `{'Int': 8}`                                         | `0x002a`                       |
 | `Struct`       | For structures, values are named but that is irrelevant for the encoding (only order matters).                                                                                 | `{"votes": [...], "id": 4}`                          | `0x04b80269...`                |
 
+## Development
+
+Day-to-day tasks are wrapped in `./dev.sh` (plain POSIX shell; the only tools
+it uses are `uv` and `git`):
+
+```bash
+./dev.sh build        # regenerate .c for changed .pyx and build extensions in place
+./dev.sh rebuild-all  # force-regenerate every extension, restoring diff-noise-only .c files
+./dev.sh test         # run the test suite (extra args pass through to pytest)
+./dev.sh bench        # run benchmarks/bench.py (extra args pass through)
+```
+
+The generated `.c` files are committed, so installing from sdist needs no
+Cython. When a `.pyx` changes, regenerate its `.c` with `./dev.sh build` and
+commit both.
+
+Two conventions the script enforces:
+
+- **Regenerate through `setup.py`, never the standalone `cythonize` CLI.**
+  `setup.py` passes relative `Extension` sources, so the Cython metadata
+  embedded in the committed `.c` files stays relative
+  (`"scalecodec/types.pyx"`). The `cythonize` CLI resolves inputs to absolute
+  paths and would leak a local filesystem layout into the repo.
+- **Only commit `.c` files whose `.pyx` actually changed.** A forced rebuild
+  re-emits every `.c` with harmless Cython-output drift; `rebuild-all`
+  restores any whose source is untouched in git, keeping diffs to the real
+  change set.
+
+The build targets the interpreter of the project venv (`.venv`), so
+`./dev.sh test` always runs against the freshly built extensions.
+
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
