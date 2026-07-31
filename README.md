@@ -7,13 +7,38 @@
 
 Cython-accelerated [SCALE codec](https://docs.substrate.io/reference/scale-codec/) library for Substrate-based blockchains (Polkadot, Kusama, Bittensor, etc.), with no external runtime dependencies.
 
-A drop-in replacement for [py-scale-codec](https://github.com/polkascan/py-scale-codec): same `scalecodec` module name and public API, but compiled with Cython for improved throughput.
+Originally a drop-in replacement for [py-scale-codec](https://github.com/polkascan/py-scale-codec) — same `scalecodec` module name, compiled with Cython — cyscale has since diverged and is **no longer drop-in compatible**: its decode paths produce plain Python values (`int`/`str`/`bool`/`dict`/`list`/`tuple`/`None`) directly instead of building `ScaleType` object trees. See [Compatibility with py-scale-codec](#compatibility-with-py-scale-codec).
 
 ## Installation
 
 ```bash
 pip install cyscale
 ```
+
+## Compatibility with py-scale-codec
+
+cyscale keeps py-scale-codec's module name and most of its API surface, but it
+is not a drop-in replacement anymore. What diverges:
+
+- **Plain values, not ScaleTypes.** The optimized decode paths — a compiled
+  per-type *value decoder* used by `batch_decode`, `get_value_decoder`, and
+  the extrinsic/call/event fast paths — decode straight to plain Python
+  values. The shapes match what `.value` (`value_serialized`) always
+  contained; what's gone is the per-node `ScaleType` object tree around them.
+  Consumers should work with the returned values directly rather than
+  expecting `.value` / `.value_object` wrappers.
+- **`value_object` fidelity is not guaranteed on fast-pathed types.** Where a
+  wrapper object still exists (e.g. a decoded `GenericExtrinsic`), its
+  `value_object` may hold plain data instead of nested `ScaleType` instances.
+- **Nested `call_hash` is corrected.** py-scale-codec computes the hash of a
+  call nested inside `batch`/`sudo`/`proxy` over the call's bytes *plus
+  everything after it* in the buffer (a `get_used_bytes()`-mid-decode bug).
+  cyscale hashes exactly the call's own bytes, so nested `call_hash` values
+  intentionally differ.
+
+The classic object API (`create_scale_object(...)` / `.decode()` /
+`.encode()`) still exists and remains the fallback for types the value
+decoder does not cover, so encode paths and exotic types behave as before.
 
 ## Performance
 
