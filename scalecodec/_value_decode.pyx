@@ -84,6 +84,8 @@ DEF OP_SET = 36            # bitmask int -> list of set names
 DEF OP_MULTIADDR = 37      # MultiAddress with GenericMultiAddress result shapes
 DEF OP_CALL = 38           # runtime Call with GenericCall's serialized dict shape
 DEF OP_ERA = 39            # '00' (immortal) or (period, phase)
+DEF OP_EVENT = 40          # runtime event with GenericScaleInfoEvent's dict shape
+DEF OP_EVENT_RECORD = 41   # EventRecord with GenericEventRecord's dict shape
 
 
 cdef class _Node:
@@ -389,6 +391,32 @@ cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize
             'call_args': out,
             'call_hash': '0x' + blake2b(raw, digest_size=32).digest().hex(),
         }
+    elif op == OP_EVENT:
+        return _dec_event(<dict>nd.aux, buf, buflen, pos)
+    elif op == OP_EVENT_RECORD:
+        # phase: a plain enum value — a variant name, or {name: payload}
+        v = _dec(<_Node>nd.children[0], buf, buflen, pos)
+        if isinstance(v, dict):
+            phase_name = next(iter(v))
+            extrinsic_idx = v[phase_name] if phase_name == 'ApplyExtrinsic' else None
+        else:
+            phase_name = v
+            extrinsic_idx = None
+        p = pos[0]
+        _need(p, 1, buflen)
+        idx = buf[p]                      # outer event enum index
+        d = _dec_event(<dict>nd.aux, buf, buflen, pos)
+        v = _dec(<_Node>nd.children[1], buf, buflen, pos)   # topics
+        return {
+            'phase': phase_name,
+            'extrinsic_idx': extrinsic_idx,
+            'event': d,
+            'event_index': idx,
+            'module_id': d['module_id'],
+            'event_id': d['event_id'],
+            'attributes': d['attributes'],
+            'topics': v,
+        }
     elif op == OP_ERA:
         _need(p, 1, buflen)
         if buf[p] == 0:
@@ -405,6 +433,31 @@ cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize
         raise ValueError('Invalid phase and period: {}, {}'.format(i, count))
 
     raise UnsupportedType(f'Unknown value-decode op {op}')
+
+
+cdef dict _dec_event(dict table, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):
+    """Decode a runtime event enum into GenericScaleInfoEvent's dict shape."""
+    cdef Py_ssize_t p = pos[0]
+    _need(p, 2, buflen)
+    v = table.get(buf[p])
+    if v is None:
+        raise ValueError("Index '{}' not present in Enum type mapping".format(buf[p]))
+    cdef int idx = buf[p + 1]
+    entry = (<dict>(<tuple>v)[1]).get(idx)
+    if entry is None:
+        raise ValueError("Index '{}' not present in Enum type mapping".format(idx))
+    pos[0] = p + 2
+    payload_node = (<tuple>entry)[1]
+    if payload_node is not None:
+        attributes = _dec(<_Node>payload_node, buf, buflen, pos)
+    else:
+        attributes = None
+    return {
+        'event_index': '{:02x}{:02x}'.format(buf[p], idx),
+        'module_id': (<tuple>v)[0],
+        'event_id': (<tuple>entry)[0],
+        'attributes': attributes,
+    }
 
 
 cdef class ValueDecoder:
@@ -502,6 +555,8 @@ cdef _init_dispatch_tables():
         'multiaddress': T.GenericMultiAddress.process,
         'generic_call': T.GenericCall.process,
         'era': T.Era.process,
+        'scale_info_event': T.GenericScaleInfoEvent.process,
+        'event_record': T.GenericEventRecord.process,
         'u8_class': P.U8,
     })
 
@@ -614,8 +669,13 @@ cdef _fill_node(_Node node, rc, cls, dict node_cache):
 
     if process is _KNOWN['tuple']:
         type_mapping = cls.type_mapping
-        if not type_mapping:
+        if type_mapping is None:
             raise UnsupportedType(f'Tuple without type_mapping: {cls}')
+        if len(type_mapping) == 0:
+            # the unit type (): decodes to an empty tuple, consuming nothing
+            node.op = OP_TUPLE
+            node.children = []
+            return
         children = [
             _build_node(rc, member_type or 'Null', node_cache)
             for member_type in type_mapping
@@ -649,6 +709,30 @@ cdef _fill_node(_Node node, rc, cls, dict node_cache):
 
     if process is _KNOWN['era']:
         node.op = OP_ERA
+        return
+
+    if process is _KNOWN['scale_info_event']:
+        node.op = OP_EVENT
+        node.aux = _build_event_table(rc, cls, node_cache)
+        return
+
+    if process is _KNOWN['event_record']:
+        type_mapping = cls.type_mapping
+        if (
+            not type_mapping
+            or len(type_mapping) != 3
+            or [f[0] for f in type_mapping] != ['phase', 'event', 'topics']
+        ):
+            raise UnsupportedType(f'EventRecord with unexpected shape: {cls}')
+        event_node = _build_node(rc, type_mapping[1][1], node_cache)
+        if event_node.op != OP_EVENT:
+            raise UnsupportedType(f'EventRecord event field is not a runtime event: {cls}')
+        node.op = OP_EVENT_RECORD
+        node.children = [
+            _build_node(rc, type_mapping[0][1], node_cache),   # phase
+            _build_node(rc, type_mapping[2][1], node_cache),   # topics
+        ]
+        node.aux = event_node.aux
         return
 
     if process is _KNOWN['enum']:
@@ -788,6 +872,64 @@ cdef dict _build_call_table(rc, cls, dict node_cache):
                     _build_node(rc, f"scale_info::{f['type']}", node_cache),
                 ))
             inner_table[cv['index']] = (cv['name'], args)
+
+        table[vv['index']] = (vv['name'], inner_table)
+
+    return table
+
+
+cdef object _variant_payload_node(rc, fields, dict node_cache):
+    """The decoder for one variant's payload: None (unit), a dict of named
+    fields, a single unnamed value, or a tuple — matching Enum's shapes."""
+    cdef _Node payload
+    if not fields:
+        return None
+    if all(f.get('name') for f in fields):
+        payload = _Node.__new__(_Node)
+        payload.op = OP_STRUCT
+        payload.keys = [f['name'] for f in fields]
+        payload.children = [
+            _build_node(rc, f"scale_info::{f['type']}", node_cache) for f in fields
+        ]
+        return payload
+    if len(fields) == 1:
+        return _build_node(rc, f"scale_info::{fields[0]['type']}", node_cache)
+    payload = _Node.__new__(_Node)
+    payload.op = OP_TUPLE
+    payload.children = [
+        _build_node(rc, f"scale_info::{f['type']}", node_cache) for f in fields
+    ]
+    return payload
+
+
+cdef dict _build_event_table(rc, cls, dict node_cache):
+    """Compile the runtime event decode table from the registry's RuntimeEvent
+    enum: {pallet_index: (pallet_name, {event_index: (event_name, payload)})}."""
+    sit = getattr(cls, 'scale_info_type', None)
+    if sit is None:
+        raise UnsupportedType(f'Event class without scale_info_type: {cls}')
+    d = sit['def']
+    if d[0] != 'variant':
+        raise UnsupportedType(f'Event registry def is not a variant: {cls}')
+
+    cdef dict table = {}
+    for variant in d[1].value_object['variants'].value_object:
+        vv = variant.value
+        fields = vv.get('fields') or []
+        if len(fields) != 1:
+            raise UnsupportedType(f'Event pallet variant {vv.get("name")!r} has unexpected shape')
+        inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")
+        inner_sit = getattr(inner_cls, 'scale_info_type', None)
+        if inner_sit is None or inner_sit['def'][0] != 'variant':
+            raise UnsupportedType(f'Pallet event enum for {vv.get("name")!r} is not a variant')
+
+        inner_table = {}
+        for event_variant in inner_sit['def'][1].value_object['variants'].value_object:
+            ev = event_variant.value
+            inner_table[ev['index']] = (
+                ev['name'],
+                _variant_payload_node(rc, ev.get('fields') or [], node_cache),
+            )
 
         table[vv['index']] = (vv['name'], inner_table)
 
