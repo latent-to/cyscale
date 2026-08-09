@@ -271,6 +271,11 @@ class RuntimeConfigurationObject:
                     base_class = self.type_registry.get('types', {}).get(type_parts[0].lower(), None)
                     if base_class:
                         decoder_class = type(type_string, (base_class,), {'sub_type': type_parts[1]})
+                        # Cache like the tuple/array branches below: without this,
+                        # every lookup of e.g. "Compact<u32>" pays type() + ABCMeta
+                        # class creation (~30us), which dominates hot paths that
+                        # resolve parametrized types per item (extrinsic decode).
+                        self._dynamic_class_cache[type_string] = decoder_class
 
             # Custom tuples
             elif type_string != '()' and type_string[0] == '(' and type_string[-1] == ')':
@@ -396,6 +401,12 @@ class RuntimeConfigurationObject:
         if cache is not None:
             cache.clear()
         self.__dict__.pop('_value_node_cache', None)
+        # Dynamic Part1<Part2>/tuple/array classes bake in the base classes
+        # they resolved against, so any change to type resolution (registry
+        # updates, spec-version switches) invalidates them too.
+        dyn = self.__dict__.get('_dynamic_class_cache')
+        if dyn is not None:
+            dyn.clear()
 
     def create_scale_object(self, type_string: Union[str, dict], data: Optional['ScaleBytes'] = None, **kwargs) -> 'ScaleType':
         """
@@ -531,6 +542,8 @@ class RuntimeConfigurationObject:
     def set_active_spec_version_id(self, spec_version_id: int) -> None:
 
         if spec_version_id != self.active_spec_version_id:
+
+            self._clear_value_decoder_cache()
 
             self.active_spec_version_id = spec_version_id
 

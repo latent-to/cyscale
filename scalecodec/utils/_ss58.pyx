@@ -15,6 +15,8 @@ whole SS58 encode of an AccountId costs one Python frame instead of ~6.
 """
 
 from cpython.bytes cimport PyBytes_FromStringAndSize, PyBytes_AsString
+from cpython.list cimport PyList_New, PyList_SET_ITEM, PyList_GET_ITEM
+from cpython.ref cimport Py_INCREF
 from libc.stdint cimport uint32_t, uint64_t
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
@@ -23,6 +25,8 @@ from hashlib import blake2b
 
 cdef extern from "Python.h":
     str PyUnicode_DecodeASCII(const char *s, Py_ssize_t size, const char *errors)
+    int PyUnicode_KIND(object o)
+    void* PyUnicode_DATA(object o)
 
 
 # Bitcoin base58 alphabet — the only alphabet SS58 uses. Kept as a module-level
@@ -221,6 +225,89 @@ cpdef bytes blake2b_digest(object data, int digest_size=64):
         digest_size,
         <unsigned char*>PyBytes_AsString(out),
     )
+    return out
+
+
+cdef unsigned char _HEX_INV[256]
+cdef _init_hex_inv():
+    cdef int i
+    for i in range(256):
+        _HEX_INV[i] = 0xFF
+    for i in range(10):
+        _HEX_INV[ord("0") + i] = <unsigned char>i
+    for i in range(6):
+        _HEX_INV[ord("a") + i] = <unsigned char>(10 + i)
+        _HEX_INV[ord("A") + i] = <unsigned char>(10 + i)
+
+_init_hex_inv()
+
+
+cpdef list blake2_128_concat_batch(
+    bytes prefix, list params, Py_ssize_t expected_len=-1
+):
+    """Build Substrate storage keys ``prefix + blake2b16(p) + p`` for a batch
+    of single ``Blake2_128Concat`` parameters.
+
+    Each entry of ``params`` is the raw parameter as ``bytes``, or a hex
+    ``str`` with a ``0x`` prefix. When ``expected_len`` is non-negative every
+    parameter must decode to exactly that many raw bytes. Raises ValueError
+    on any entry that does not conform (non-hex, odd-length, wrong size), so
+    callers can fall back to a generic path.
+    """
+    cdef Py_ssize_t n = len(params)
+    cdef list out = PyList_New(n)
+    cdef Py_ssize_t plen = len(prefix)
+    cdef const unsigned char* pfx = <const unsigned char*>PyBytes_AsString(prefix)
+    cdef unsigned char raw_stack[128]
+    cdef const unsigned char* raw
+    cdef Py_ssize_t raw_len, j, hex_len
+    cdef Py_ssize_t i
+    cdef object param
+    cdef bytes key
+    cdef unsigned char* kb
+    cdef unsigned char hi, lo
+    cdef const unsigned char* s
+
+    for i in range(n):
+        param = <object>PyList_GET_ITEM(params, i)
+        if type(param) is str:
+            hex_len = <Py_ssize_t>len(<str>param)
+            if hex_len < 2 or hex_len % 2 != 0:
+                raise ValueError(f"not a 0x hex string: {param!r}")
+            raw_len = (hex_len - 2) // 2
+            if raw_len > 128:
+                raise ValueError("hex parameter too long for fast path")
+            if PyUnicode_KIND(param) != 1:
+                raise ValueError(f"not a 0x hex string: {param!r}")
+            s = <const unsigned char*>PyUnicode_DATA(param)
+            if s[0] != c"0" or (s[1] != c"x" and s[1] != c"X"):
+                raise ValueError(f"not a 0x hex string: {param!r}")
+            for j in range(raw_len):
+                hi = _HEX_INV[s[2 + 2 * j]]
+                lo = _HEX_INV[s[3 + 2 * j]]
+                if hi == 0xFF or lo == 0xFF:
+                    raise ValueError(f"not a 0x hex string: {param!r}")
+                raw_stack[j] = <unsigned char>((hi << 4) | lo)
+            raw = raw_stack
+        elif type(param) is bytes:
+            raw_len = len(<bytes>param)
+            raw = <const unsigned char*>PyBytes_AsString(<bytes>param)
+        else:
+            raise ValueError(f"unsupported parameter type: {type(param)!r}")
+
+        if expected_len >= 0 and raw_len != expected_len:
+            raise ValueError(
+                f"parameter length {raw_len} != expected {expected_len}"
+            )
+
+        key = PyBytes_FromStringAndSize(NULL, plen + 16 + raw_len)
+        kb = <unsigned char*>PyBytes_AsString(key)
+        memcpy(kb, pfx, plen)
+        _blake2b_oneshot(raw, raw_len, 16, kb + plen)
+        memcpy(kb + plen + 16, raw, raw_len)
+        Py_INCREF(key)
+        PyList_SET_ITEM(out, i, key)
+
     return out
 
 
