@@ -1143,6 +1143,36 @@ static int __Pyx_init_co_variables(void) {
 /* Early includes */
 #include <string.h>
 #include <stdio.h>
+
+    #if __PYX_LIMITED_VERSION_HEX < 0x030d0000
+    static CYTHON_INLINE PyObject *
+    __Pyx_CAPI_PyList_GetItemRef(PyObject *list, Py_ssize_t index)
+    {
+        PyObject *item = PyList_GetItem(list, index);
+        Py_XINCREF(item);
+        return item;
+    }
+    #else
+    #define __Pyx_CAPI_PyList_GetItemRef PyList_GetItemRef
+    #endif
+
+    #if CYTHON_COMPILING_IN_LIMITED_API || PY_VERSION_HEX < 0x030d0000
+    static CYTHON_INLINE int
+    __Pyx_CAPI_PyList_Extend(PyObject *list, PyObject *iterable)
+    {
+        return PyList_SetSlice(list, PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, iterable);
+    }
+
+    static CYTHON_INLINE int
+    __Pyx_CAPI_PyList_Clear(PyObject *list)
+    {
+        return PyList_SetSlice(list, 0, PY_SSIZE_T_MAX, NULL);
+    }
+    #else
+    #define __Pyx_CAPI_PyList_Extend PyList_Extend
+    #define __Pyx_CAPI_PyList_Clear PyList_Clear
+    #endif
+    
 #include <stdint.h>
 #include "pythread.h"
 #include <stdlib.h>
@@ -1627,7 +1657,7 @@ struct __pyx_MemviewEnum_obj;
 struct __pyx_memoryview_obj;
 struct __pyx_memoryviewslice_obj;
 
-/* "scalecodec/_value_decode.pyx":91
+/* "scalecodec/_value_decode.pyx":108
  * 
  * 
  * cdef class _Node:             # <<<<<<<<<<<<<<
@@ -1644,7 +1674,7 @@ struct __pyx_obj_10scalecodec_13_value_decode__Node {
 };
 
 
-/* "scalecodec/_value_decode.pyx":463
+/* "scalecodec/_value_decode.pyx":698
  * 
  * 
  * cdef class ValueDecoder:             # <<<<<<<<<<<<<<
@@ -1657,7 +1687,7 @@ struct __pyx_obj_10scalecodec_13_value_decode_ValueDecoder {
 };
 
 
-/* "scalecodec/_value_decode.pyx":887
+/* "scalecodec/_value_decode.pyx":1137
  *     if not fields:
  *         return None
  *     if all(f.get('name') for f in fields):             # <<<<<<<<<<<<<<
@@ -2482,73 +2512,17 @@ static void __Pyx_RaiseUnboundLocalError(const char *varname);
 /* DivInt[long].proto */
 static CYTHON_INLINE long __Pyx_div_long(long, long, int b_is_constant);
 
-/* PyObjectVectorCallKwBuilder.proto (used by PyObjectVectorCallMethodKwBuilder) */
-CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n);
-#if CYTHON_VECTORCALL
-#if PY_VERSION_HEX >= 0x03090000
-#define __Pyx_Object_Vectorcall_CallFromBuilder PyObject_Vectorcall
-#else
-#define __Pyx_Object_Vectorcall_CallFromBuilder _PyObject_Vectorcall
-#endif
-#define __Pyx_MakeVectorcallBuilderKwds(n) PyTuple_New(n)
-static int __Pyx_VectorcallBuilder_AddArg(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n);
-static int __Pyx_VectorcallBuilder_AddArgStr(const char *key, PyObject *value, PyObject *builder, PyObject **args, int n);
-#else
-#define __Pyx_Object_Vectorcall_CallFromBuilder __Pyx_PyObject_FastCallDict
-#define __Pyx_MakeVectorcallBuilderKwds(n) __Pyx_PyDict_NewPresized(n)
-#define __Pyx_VectorcallBuilder_AddArg(key, value, builder, args, n) PyDict_SetItem(builder, key, value)
-#define __Pyx_VectorcallBuilder_AddArgStr(key, value, builder, args, n) PyDict_SetItemString(builder, key, value)
-#endif
-
-/* PyObjectVectorCallMethodKwBuilder.proto */
-#if CYTHON_VECTORCALL && PY_VERSION_HEX >= 0x03090000
-#define __Pyx_Object_VectorcallMethod_CallFromBuilder PyObject_VectorcallMethod
-#else
-static PyObject *__Pyx_Object_VectorcallMethod_CallFromBuilder(PyObject *name, PyObject *const *args, size_t nargsf, PyObject *kwnames);
-#endif
-
-/* decode_c_string_utf16.proto (used by decode_c_bytes) */
-static CYTHON_INLINE PyObject *__Pyx_PyUnicode_DecodeUTF16(const char *s, Py_ssize_t size, const char *errors) {
-    int byteorder = 0;
-    return PyUnicode_DecodeUTF16(s, size, errors, &byteorder);
-}
-static CYTHON_INLINE PyObject *__Pyx_PyUnicode_DecodeUTF16LE(const char *s, Py_ssize_t size, const char *errors) {
-    int byteorder = -1;
-    return PyUnicode_DecodeUTF16(s, size, errors, &byteorder);
-}
-static CYTHON_INLINE PyObject *__Pyx_PyUnicode_DecodeUTF16BE(const char *s, Py_ssize_t size, const char *errors) {
-    int byteorder = 1;
-    return PyUnicode_DecodeUTF16(s, size, errors, &byteorder);
-}
-
-/* decode_c_bytes.proto (used by decode_bytes) */
-static CYTHON_INLINE PyObject* __Pyx_decode_c_bytes(
-         const char* cstring, Py_ssize_t length, Py_ssize_t start, Py_ssize_t stop,
-         const char* encoding, const char* errors,
-         PyObject* (*decode_func)(const char *s, Py_ssize_t size, const char *errors));
-
-/* decode_bytes.proto */
-static CYTHON_INLINE PyObject* __Pyx_decode_bytes(
-         PyObject* string, Py_ssize_t start, Py_ssize_t stop,
-         const char* encoding, const char* errors,
-         PyObject* (*decode_func)(const char *s, Py_ssize_t size, const char *errors)) {
-    char* as_c_string;
-    Py_ssize_t size;
-#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE
-    as_c_string = PyBytes_AS_STRING(string);
-    size = PyBytes_GET_SIZE(string);
-#else
-    if (PyBytes_AsStringAndSize(string, &as_c_string, &size) < 0) {
-        return NULL;
-    }
-#endif
-    return __Pyx_decode_c_bytes(
-        as_c_string, size,
-        start, stop, encoding, errors, decode_func);
-}
-
 /* PyUnicodeDecodeError_Check.proto */
 #define __Pyx_PyExc_UnicodeDecodeError_Check(obj)  __Pyx_TypeCheck(obj, PyExc_UnicodeDecodeError)
+
+/* CIntToPyUnicode.proto */
+#define __Pyx_PyUnicode_From_uint64_t(value, width, padding_char, format_char) (\
+    ((format_char) == ('c')) ?\
+        __Pyx_uchar___Pyx_PyUnicode_From_uint64_t(value, width, padding_char) :\
+        __Pyx____Pyx_PyUnicode_From_uint64_t(value, width, padding_char, format_char)\
+    )
+static CYTHON_INLINE PyObject* __Pyx_uchar___Pyx_PyUnicode_From_uint64_t(uint64_t value, Py_ssize_t width, char padding_char);
+static CYTHON_INLINE PyObject* __Pyx____Pyx_PyUnicode_From_uint64_t(uint64_t value, Py_ssize_t width, char padding_char, char format_char);
 
 /* ListAppend.proto */
 #if CYTHON_USE_PYLIST_INTERNALS && CYTHON_ASSUME_SAFE_MACROS
@@ -2597,6 +2571,24 @@ static PyObject* __Pyx__CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObje
 static CYTHON_INLINE PyObject* __Pyx_CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg);
 #else
 #define __Pyx_CallUnboundCMethod1(cfunc, self, arg)  __Pyx__CallUnboundCMethod1(cfunc, self, arg)
+#endif
+
+/* PyObjectVectorCallKwBuilder.proto */
+CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n);
+#if CYTHON_VECTORCALL
+#if PY_VERSION_HEX >= 0x03090000
+#define __Pyx_Object_Vectorcall_CallFromBuilder PyObject_Vectorcall
+#else
+#define __Pyx_Object_Vectorcall_CallFromBuilder _PyObject_Vectorcall
+#endif
+#define __Pyx_MakeVectorcallBuilderKwds(n) PyTuple_New(n)
+static int __Pyx_VectorcallBuilder_AddArg(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n);
+static int __Pyx_VectorcallBuilder_AddArgStr(const char *key, PyObject *value, PyObject *builder, PyObject **args, int n);
+#else
+#define __Pyx_Object_Vectorcall_CallFromBuilder __Pyx_PyObject_FastCallDict
+#define __Pyx_MakeVectorcallBuilderKwds(n) __Pyx_PyDict_NewPresized(n)
+#define __Pyx_VectorcallBuilder_AddArg(key, value, builder, args, n) PyDict_SetItem(builder, key, value)
+#define __Pyx_VectorcallBuilder_AddArgStr(key, value, builder, args, n) PyDict_SetItemString(builder, key, value)
 #endif
 
 /* IterNextPlain.proto (used by IterNext) */
@@ -3270,11 +3262,20 @@ static PyObject *__pyx_memoryviewslice__get_base(struct __pyx_memoryviewslice_ob
 
 /* Module declarations from "cpython.object" */
 
+/* Module declarations from "cpython.bytearray" */
+
 /* Module declarations from "cpython.bytes" */
+
+/* Module declarations from "cpython.list" */
+
+/* Module declarations from "cpython.ref" */
+
+/* Module declarations from "cpython.tuple" */
 
 /* Module declarations from "libc.stdint" */
 
 /* Module declarations from "scalecodec._value_decode" */
+static char const *__pyx_v_10scalecodec_13_value_decode__HEXCHARS;
 static PyObject *__pyx_v_10scalecodec_13_value_decode__PRIM_OPS = 0;
 static PyObject *__pyx_v_10scalecodec_13_value_decode__KNOWN = 0;
 static PyObject *__pyx_collections_abc_Sequence = 0;
@@ -3287,7 +3288,12 @@ static int __pyx_memoryview_thread_locks_used;
 static PyThread_type_lock __pyx_memoryview_thread_locks[8];
 static CYTHON_INLINE void __pyx_f_10scalecodec_13_value_decode__need(Py_ssize_t, Py_ssize_t, Py_ssize_t); /*proto*/
 static CYTHON_INLINE uint64_t __pyx_f_10scalecodec_13_value_decode__read_uint(unsigned char const *, Py_ssize_t, int); /*proto*/
+static PyObject *__pyx_f_10scalecodec_13_value_decode__hex0x(unsigned char const *, Py_ssize_t); /*proto*/
+static int __pyx_f_10scalecodec_13_value_decode__utf8_valid(unsigned char const *, Py_ssize_t); /*proto*/
+static CYTHON_INLINE PyObject *__pyx_f_10scalecodec_13_value_decode__utf8_or_hex(unsigned char const *, Py_ssize_t); /*proto*/
+static Py_ssize_t __pyx_f_10scalecodec_13_value_decode__read_compact_len(unsigned char const *, Py_ssize_t, Py_ssize_t *); /*proto*/
 static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned char const *, Py_ssize_t, Py_ssize_t *); /*proto*/
+static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_list(struct __pyx_obj_10scalecodec_13_value_decode__Node *, Py_ssize_t, unsigned char const *, Py_ssize_t, Py_ssize_t *); /*proto*/
 static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10scalecodec_13_value_decode__Node *, unsigned char const *, Py_ssize_t, Py_ssize_t *); /*proto*/
 static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *, unsigned char const *, Py_ssize_t, Py_ssize_t *); /*proto*/
 static PyObject *__pyx_f_10scalecodec_13_value_decode__init_dispatch_tables(void); /*proto*/
@@ -3349,6 +3355,7 @@ static const char __pyx_k_c[] = "c";
 static const char __pyx_k_name[] = "name";
 static const char __pyx_k_node[] = "_node";
 static const char __pyx_k_fortran[] = "fortran";
+static const char __pyx_k_0123456789abcdef[] = "0123456789abcdef";
 static const char __pyx_k_Value_only_SCALE_decoding_plain[] = "Value-only SCALE decoding: plain Python values with no ScaleType objects.\n\nThe classic decode path builds one ScaleType instance per node of the type\ntree (a `System.Account` value allocates ~a dozen objects), purely so the\nresult can carry `value_object` alongside `value_serialized`. The batch read\npaths only ever consume `.value`, so all of that allocation is overhead.\n\nThis module compiles a type into a small tree of `_Node` descriptors once\n(per runtime configuration), then decodes each SCALE blob by walking that\ntree with a single recursive C function that reads straight out of the input\nbuffer and builds plain values (int/str/dict/list/tuple/None) directly.\n\nOnly types whose semantics are fully known are compiled: the compiler\nresolves the type through the existing dynamic decoder classes and checks \342\200\224\nby `process` method identity \342\200\224 that each class decodes with a known base\nimplementation (Struct, Enum, Vec, primitives, ...). Any class that overrides\n`process` (GenericCall, Era, Data, metadata types, ...) raises\n:class:`UnsupportedType` and the caller falls back to the classic path, so\nbehavior can never silently diverge for exotic types.\n\nDecoded values are shape-identical to `.value` (``value_serialized``) of the\nclassic path, and a full decode enforces exact buffer consumption the same\nway ``decode(check_remaining=True)`` does.\n";
 /* #### Code section: decls ### */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
@@ -3448,7 +3455,6 @@ typedef struct {
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_items;
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_pop;
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_values;
-  __Pyx_CachedCFunction __pyx_umethod_PyBytes_Type__hex;
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type__update;
   PyObject *__pyx_slice[1];
   PyObject *__pyx_tuple[2];
@@ -3599,194 +3605,194 @@ static __pyx_mstatetype * const __pyx_mstate_global = &__pyx_mstate_global_stati
 #define __pyx_kp_u_stringsource __pyx_string_tab[88]
 #define __pyx_kp_u_unable_to_allocate_array_data __pyx_string_tab[89]
 #define __pyx_kp_u_unable_to_allocate_shape_and_str __pyx_string_tab[90]
-#define __pyx_n_u_ASCII __pyx_string_tab[91]
-#define __pyx_n_u_ApplyExtrinsic __pyx_string_tab[92]
-#define __pyx_n_u_BTreeMap __pyx_string_tab[93]
-#define __pyx_n_u_BTreeSet __pyx_string_tab[94]
-#define __pyx_n_u_BitVec __pyx_string_tab[95]
-#define __pyx_n_u_Bool __pyx_string_tab[96]
-#define __pyx_n_u_Bytes __pyx_string_tab[97]
-#define __pyx_n_u_Compact __pyx_string_tab[98]
-#define __pyx_n_u_Ellipsis __pyx_string_tab[99]
-#define __pyx_n_u_Enum __pyx_string_tab[100]
-#define __pyx_n_u_Era __pyx_string_tab[101]
-#define __pyx_n_u_F32 __pyx_string_tab[102]
-#define __pyx_n_u_F64 __pyx_string_tab[103]
-#define __pyx_n_u_FixedLengthArray __pyx_string_tab[104]
-#define __pyx_n_u_GenericAccountId __pyx_string_tab[105]
-#define __pyx_n_u_GenericCall __pyx_string_tab[106]
-#define __pyx_n_u_GenericEventRecord __pyx_string_tab[107]
-#define __pyx_n_u_GenericMultiAddress __pyx_string_tab[108]
-#define __pyx_n_u_GenericScaleInfoEvent __pyx_string_tab[109]
-#define __pyx_n_u_H160 __pyx_string_tab[110]
-#define __pyx_n_u_H256 __pyx_string_tab[111]
-#define __pyx_n_u_H512 __pyx_string_tab[112]
-#define __pyx_n_u_HexBytes __pyx_string_tab[113]
-#define __pyx_n_u_I128 __pyx_string_tab[114]
-#define __pyx_n_u_I16 __pyx_string_tab[115]
-#define __pyx_n_u_I256 __pyx_string_tab[116]
-#define __pyx_n_u_I32 __pyx_string_tab[117]
-#define __pyx_n_u_I64 __pyx_string_tab[118]
-#define __pyx_n_u_I8 __pyx_string_tab[119]
-#define __pyx_n_u_InvalidScaleTypeValueException __pyx_string_tab[120]
-#define __pyx_n_u_Map __pyx_string_tab[121]
-#define __pyx_n_u_Node __pyx_string_tab[122]
-#define __pyx_n_u_Node___reduce_cython __pyx_string_tab[123]
-#define __pyx_n_u_Node___setstate_cython __pyx_string_tab[124]
-#define __pyx_n_u_Null __pyx_string_tab[125]
-#define __pyx_n_u_Option __pyx_string_tab[126]
-#define __pyx_n_u_OptionBytes __pyx_string_tab[127]
-#define __pyx_n_u_Pyx_PyDict_NextRef __pyx_string_tab[128]
-#define __pyx_n_u_RemainingScaleBytesNotEmptyExcep __pyx_string_tab[129]
-#define __pyx_n_u_RuntimeConfigurationObject __pyx_string_tab[130]
-#define __pyx_n_u_Sequence __pyx_string_tab[131]
-#define __pyx_n_u_Set __pyx_string_tab[132]
-#define __pyx_n_u_Struct __pyx_string_tab[133]
-#define __pyx_n_u_Tuple __pyx_string_tab[134]
-#define __pyx_n_u_U128 __pyx_string_tab[135]
-#define __pyx_n_u_U16 __pyx_string_tab[136]
-#define __pyx_n_u_U256 __pyx_string_tab[137]
-#define __pyx_n_u_U32 __pyx_string_tab[138]
-#define __pyx_n_u_U64 __pyx_string_tab[139]
-#define __pyx_n_u_U8 __pyx_string_tab[140]
-#define __pyx_n_u_UnsupportedType __pyx_string_tab[141]
-#define __pyx_n_u_ValueDecoder __pyx_string_tab[142]
-#define __pyx_n_u_ValueDecoder___reduce_cython __pyx_string_tab[143]
-#define __pyx_n_u_ValueDecoder___setstate_cython __pyx_string_tab[144]
-#define __pyx_n_u_ValueDecoder_decode_at __pyx_string_tab[145]
-#define __pyx_n_u_Vec __pyx_string_tab[146]
-#define __pyx_n_u_View_MemoryView __pyx_string_tab[147]
-#define __pyx_n_u_abc __pyx_string_tab[148]
-#define __pyx_n_u_account_id __pyx_string_tab[149]
-#define __pyx_n_u_allocate_buffer __pyx_string_tab[150]
-#define __pyx_n_u_annotate __pyx_string_tab[151]
-#define __pyx_n_u_array __pyx_string_tab[152]
-#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[153]
-#define __pyx_n_u_attributes __pyx_string_tab[154]
-#define __pyx_n_u_base __pyx_string_tab[155]
-#define __pyx_n_u_bitvec __pyx_string_tab[156]
-#define __pyx_n_u_blake2b __pyx_string_tab[157]
-#define __pyx_n_u_btreemap __pyx_string_tab[158]
-#define __pyx_n_u_btreeset __pyx_string_tab[159]
-#define __pyx_n_u_buf __pyx_string_tab[160]
-#define __pyx_n_u_buflen __pyx_string_tab[161]
-#define __pyx_n_u_build_decoder __pyx_string_tab[162]
-#define __pyx_n_u_bytes __pyx_string_tab[163]
-#define __pyx_n_u_c __pyx_string_tab[164]
-#define __pyx_n_u_call_args __pyx_string_tab[165]
-#define __pyx_n_u_call_function __pyx_string_tab[166]
-#define __pyx_n_u_call_hash __pyx_string_tab[167]
-#define __pyx_n_u_call_index __pyx_string_tab[168]
-#define __pyx_n_u_call_module __pyx_string_tab[169]
-#define __pyx_n_u_class __pyx_string_tab[170]
-#define __pyx_n_u_class_getitem __pyx_string_tab[171]
-#define __pyx_n_u_cline_in_traceback __pyx_string_tab[172]
-#define __pyx_n_u_close __pyx_string_tab[173]
-#define __pyx_n_u_convert_type_string __pyx_string_tab[174]
-#define __pyx_n_u_count __pyx_string_tab[175]
-#define __pyx_n_u_data __pyx_string_tab[176]
-#define __pyx_n_u_dec __pyx_string_tab[177]
-#define __pyx_n_u_decode_at __pyx_string_tab[178]
-#define __pyx_n_u_def __pyx_string_tab[179]
-#define __pyx_n_u_dict __pyx_string_tab[180]
-#define __pyx_n_u_dict_2 __pyx_string_tab[181]
-#define __pyx_n_u_digest __pyx_string_tab[182]
-#define __pyx_n_u_digest_size __pyx_string_tab[183]
-#define __pyx_n_u_doc __pyx_string_tab[184]
-#define __pyx_n_u_dtype_is_object __pyx_string_tab[185]
-#define __pyx_n_u_element_count __pyx_string_tab[186]
-#define __pyx_n_u_encode __pyx_string_tab[187]
-#define __pyx_n_u_enum __pyx_string_tab[188]
-#define __pyx_n_u_enumerate __pyx_string_tab[189]
-#define __pyx_n_u_era __pyx_string_tab[190]
-#define __pyx_n_u_error __pyx_string_tab[191]
-#define __pyx_n_u_event __pyx_string_tab[192]
-#define __pyx_n_u_event_id __pyx_string_tab[193]
-#define __pyx_n_u_event_index __pyx_string_tab[194]
-#define __pyx_n_u_event_record __pyx_string_tab[195]
-#define __pyx_n_u_extrinsic_idx __pyx_string_tab[196]
-#define __pyx_n_u_f __pyx_string_tab[197]
-#define __pyx_n_u_fields __pyx_string_tab[198]
-#define __pyx_n_u_flags __pyx_string_tab[199]
-#define __pyx_n_u_format __pyx_string_tab[200]
-#define __pyx_n_u_fortran __pyx_string_tab[201]
-#define __pyx_n_u_from_bytes __pyx_string_tab[202]
-#define __pyx_n_u_func __pyx_string_tab[203]
-#define __pyx_n_u_generic_call __pyx_string_tab[204]
-#define __pyx_n_u_genexpr __pyx_string_tab[205]
-#define __pyx_n_u_get __pyx_string_tab[206]
-#define __pyx_n_u_get_decoder_class __pyx_string_tab[207]
-#define __pyx_n_u_getstate __pyx_string_tab[208]
-#define __pyx_n_u_h256 __pyx_string_tab[209]
-#define __pyx_n_u_hashlib __pyx_string_tab[210]
-#define __pyx_n_u_hex __pyx_string_tab[211]
-#define __pyx_n_u_hexbytes __pyx_string_tab[212]
-#define __pyx_n_u_id __pyx_string_tab[213]
-#define __pyx_n_u_import __pyx_string_tab[214]
-#define __pyx_n_u_index __pyx_string_tab[215]
-#define __pyx_n_u_is_coroutine __pyx_string_tab[216]
-#define __pyx_n_u_items __pyx_string_tab[217]
-#define __pyx_n_u_itemsize __pyx_string_tab[218]
-#define __pyx_n_u_little __pyx_string_tab[219]
-#define __pyx_n_u_main __pyx_string_tab[220]
-#define __pyx_n_u_map __pyx_string_tab[221]
-#define __pyx_n_u_memview __pyx_string_tab[222]
-#define __pyx_n_u_metaclass __pyx_string_tab[223]
-#define __pyx_n_u_mode __pyx_string_tab[224]
-#define __pyx_n_u_module __pyx_string_tab[225]
-#define __pyx_n_u_module_id __pyx_string_tab[226]
-#define __pyx_n_u_mro_entries __pyx_string_tab[227]
-#define __pyx_n_u_multiaddress __pyx_string_tab[228]
-#define __pyx_n_u_mv __pyx_string_tab[229]
-#define __pyx_n_u_name __pyx_string_tab[230]
-#define __pyx_n_u_name_2 __pyx_string_tab[231]
-#define __pyx_n_u_ndim __pyx_string_tab[232]
-#define __pyx_n_u_new __pyx_string_tab[233]
-#define __pyx_n_u_next __pyx_string_tab[234]
-#define __pyx_n_u_node_cache __pyx_string_tab[235]
-#define __pyx_n_u_null __pyx_string_tab[236]
-#define __pyx_n_u_obj __pyx_string_tab[237]
-#define __pyx_n_u_offset __pyx_string_tab[238]
-#define __pyx_n_u_option __pyx_string_tab[239]
-#define __pyx_n_u_option_bytes __pyx_string_tab[240]
-#define __pyx_n_u_pack __pyx_string_tab[241]
-#define __pyx_n_u_phase __pyx_string_tab[242]
-#define __pyx_n_u_pop __pyx_string_tab[243]
-#define __pyx_n_u_pos __pyx_string_tab[244]
-#define __pyx_n_u_prepare __pyx_string_tab[245]
-#define __pyx_n_u_primitives __pyx_string_tab[246]
-#define __pyx_n_u_process __pyx_string_tab[247]
-#define __pyx_n_u_pyx_checksum __pyx_string_tab[248]
-#define __pyx_n_u_pyx_result __pyx_string_tab[249]
-#define __pyx_n_u_pyx_state __pyx_string_tab[250]
-#define __pyx_n_u_pyx_type __pyx_string_tab[251]
-#define __pyx_n_u_pyx_unpickle_Enum __pyx_string_tab[252]
-#define __pyx_n_u_pyx_unpickle_ValueDecoder __pyx_string_tab[253]
-#define __pyx_n_u_pyx_vtable __pyx_string_tab[254]
-#define __pyx_n_u_qualname __pyx_string_tab[255]
-#define __pyx_n_u_reduce __pyx_string_tab[256]
-#define __pyx_n_u_reduce_cython __pyx_string_tab[257]
-#define __pyx_n_u_reduce_ex __pyx_string_tab[258]
-#define __pyx_n_u_register __pyx_string_tab[259]
-#define __pyx_n_u_result __pyx_string_tab[260]
-#define __pyx_n_u_runtime_config __pyx_string_tab[261]
-#define __pyx_n_u_scale_info_event __pyx_string_tab[262]
-#define __pyx_n_u_scale_info_type __pyx_string_tab[263]
-#define __pyx_n_u_scalecodec __pyx_string_tab[264]
-#define __pyx_n_u_scalecodec__compact __pyx_string_tab[265]
-#define __pyx_n_u_scalecodec__value_decode __pyx_string_tab[266]
-#define __pyx_n_u_scalecodec_base __pyx_string_tab[267]
-#define __pyx_n_u_scalecodec_exceptions __pyx_string_tab[268]
-#define __pyx_n_u_scalecodec_utils__ss58 __pyx_string_tab[269]
-#define __pyx_n_u_self __pyx_string_tab[270]
-#define __pyx_n_u_send __pyx_string_tab[271]
-#define __pyx_n_u_set __pyx_string_tab[272]
-#define __pyx_n_u_set_name __pyx_string_tab[273]
-#define __pyx_n_u_setdefault __pyx_string_tab[274]
-#define __pyx_n_u_setstate __pyx_string_tab[275]
-#define __pyx_n_u_setstate_cython __pyx_string_tab[276]
-#define __pyx_n_u_shape __pyx_string_tab[277]
-#define __pyx_n_u_signed __pyx_string_tab[278]
+#define __pyx_kp_u_x_2 __pyx_string_tab[91]
+#define __pyx_n_u_ASCII __pyx_string_tab[92]
+#define __pyx_n_u_ApplyExtrinsic __pyx_string_tab[93]
+#define __pyx_n_u_BTreeMap __pyx_string_tab[94]
+#define __pyx_n_u_BTreeSet __pyx_string_tab[95]
+#define __pyx_n_u_BitVec __pyx_string_tab[96]
+#define __pyx_n_u_Bool __pyx_string_tab[97]
+#define __pyx_n_u_Bytes __pyx_string_tab[98]
+#define __pyx_n_u_Compact __pyx_string_tab[99]
+#define __pyx_n_u_Ellipsis __pyx_string_tab[100]
+#define __pyx_n_u_Enum __pyx_string_tab[101]
+#define __pyx_n_u_Era __pyx_string_tab[102]
+#define __pyx_n_u_F32 __pyx_string_tab[103]
+#define __pyx_n_u_F64 __pyx_string_tab[104]
+#define __pyx_n_u_FixedLengthArray __pyx_string_tab[105]
+#define __pyx_n_u_GenericAccountId __pyx_string_tab[106]
+#define __pyx_n_u_GenericCall __pyx_string_tab[107]
+#define __pyx_n_u_GenericEventRecord __pyx_string_tab[108]
+#define __pyx_n_u_GenericMultiAddress __pyx_string_tab[109]
+#define __pyx_n_u_GenericScaleInfoEvent __pyx_string_tab[110]
+#define __pyx_n_u_H160 __pyx_string_tab[111]
+#define __pyx_n_u_H256 __pyx_string_tab[112]
+#define __pyx_n_u_H512 __pyx_string_tab[113]
+#define __pyx_n_u_HexBytes __pyx_string_tab[114]
+#define __pyx_n_u_I128 __pyx_string_tab[115]
+#define __pyx_n_u_I16 __pyx_string_tab[116]
+#define __pyx_n_u_I256 __pyx_string_tab[117]
+#define __pyx_n_u_I32 __pyx_string_tab[118]
+#define __pyx_n_u_I64 __pyx_string_tab[119]
+#define __pyx_n_u_I8 __pyx_string_tab[120]
+#define __pyx_n_u_InvalidScaleTypeValueException __pyx_string_tab[121]
+#define __pyx_n_u_Map __pyx_string_tab[122]
+#define __pyx_n_u_Node __pyx_string_tab[123]
+#define __pyx_n_u_Node___reduce_cython __pyx_string_tab[124]
+#define __pyx_n_u_Node___setstate_cython __pyx_string_tab[125]
+#define __pyx_n_u_Null __pyx_string_tab[126]
+#define __pyx_n_u_Option __pyx_string_tab[127]
+#define __pyx_n_u_OptionBytes __pyx_string_tab[128]
+#define __pyx_n_u_Pyx_PyDict_NextRef __pyx_string_tab[129]
+#define __pyx_n_u_RemainingScaleBytesNotEmptyExcep __pyx_string_tab[130]
+#define __pyx_n_u_RuntimeConfigurationObject __pyx_string_tab[131]
+#define __pyx_n_u_Sequence __pyx_string_tab[132]
+#define __pyx_n_u_Set __pyx_string_tab[133]
+#define __pyx_n_u_Struct __pyx_string_tab[134]
+#define __pyx_n_u_Tuple __pyx_string_tab[135]
+#define __pyx_n_u_U128 __pyx_string_tab[136]
+#define __pyx_n_u_U16 __pyx_string_tab[137]
+#define __pyx_n_u_U256 __pyx_string_tab[138]
+#define __pyx_n_u_U32 __pyx_string_tab[139]
+#define __pyx_n_u_U64 __pyx_string_tab[140]
+#define __pyx_n_u_U8 __pyx_string_tab[141]
+#define __pyx_n_u_UnsupportedType __pyx_string_tab[142]
+#define __pyx_n_u_ValueDecoder __pyx_string_tab[143]
+#define __pyx_n_u_ValueDecoder___reduce_cython __pyx_string_tab[144]
+#define __pyx_n_u_ValueDecoder___setstate_cython __pyx_string_tab[145]
+#define __pyx_n_u_ValueDecoder_decode_at __pyx_string_tab[146]
+#define __pyx_n_u_Vec __pyx_string_tab[147]
+#define __pyx_n_u_View_MemoryView __pyx_string_tab[148]
+#define __pyx_n_u_abc __pyx_string_tab[149]
+#define __pyx_n_u_account_id __pyx_string_tab[150]
+#define __pyx_n_u_allocate_buffer __pyx_string_tab[151]
+#define __pyx_n_u_annotate __pyx_string_tab[152]
+#define __pyx_n_u_array __pyx_string_tab[153]
+#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[154]
+#define __pyx_n_u_attributes __pyx_string_tab[155]
+#define __pyx_n_u_base __pyx_string_tab[156]
+#define __pyx_n_u_bitvec __pyx_string_tab[157]
+#define __pyx_n_u_blake2b __pyx_string_tab[158]
+#define __pyx_n_u_btreemap __pyx_string_tab[159]
+#define __pyx_n_u_btreeset __pyx_string_tab[160]
+#define __pyx_n_u_buf __pyx_string_tab[161]
+#define __pyx_n_u_buflen __pyx_string_tab[162]
+#define __pyx_n_u_build_decoder __pyx_string_tab[163]
+#define __pyx_n_u_bytes __pyx_string_tab[164]
+#define __pyx_n_u_c __pyx_string_tab[165]
+#define __pyx_n_u_call_args __pyx_string_tab[166]
+#define __pyx_n_u_call_function __pyx_string_tab[167]
+#define __pyx_n_u_call_hash __pyx_string_tab[168]
+#define __pyx_n_u_call_index __pyx_string_tab[169]
+#define __pyx_n_u_call_module __pyx_string_tab[170]
+#define __pyx_n_u_class __pyx_string_tab[171]
+#define __pyx_n_u_class_getitem __pyx_string_tab[172]
+#define __pyx_n_u_cline_in_traceback __pyx_string_tab[173]
+#define __pyx_n_u_close __pyx_string_tab[174]
+#define __pyx_n_u_convert_type_string __pyx_string_tab[175]
+#define __pyx_n_u_count __pyx_string_tab[176]
+#define __pyx_n_u_data __pyx_string_tab[177]
+#define __pyx_n_u_dec __pyx_string_tab[178]
+#define __pyx_n_u_decode_at __pyx_string_tab[179]
+#define __pyx_n_u_def __pyx_string_tab[180]
+#define __pyx_n_u_dict __pyx_string_tab[181]
+#define __pyx_n_u_dict_2 __pyx_string_tab[182]
+#define __pyx_n_u_digest __pyx_string_tab[183]
+#define __pyx_n_u_digest_size __pyx_string_tab[184]
+#define __pyx_n_u_doc __pyx_string_tab[185]
+#define __pyx_n_u_dtype_is_object __pyx_string_tab[186]
+#define __pyx_n_u_element_count __pyx_string_tab[187]
+#define __pyx_n_u_encode __pyx_string_tab[188]
+#define __pyx_n_u_enum __pyx_string_tab[189]
+#define __pyx_n_u_enumerate __pyx_string_tab[190]
+#define __pyx_n_u_era __pyx_string_tab[191]
+#define __pyx_n_u_error __pyx_string_tab[192]
+#define __pyx_n_u_event __pyx_string_tab[193]
+#define __pyx_n_u_event_id __pyx_string_tab[194]
+#define __pyx_n_u_event_index __pyx_string_tab[195]
+#define __pyx_n_u_event_record __pyx_string_tab[196]
+#define __pyx_n_u_extrinsic_idx __pyx_string_tab[197]
+#define __pyx_n_u_f __pyx_string_tab[198]
+#define __pyx_n_u_fields __pyx_string_tab[199]
+#define __pyx_n_u_flags __pyx_string_tab[200]
+#define __pyx_n_u_format __pyx_string_tab[201]
+#define __pyx_n_u_fortran __pyx_string_tab[202]
+#define __pyx_n_u_from_bytes __pyx_string_tab[203]
+#define __pyx_n_u_func __pyx_string_tab[204]
+#define __pyx_n_u_generic_call __pyx_string_tab[205]
+#define __pyx_n_u_genexpr __pyx_string_tab[206]
+#define __pyx_n_u_get __pyx_string_tab[207]
+#define __pyx_n_u_get_decoder_class __pyx_string_tab[208]
+#define __pyx_n_u_getstate __pyx_string_tab[209]
+#define __pyx_n_u_h256 __pyx_string_tab[210]
+#define __pyx_n_u_hashlib __pyx_string_tab[211]
+#define __pyx_n_u_hex __pyx_string_tab[212]
+#define __pyx_n_u_hexbytes __pyx_string_tab[213]
+#define __pyx_n_u_id __pyx_string_tab[214]
+#define __pyx_n_u_import __pyx_string_tab[215]
+#define __pyx_n_u_index __pyx_string_tab[216]
+#define __pyx_n_u_is_coroutine __pyx_string_tab[217]
+#define __pyx_n_u_items __pyx_string_tab[218]
+#define __pyx_n_u_itemsize __pyx_string_tab[219]
+#define __pyx_n_u_little __pyx_string_tab[220]
+#define __pyx_n_u_main __pyx_string_tab[221]
+#define __pyx_n_u_map __pyx_string_tab[222]
+#define __pyx_n_u_memview __pyx_string_tab[223]
+#define __pyx_n_u_metaclass __pyx_string_tab[224]
+#define __pyx_n_u_mode __pyx_string_tab[225]
+#define __pyx_n_u_module __pyx_string_tab[226]
+#define __pyx_n_u_module_id __pyx_string_tab[227]
+#define __pyx_n_u_mro_entries __pyx_string_tab[228]
+#define __pyx_n_u_multiaddress __pyx_string_tab[229]
+#define __pyx_n_u_mv __pyx_string_tab[230]
+#define __pyx_n_u_name __pyx_string_tab[231]
+#define __pyx_n_u_name_2 __pyx_string_tab[232]
+#define __pyx_n_u_ndim __pyx_string_tab[233]
+#define __pyx_n_u_new __pyx_string_tab[234]
+#define __pyx_n_u_next __pyx_string_tab[235]
+#define __pyx_n_u_node_cache __pyx_string_tab[236]
+#define __pyx_n_u_null __pyx_string_tab[237]
+#define __pyx_n_u_obj __pyx_string_tab[238]
+#define __pyx_n_u_offset __pyx_string_tab[239]
+#define __pyx_n_u_option __pyx_string_tab[240]
+#define __pyx_n_u_option_bytes __pyx_string_tab[241]
+#define __pyx_n_u_pack __pyx_string_tab[242]
+#define __pyx_n_u_phase __pyx_string_tab[243]
+#define __pyx_n_u_pop __pyx_string_tab[244]
+#define __pyx_n_u_pos __pyx_string_tab[245]
+#define __pyx_n_u_prepare __pyx_string_tab[246]
+#define __pyx_n_u_primitives __pyx_string_tab[247]
+#define __pyx_n_u_process __pyx_string_tab[248]
+#define __pyx_n_u_pyx_checksum __pyx_string_tab[249]
+#define __pyx_n_u_pyx_result __pyx_string_tab[250]
+#define __pyx_n_u_pyx_state __pyx_string_tab[251]
+#define __pyx_n_u_pyx_type __pyx_string_tab[252]
+#define __pyx_n_u_pyx_unpickle_Enum __pyx_string_tab[253]
+#define __pyx_n_u_pyx_unpickle_ValueDecoder __pyx_string_tab[254]
+#define __pyx_n_u_pyx_vtable __pyx_string_tab[255]
+#define __pyx_n_u_qualname __pyx_string_tab[256]
+#define __pyx_n_u_reduce __pyx_string_tab[257]
+#define __pyx_n_u_reduce_cython __pyx_string_tab[258]
+#define __pyx_n_u_reduce_ex __pyx_string_tab[259]
+#define __pyx_n_u_register __pyx_string_tab[260]
+#define __pyx_n_u_result __pyx_string_tab[261]
+#define __pyx_n_u_runtime_config __pyx_string_tab[262]
+#define __pyx_n_u_scale_info_event __pyx_string_tab[263]
+#define __pyx_n_u_scale_info_type __pyx_string_tab[264]
+#define __pyx_n_u_scalecodec __pyx_string_tab[265]
+#define __pyx_n_u_scalecodec__compact __pyx_string_tab[266]
+#define __pyx_n_u_scalecodec__value_decode __pyx_string_tab[267]
+#define __pyx_n_u_scalecodec_base __pyx_string_tab[268]
+#define __pyx_n_u_scalecodec_exceptions __pyx_string_tab[269]
+#define __pyx_n_u_scalecodec_utils__ss58 __pyx_string_tab[270]
+#define __pyx_n_u_self __pyx_string_tab[271]
+#define __pyx_n_u_send __pyx_string_tab[272]
+#define __pyx_n_u_set __pyx_string_tab[273]
+#define __pyx_n_u_set_name __pyx_string_tab[274]
+#define __pyx_n_u_setdefault __pyx_string_tab[275]
+#define __pyx_n_u_setstate __pyx_string_tab[276]
+#define __pyx_n_u_setstate_cython __pyx_string_tab[277]
+#define __pyx_n_u_shape __pyx_string_tab[278]
 #define __pyx_n_u_size __pyx_string_tab[279]
 #define __pyx_n_u_split __pyx_string_tab[280]
 #define __pyx_n_u_ss58_encode_fast __pyx_string_tab[281]
@@ -3825,7 +3831,7 @@ static __pyx_mstatetype * const __pyx_mstate_global = &__pyx_mstate_global_stati
 #define __pyx_n_u_x __pyx_string_tab[314]
 #define __pyx_n_u_zfill __pyx_string_tab[315]
 #define __pyx_kp_b_iso88591_6 __pyx_string_tab[316]
-#define __pyx_kp_b_iso88591_A_6_a_7_Q_2Qa_Qd_xq_xq __pyx_string_tab[317]
+#define __pyx_kp_b_iso88591_A_a_9_Qa_aq_Qa_RvQa_2QfL_Qd_xq_x __pyx_string_tab[317]
 #define __pyx_kp_b_iso88591_L_y_14I_y_1_M_1 __pyx_string_tab[318]
 #define __pyx_kp_b_iso88591_Q __pyx_string_tab[319]
 #define __pyx_kp_b_iso88591_T_G1F_a_vWE_Q_q_t7_q_T_G1_T_A __pyx_string_tab[320]
@@ -16435,7 +16441,7 @@ static PyObject *__pyx_unpickle_Enum__set_state(struct __pyx_MemviewEnum_obj *__
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":98
+/* "scalecodec/_value_decode.pyx":115
  *     cdef object aux             # runtime_config (ACCOUNT_ID), value list, set masks
  * 
  *     def __cinit__(self):             # <<<<<<<<<<<<<<
@@ -16473,7 +16479,7 @@ static int __pyx_pf_10scalecodec_13_value_decode_5_Node___cinit__(struct __pyx_o
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "scalecodec/_value_decode.pyx":99
+  /* "scalecodec/_value_decode.pyx":116
  * 
  *     def __cinit__(self):
  *         self.op = OP_NULL             # <<<<<<<<<<<<<<
@@ -16482,7 +16488,7 @@ static int __pyx_pf_10scalecodec_13_value_decode_5_Node___cinit__(struct __pyx_o
 */
   __pyx_v_self->op = 29;
 
-  /* "scalecodec/_value_decode.pyx":100
+  /* "scalecodec/_value_decode.pyx":117
  *     def __cinit__(self):
  *         self.op = OP_NULL
  *         self.n = 0             # <<<<<<<<<<<<<<
@@ -16491,7 +16497,7 @@ static int __pyx_pf_10scalecodec_13_value_decode_5_Node___cinit__(struct __pyx_o
 */
   __pyx_v_self->n = 0;
 
-  /* "scalecodec/_value_decode.pyx":101
+  /* "scalecodec/_value_decode.pyx":118
  *         self.op = OP_NULL
  *         self.n = 0
  *         self.children = None             # <<<<<<<<<<<<<<
@@ -16504,7 +16510,7 @@ static int __pyx_pf_10scalecodec_13_value_decode_5_Node___cinit__(struct __pyx_o
   __Pyx_DECREF(__pyx_v_self->children);
   __pyx_v_self->children = ((PyObject*)Py_None);
 
-  /* "scalecodec/_value_decode.pyx":102
+  /* "scalecodec/_value_decode.pyx":119
  *         self.n = 0
  *         self.children = None
  *         self.keys = None             # <<<<<<<<<<<<<<
@@ -16517,7 +16523,7 @@ static int __pyx_pf_10scalecodec_13_value_decode_5_Node___cinit__(struct __pyx_o
   __Pyx_DECREF(__pyx_v_self->keys);
   __pyx_v_self->keys = ((PyObject*)Py_None);
 
-  /* "scalecodec/_value_decode.pyx":103
+  /* "scalecodec/_value_decode.pyx":120
  *         self.children = None
  *         self.keys = None
  *         self.aux = None             # <<<<<<<<<<<<<<
@@ -16530,7 +16536,7 @@ static int __pyx_pf_10scalecodec_13_value_decode_5_Node___cinit__(struct __pyx_o
   __Pyx_DECREF(__pyx_v_self->aux);
   __pyx_v_self->aux = Py_None;
 
-  /* "scalecodec/_value_decode.pyx":98
+  /* "scalecodec/_value_decode.pyx":115
  *     cdef object aux             # runtime_config (ACCOUNT_ID), value list, set masks
  * 
  *     def __cinit__(self):             # <<<<<<<<<<<<<<
@@ -16748,7 +16754,7 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_5_Node_4__setstate_cython
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":108
+/* "scalecodec/_value_decode.pyx":125
  * # --- decode interpreter -----------------------------------------------------------
  * 
  * cdef inline void _need(Py_ssize_t p, Py_ssize_t want, Py_ssize_t buflen) except *:             # <<<<<<<<<<<<<<
@@ -16773,7 +16779,7 @@ static CYTHON_INLINE void __pyx_f_10scalecodec_13_value_decode__need(Py_ssize_t 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_need", 0);
 
-  /* "scalecodec/_value_decode.pyx":109
+  /* "scalecodec/_value_decode.pyx":126
  * 
  * cdef inline void _need(Py_ssize_t p, Py_ssize_t want, Py_ssize_t buflen) except *:
  *     if p + want > buflen:             # <<<<<<<<<<<<<<
@@ -16783,7 +16789,7 @@ static CYTHON_INLINE void __pyx_f_10scalecodec_13_value_decode__need(Py_ssize_t 
   __pyx_t_1 = ((__pyx_v_p + __pyx_v_want) > __pyx_v_buflen);
   if (unlikely(__pyx_t_1)) {
 
-    /* "scalecodec/_value_decode.pyx":110
+    /* "scalecodec/_value_decode.pyx":127
  * cdef inline void _need(Py_ssize_t p, Py_ssize_t want, Py_ssize_t buflen) except *:
  *     if p + want > buflen:
  *         raise RemainingScaleBytesNotEmptyException(             # <<<<<<<<<<<<<<
@@ -16791,21 +16797,21 @@ static CYTHON_INLINE void __pyx_f_10scalecodec_13_value_decode__need(Py_ssize_t 
  *         )
 */
     __pyx_t_3 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_RemainingScaleBytesNotEmptyExcep); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_RemainingScaleBytesNotEmptyExcep); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 127, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
 
-    /* "scalecodec/_value_decode.pyx":111
+    /* "scalecodec/_value_decode.pyx":128
  *     if p + want > buflen:
  *         raise RemainingScaleBytesNotEmptyException(
  *             f'No more bytes available (needs {want} at offset {p}, length {buflen})'             # <<<<<<<<<<<<<<
  *         )
  * 
 */
-    __pyx_t_5 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_want, 0, ' ', 'd'); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_want, 0, ' ', 'd'); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 128, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_p, 0, ' ', 'd'); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_p, 0, ' ', 'd'); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 128, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_buflen, 0, ' ', 'd'); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_buflen, 0, ' ', 'd'); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 128, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_8[0] = __pyx_mstate_global->__pyx_kp_u_No_more_bytes_available_needs;
     __pyx_t_8[1] = __pyx_t_5;
@@ -16815,7 +16821,7 @@ static CYTHON_INLINE void __pyx_f_10scalecodec_13_value_decode__need(Py_ssize_t 
     __pyx_t_8[5] = __pyx_t_7;
     __pyx_t_8[6] = __pyx_mstate_global->__pyx_kp_u__5;
     __pyx_t_9 = __Pyx_PyUnicode_Join(__pyx_t_8, 7, 31 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_5) + 11 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_6) + 9 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_7) + 1, 127);
-    if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 111, __pyx_L1_error)
+    if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 128, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -16838,14 +16844,14 @@ static CYTHON_INLINE void __pyx_f_10scalecodec_13_value_decode__need(Py_ssize_t 
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
     }
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 110, __pyx_L1_error)
+    __PYX_ERR(0, 127, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":109
+    /* "scalecodec/_value_decode.pyx":126
  * 
  * cdef inline void _need(Py_ssize_t p, Py_ssize_t want, Py_ssize_t buflen) except *:
  *     if p + want > buflen:             # <<<<<<<<<<<<<<
@@ -16854,7 +16860,7 @@ static CYTHON_INLINE void __pyx_f_10scalecodec_13_value_decode__need(Py_ssize_t 
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":108
+  /* "scalecodec/_value_decode.pyx":125
  * # --- decode interpreter -----------------------------------------------------------
  * 
  * cdef inline void _need(Py_ssize_t p, Py_ssize_t want, Py_ssize_t buflen) except *:             # <<<<<<<<<<<<<<
@@ -16877,7 +16883,7 @@ static CYTHON_INLINE void __pyx_f_10scalecodec_13_value_decode__need(Py_ssize_t 
   __Pyx_RefNannyFinishContext();
 }
 
-/* "scalecodec/_value_decode.pyx":115
+/* "scalecodec/_value_decode.pyx":132
  * 
  * 
  * cdef inline uint64_t _read_uint(const unsigned char* buf, Py_ssize_t p, int nbytes) noexcept:             # <<<<<<<<<<<<<<
@@ -16893,7 +16899,7 @@ static CYTHON_INLINE uint64_t __pyx_f_10scalecodec_13_value_decode__read_uint(un
   int __pyx_t_2;
   int __pyx_t_3;
 
-  /* "scalecodec/_value_decode.pyx":116
+  /* "scalecodec/_value_decode.pyx":133
  * 
  * cdef inline uint64_t _read_uint(const unsigned char* buf, Py_ssize_t p, int nbytes) noexcept:
  *     cdef uint64_t v = 0             # <<<<<<<<<<<<<<
@@ -16902,7 +16908,7 @@ static CYTHON_INLINE uint64_t __pyx_f_10scalecodec_13_value_decode__read_uint(un
 */
   __pyx_v_v = 0;
 
-  /* "scalecodec/_value_decode.pyx":118
+  /* "scalecodec/_value_decode.pyx":135
  *     cdef uint64_t v = 0
  *     cdef int i
  *     for i in range(nbytes):             # <<<<<<<<<<<<<<
@@ -16914,7 +16920,7 @@ static CYTHON_INLINE uint64_t __pyx_f_10scalecodec_13_value_decode__read_uint(un
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "scalecodec/_value_decode.pyx":119
+    /* "scalecodec/_value_decode.pyx":136
  *     cdef int i
  *     for i in range(nbytes):
  *         v |= (<uint64_t>buf[p + i]) << (8 * i)             # <<<<<<<<<<<<<<
@@ -16924,7 +16930,7 @@ static CYTHON_INLINE uint64_t __pyx_f_10scalecodec_13_value_decode__read_uint(un
     __pyx_v_v = (__pyx_v_v | (((uint64_t)(__pyx_v_buf[(__pyx_v_p + __pyx_v_i)])) << (8 * __pyx_v_i)));
   }
 
-  /* "scalecodec/_value_decode.pyx":120
+  /* "scalecodec/_value_decode.pyx":137
  *     for i in range(nbytes):
  *         v |= (<uint64_t>buf[p + i]) << (8 * i)
  *     return v             # <<<<<<<<<<<<<<
@@ -16934,7 +16940,7 @@ static CYTHON_INLINE uint64_t __pyx_f_10scalecodec_13_value_decode__read_uint(un
   __pyx_r = __pyx_v_v;
   goto __pyx_L0;
 
-  /* "scalecodec/_value_decode.pyx":115
+  /* "scalecodec/_value_decode.pyx":132
  * 
  * 
  * cdef inline uint64_t _read_uint(const unsigned char* buf, Py_ssize_t p, int nbytes) noexcept:             # <<<<<<<<<<<<<<
@@ -16947,7 +16953,1353 @@ static CYTHON_INLINE uint64_t __pyx_f_10scalecodec_13_value_decode__read_uint(un
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":123
+/* "scalecodec/_value_decode.pyx":143
+ * 
+ * 
+ * cdef str _hex0x(const unsigned char* p, Py_ssize_t n):             # <<<<<<<<<<<<<<
+ *     """'0x' + lowercase hex of `n` bytes, built in a single allocation."""
+ *     cdef str out = PyUnicode_New(2 + 2 * n, 127)
+*/
+
+static PyObject *__pyx_f_10scalecodec_13_value_decode__hex0x(unsigned char const *__pyx_v_p, Py_ssize_t __pyx_v_n) {
+  PyObject *__pyx_v_out = 0;
+  char *__pyx_v_w;
+  Py_ssize_t __pyx_v_i;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  Py_ssize_t __pyx_t_2;
+  Py_ssize_t __pyx_t_3;
+  Py_ssize_t __pyx_t_4;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_hex0x", 0);
+
+  /* "scalecodec/_value_decode.pyx":145
+ * cdef str _hex0x(const unsigned char* p, Py_ssize_t n):
+ *     """'0x' + lowercase hex of `n` bytes, built in a single allocation."""
+ *     cdef str out = PyUnicode_New(2 + 2 * n, 127)             # <<<<<<<<<<<<<<
+ *     cdef char* w = <char*>PyUnicode_DATA(out)
+ *     cdef Py_ssize_t i
+*/
+  __pyx_t_1 = PyUnicode_New((2 + (2 * __pyx_v_n)), 0x7F); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_v_out = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "scalecodec/_value_decode.pyx":146
+ *     """'0x' + lowercase hex of `n` bytes, built in a single allocation."""
+ *     cdef str out = PyUnicode_New(2 + 2 * n, 127)
+ *     cdef char* w = <char*>PyUnicode_DATA(out)             # <<<<<<<<<<<<<<
+ *     cdef Py_ssize_t i
+ *     w[0] = c'0'
+*/
+  __pyx_v_w = ((char *)PyUnicode_DATA(__pyx_v_out));
+
+  /* "scalecodec/_value_decode.pyx":148
+ *     cdef char* w = <char*>PyUnicode_DATA(out)
+ *     cdef Py_ssize_t i
+ *     w[0] = c'0'             # <<<<<<<<<<<<<<
+ *     w[1] = c'x'
+ *     for i in range(n):
+*/
+  (__pyx_v_w[0]) = '0';
+
+  /* "scalecodec/_value_decode.pyx":149
+ *     cdef Py_ssize_t i
+ *     w[0] = c'0'
+ *     w[1] = c'x'             # <<<<<<<<<<<<<<
+ *     for i in range(n):
+ *         w[2 + 2 * i] = _HEXCHARS[p[i] >> 4]
+*/
+  (__pyx_v_w[1]) = 'x';
+
+  /* "scalecodec/_value_decode.pyx":150
+ *     w[0] = c'0'
+ *     w[1] = c'x'
+ *     for i in range(n):             # <<<<<<<<<<<<<<
+ *         w[2 + 2 * i] = _HEXCHARS[p[i] >> 4]
+ *         w[3 + 2 * i] = _HEXCHARS[p[i] & 0xF]
+*/
+  __pyx_t_2 = __pyx_v_n;
+  __pyx_t_3 = __pyx_t_2;
+  for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
+    __pyx_v_i = __pyx_t_4;
+
+    /* "scalecodec/_value_decode.pyx":151
+ *     w[1] = c'x'
+ *     for i in range(n):
+ *         w[2 + 2 * i] = _HEXCHARS[p[i] >> 4]             # <<<<<<<<<<<<<<
+ *         w[3 + 2 * i] = _HEXCHARS[p[i] & 0xF]
+ *     return out
+*/
+    (__pyx_v_w[(2 + (2 * __pyx_v_i))]) = (__pyx_v_10scalecodec_13_value_decode__HEXCHARS[((__pyx_v_p[__pyx_v_i]) >> 4)]);
+
+    /* "scalecodec/_value_decode.pyx":152
+ *     for i in range(n):
+ *         w[2 + 2 * i] = _HEXCHARS[p[i] >> 4]
+ *         w[3 + 2 * i] = _HEXCHARS[p[i] & 0xF]             # <<<<<<<<<<<<<<
+ *     return out
+ * 
+*/
+    (__pyx_v_w[(3 + (2 * __pyx_v_i))]) = (__pyx_v_10scalecodec_13_value_decode__HEXCHARS[((__pyx_v_p[__pyx_v_i]) & 0xF)]);
+  }
+
+  /* "scalecodec/_value_decode.pyx":153
+ *         w[2 + 2 * i] = _HEXCHARS[p[i] >> 4]
+ *         w[3 + 2 * i] = _HEXCHARS[p[i] & 0xF]
+ *     return out             # <<<<<<<<<<<<<<
+ * 
+ * 
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_out);
+  __pyx_r = __pyx_v_out;
+  goto __pyx_L0;
+
+  /* "scalecodec/_value_decode.pyx":143
+ * 
+ * 
+ * cdef str _hex0x(const unsigned char* p, Py_ssize_t n):             # <<<<<<<<<<<<<<
+ *     """'0x' + lowercase hex of `n` bytes, built in a single allocation."""
+ *     cdef str out = PyUnicode_New(2 + 2 * n, 127)
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("scalecodec._value_decode._hex0x", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_out);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "scalecodec/_value_decode.pyx":156
+ * 
+ * 
+ * cdef bint _utf8_valid(const unsigned char* s, Py_ssize_t n) noexcept:             # <<<<<<<<<<<<<<
+ *     """Strict UTF-8 validity (RFC 3629: no overlongs, surrogates, > U+10FFFF)."""
+ *     cdef Py_ssize_t i = 0
+*/
+
+static int __pyx_f_10scalecodec_13_value_decode__utf8_valid(unsigned char const *__pyx_v_s, Py_ssize_t __pyx_v_n) {
+  Py_ssize_t __pyx_v_i;
+  unsigned int __pyx_v_c;
+  uint64_t __pyx_v_w;
+  int __pyx_r;
+  int __pyx_t_1;
+  int __pyx_t_2;
+
+  /* "scalecodec/_value_decode.pyx":158
+ * cdef bint _utf8_valid(const unsigned char* s, Py_ssize_t n) noexcept:
+ *     """Strict UTF-8 validity (RFC 3629: no overlongs, surrogates, > U+10FFFF)."""
+ *     cdef Py_ssize_t i = 0             # <<<<<<<<<<<<<<
+ *     cdef unsigned int c
+ *     cdef uint64_t w
+*/
+  __pyx_v_i = 0;
+
+  /* "scalecodec/_value_decode.pyx":161
+ *     cdef unsigned int c
+ *     cdef uint64_t w
+ *     while i < n:             # <<<<<<<<<<<<<<
+ *         c = s[i]
+ *         if c < 0x80:
+*/
+  while (1) {
+    __pyx_t_1 = (__pyx_v_i < __pyx_v_n);
+    if (!__pyx_t_1) break;
+
+    /* "scalecodec/_value_decode.pyx":162
+ *     cdef uint64_t w
+ *     while i < n:
+ *         c = s[i]             # <<<<<<<<<<<<<<
+ *         if c < 0x80:
+ *             i += 1
+*/
+    __pyx_v_c = (__pyx_v_s[__pyx_v_i]);
+
+    /* "scalecodec/_value_decode.pyx":163
+ *     while i < n:
+ *         c = s[i]
+ *         if c < 0x80:             # <<<<<<<<<<<<<<
+ *             i += 1
+ *             # all-ASCII runs a word at a time
+*/
+    __pyx_t_1 = (__pyx_v_c < 0x80);
+    if (__pyx_t_1) {
+
+      /* "scalecodec/_value_decode.pyx":164
+ *         c = s[i]
+ *         if c < 0x80:
+ *             i += 1             # <<<<<<<<<<<<<<
+ *             # all-ASCII runs a word at a time
+ *             while i + 8 <= n:
+*/
+      __pyx_v_i = (__pyx_v_i + 1);
+
+      /* "scalecodec/_value_decode.pyx":166
+ *             i += 1
+ *             # all-ASCII runs a word at a time
+ *             while i + 8 <= n:             # <<<<<<<<<<<<<<
+ *                 memcpy(&w, s + i, 8)
+ *                 if w & <uint64_t>0x8080808080808080ULL:
+*/
+      while (1) {
+        __pyx_t_1 = ((__pyx_v_i + 8) <= __pyx_v_n);
+        if (!__pyx_t_1) break;
+
+        /* "scalecodec/_value_decode.pyx":167
+ *             # all-ASCII runs a word at a time
+ *             while i + 8 <= n:
+ *                 memcpy(&w, s + i, 8)             # <<<<<<<<<<<<<<
+ *                 if w & <uint64_t>0x8080808080808080ULL:
+ *                     break
+*/
+        (void)(memcpy((&__pyx_v_w), (__pyx_v_s + __pyx_v_i), 8));
+
+        /* "scalecodec/_value_decode.pyx":168
+ *             while i + 8 <= n:
+ *                 memcpy(&w, s + i, 8)
+ *                 if w & <uint64_t>0x8080808080808080ULL:             # <<<<<<<<<<<<<<
+ *                     break
+ *                 i += 8
+*/
+        __pyx_t_1 = ((__pyx_v_w & ((uint64_t)0x8080808080808080ULL)) != 0);
+        if (__pyx_t_1) {
+
+          /* "scalecodec/_value_decode.pyx":169
+ *                 memcpy(&w, s + i, 8)
+ *                 if w & <uint64_t>0x8080808080808080ULL:
+ *                     break             # <<<<<<<<<<<<<<
+ *                 i += 8
+ *         elif c < 0xC2:
+*/
+          goto __pyx_L7_break;
+
+          /* "scalecodec/_value_decode.pyx":168
+ *             while i + 8 <= n:
+ *                 memcpy(&w, s + i, 8)
+ *                 if w & <uint64_t>0x8080808080808080ULL:             # <<<<<<<<<<<<<<
+ *                     break
+ *                 i += 8
+*/
+        }
+
+        /* "scalecodec/_value_decode.pyx":170
+ *                 if w & <uint64_t>0x8080808080808080ULL:
+ *                     break
+ *                 i += 8             # <<<<<<<<<<<<<<
+ *         elif c < 0xC2:
+ *             return False
+*/
+        __pyx_v_i = (__pyx_v_i + 8);
+      }
+      __pyx_L7_break:;
+
+      /* "scalecodec/_value_decode.pyx":163
+ *     while i < n:
+ *         c = s[i]
+ *         if c < 0x80:             # <<<<<<<<<<<<<<
+ *             i += 1
+ *             # all-ASCII runs a word at a time
+*/
+      goto __pyx_L5;
+    }
+
+    /* "scalecodec/_value_decode.pyx":171
+ *                     break
+ *                 i += 8
+ *         elif c < 0xC2:             # <<<<<<<<<<<<<<
+ *             return False
+ *         elif c < 0xE0:
+*/
+    __pyx_t_1 = (__pyx_v_c < 0xC2);
+    if (__pyx_t_1) {
+
+      /* "scalecodec/_value_decode.pyx":172
+ *                 i += 8
+ *         elif c < 0xC2:
+ *             return False             # <<<<<<<<<<<<<<
+ *         elif c < 0xE0:
+ *             if i + 2 > n or (s[i + 1] & 0xC0) != 0x80:
+*/
+      __pyx_r = 0;
+      goto __pyx_L0;
+
+      /* "scalecodec/_value_decode.pyx":171
+ *                     break
+ *                 i += 8
+ *         elif c < 0xC2:             # <<<<<<<<<<<<<<
+ *             return False
+ *         elif c < 0xE0:
+*/
+    }
+
+    /* "scalecodec/_value_decode.pyx":173
+ *         elif c < 0xC2:
+ *             return False
+ *         elif c < 0xE0:             # <<<<<<<<<<<<<<
+ *             if i + 2 > n or (s[i + 1] & 0xC0) != 0x80:
+ *                 return False
+*/
+    __pyx_t_1 = (__pyx_v_c < 0xE0);
+    if (__pyx_t_1) {
+
+      /* "scalecodec/_value_decode.pyx":174
+ *             return False
+ *         elif c < 0xE0:
+ *             if i + 2 > n or (s[i + 1] & 0xC0) != 0x80:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             i += 2
+*/
+      __pyx_t_2 = ((__pyx_v_i + 2) > __pyx_v_n);
+      if (!__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L10_bool_binop_done;
+      }
+      __pyx_t_2 = (((__pyx_v_s[(__pyx_v_i + 1)]) & 0xC0) != 0x80);
+      __pyx_t_1 = __pyx_t_2;
+      __pyx_L10_bool_binop_done:;
+      if (__pyx_t_1) {
+
+        /* "scalecodec/_value_decode.pyx":175
+ *         elif c < 0xE0:
+ *             if i + 2 > n or (s[i + 1] & 0xC0) != 0x80:
+ *                 return False             # <<<<<<<<<<<<<<
+ *             i += 2
+ *         elif c < 0xF0:
+*/
+        __pyx_r = 0;
+        goto __pyx_L0;
+
+        /* "scalecodec/_value_decode.pyx":174
+ *             return False
+ *         elif c < 0xE0:
+ *             if i + 2 > n or (s[i + 1] & 0xC0) != 0x80:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             i += 2
+*/
+      }
+
+      /* "scalecodec/_value_decode.pyx":176
+ *             if i + 2 > n or (s[i + 1] & 0xC0) != 0x80:
+ *                 return False
+ *             i += 2             # <<<<<<<<<<<<<<
+ *         elif c < 0xF0:
+ *             if i + 3 > n or (s[i + 1] & 0xC0) != 0x80 or (s[i + 2] & 0xC0) != 0x80:
+*/
+      __pyx_v_i = (__pyx_v_i + 2);
+
+      /* "scalecodec/_value_decode.pyx":173
+ *         elif c < 0xC2:
+ *             return False
+ *         elif c < 0xE0:             # <<<<<<<<<<<<<<
+ *             if i + 2 > n or (s[i + 1] & 0xC0) != 0x80:
+ *                 return False
+*/
+      goto __pyx_L5;
+    }
+
+    /* "scalecodec/_value_decode.pyx":177
+ *                 return False
+ *             i += 2
+ *         elif c < 0xF0:             # <<<<<<<<<<<<<<
+ *             if i + 3 > n or (s[i + 1] & 0xC0) != 0x80 or (s[i + 2] & 0xC0) != 0x80:
+ *                 return False
+*/
+    __pyx_t_1 = (__pyx_v_c < 0xF0);
+    if (__pyx_t_1) {
+
+      /* "scalecodec/_value_decode.pyx":178
+ *             i += 2
+ *         elif c < 0xF0:
+ *             if i + 3 > n or (s[i + 1] & 0xC0) != 0x80 or (s[i + 2] & 0xC0) != 0x80:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             if c == 0xE0 and s[i + 1] < 0xA0:
+*/
+      __pyx_t_2 = ((__pyx_v_i + 3) > __pyx_v_n);
+      if (!__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L13_bool_binop_done;
+      }
+      __pyx_t_2 = (((__pyx_v_s[(__pyx_v_i + 1)]) & 0xC0) != 0x80);
+      if (!__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L13_bool_binop_done;
+      }
+      __pyx_t_2 = (((__pyx_v_s[(__pyx_v_i + 2)]) & 0xC0) != 0x80);
+      __pyx_t_1 = __pyx_t_2;
+      __pyx_L13_bool_binop_done:;
+      if (__pyx_t_1) {
+
+        /* "scalecodec/_value_decode.pyx":179
+ *         elif c < 0xF0:
+ *             if i + 3 > n or (s[i + 1] & 0xC0) != 0x80 or (s[i + 2] & 0xC0) != 0x80:
+ *                 return False             # <<<<<<<<<<<<<<
+ *             if c == 0xE0 and s[i + 1] < 0xA0:
+ *                 return False
+*/
+        __pyx_r = 0;
+        goto __pyx_L0;
+
+        /* "scalecodec/_value_decode.pyx":178
+ *             i += 2
+ *         elif c < 0xF0:
+ *             if i + 3 > n or (s[i + 1] & 0xC0) != 0x80 or (s[i + 2] & 0xC0) != 0x80:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             if c == 0xE0 and s[i + 1] < 0xA0:
+*/
+      }
+
+      /* "scalecodec/_value_decode.pyx":180
+ *             if i + 3 > n or (s[i + 1] & 0xC0) != 0x80 or (s[i + 2] & 0xC0) != 0x80:
+ *                 return False
+ *             if c == 0xE0 and s[i + 1] < 0xA0:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             if c == 0xED and s[i + 1] > 0x9F:
+*/
+      __pyx_t_2 = (__pyx_v_c == 0xE0);
+      if (__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L17_bool_binop_done;
+      }
+      __pyx_t_2 = ((__pyx_v_s[(__pyx_v_i + 1)]) < 0xA0);
+      __pyx_t_1 = __pyx_t_2;
+      __pyx_L17_bool_binop_done:;
+      if (__pyx_t_1) {
+
+        /* "scalecodec/_value_decode.pyx":181
+ *                 return False
+ *             if c == 0xE0 and s[i + 1] < 0xA0:
+ *                 return False             # <<<<<<<<<<<<<<
+ *             if c == 0xED and s[i + 1] > 0x9F:
+ *                 return False
+*/
+        __pyx_r = 0;
+        goto __pyx_L0;
+
+        /* "scalecodec/_value_decode.pyx":180
+ *             if i + 3 > n or (s[i + 1] & 0xC0) != 0x80 or (s[i + 2] & 0xC0) != 0x80:
+ *                 return False
+ *             if c == 0xE0 and s[i + 1] < 0xA0:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             if c == 0xED and s[i + 1] > 0x9F:
+*/
+      }
+
+      /* "scalecodec/_value_decode.pyx":182
+ *             if c == 0xE0 and s[i + 1] < 0xA0:
+ *                 return False
+ *             if c == 0xED and s[i + 1] > 0x9F:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             i += 3
+*/
+      __pyx_t_2 = (__pyx_v_c == 0xED);
+      if (__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L20_bool_binop_done;
+      }
+      __pyx_t_2 = ((__pyx_v_s[(__pyx_v_i + 1)]) > 0x9F);
+      __pyx_t_1 = __pyx_t_2;
+      __pyx_L20_bool_binop_done:;
+      if (__pyx_t_1) {
+
+        /* "scalecodec/_value_decode.pyx":183
+ *                 return False
+ *             if c == 0xED and s[i + 1] > 0x9F:
+ *                 return False             # <<<<<<<<<<<<<<
+ *             i += 3
+ *         elif c < 0xF5:
+*/
+        __pyx_r = 0;
+        goto __pyx_L0;
+
+        /* "scalecodec/_value_decode.pyx":182
+ *             if c == 0xE0 and s[i + 1] < 0xA0:
+ *                 return False
+ *             if c == 0xED and s[i + 1] > 0x9F:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             i += 3
+*/
+      }
+
+      /* "scalecodec/_value_decode.pyx":184
+ *             if c == 0xED and s[i + 1] > 0x9F:
+ *                 return False
+ *             i += 3             # <<<<<<<<<<<<<<
+ *         elif c < 0xF5:
+ *             if (
+*/
+      __pyx_v_i = (__pyx_v_i + 3);
+
+      /* "scalecodec/_value_decode.pyx":177
+ *                 return False
+ *             i += 2
+ *         elif c < 0xF0:             # <<<<<<<<<<<<<<
+ *             if i + 3 > n or (s[i + 1] & 0xC0) != 0x80 or (s[i + 2] & 0xC0) != 0x80:
+ *                 return False
+*/
+      goto __pyx_L5;
+    }
+
+    /* "scalecodec/_value_decode.pyx":185
+ *                 return False
+ *             i += 3
+ *         elif c < 0xF5:             # <<<<<<<<<<<<<<
+ *             if (
+ *                 i + 4 > n
+*/
+    __pyx_t_1 = (__pyx_v_c < 0xF5);
+    if (__pyx_t_1) {
+
+      /* "scalecodec/_value_decode.pyx":187
+ *         elif c < 0xF5:
+ *             if (
+ *                 i + 4 > n             # <<<<<<<<<<<<<<
+ *                 or (s[i + 1] & 0xC0) != 0x80
+ *                 or (s[i + 2] & 0xC0) != 0x80
+*/
+      __pyx_t_2 = ((__pyx_v_i + 4) > __pyx_v_n);
+      if (!__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L23_bool_binop_done;
+      }
+
+      /* "scalecodec/_value_decode.pyx":188
+ *             if (
+ *                 i + 4 > n
+ *                 or (s[i + 1] & 0xC0) != 0x80             # <<<<<<<<<<<<<<
+ *                 or (s[i + 2] & 0xC0) != 0x80
+ *                 or (s[i + 3] & 0xC0) != 0x80
+*/
+      __pyx_t_2 = (((__pyx_v_s[(__pyx_v_i + 1)]) & 0xC0) != 0x80);
+      if (!__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L23_bool_binop_done;
+      }
+
+      /* "scalecodec/_value_decode.pyx":189
+ *                 i + 4 > n
+ *                 or (s[i + 1] & 0xC0) != 0x80
+ *                 or (s[i + 2] & 0xC0) != 0x80             # <<<<<<<<<<<<<<
+ *                 or (s[i + 3] & 0xC0) != 0x80
+ *             ):
+*/
+      __pyx_t_2 = (((__pyx_v_s[(__pyx_v_i + 2)]) & 0xC0) != 0x80);
+      if (!__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L23_bool_binop_done;
+      }
+
+      /* "scalecodec/_value_decode.pyx":190
+ *                 or (s[i + 1] & 0xC0) != 0x80
+ *                 or (s[i + 2] & 0xC0) != 0x80
+ *                 or (s[i + 3] & 0xC0) != 0x80             # <<<<<<<<<<<<<<
+ *             ):
+ *                 return False
+*/
+      __pyx_t_2 = (((__pyx_v_s[(__pyx_v_i + 3)]) & 0xC0) != 0x80);
+      __pyx_t_1 = __pyx_t_2;
+      __pyx_L23_bool_binop_done:;
+
+      /* "scalecodec/_value_decode.pyx":186
+ *             i += 3
+ *         elif c < 0xF5:
+ *             if (             # <<<<<<<<<<<<<<
+ *                 i + 4 > n
+ *                 or (s[i + 1] & 0xC0) != 0x80
+*/
+      if (__pyx_t_1) {
+
+        /* "scalecodec/_value_decode.pyx":192
+ *                 or (s[i + 3] & 0xC0) != 0x80
+ *             ):
+ *                 return False             # <<<<<<<<<<<<<<
+ *             if c == 0xF0 and s[i + 1] < 0x90:
+ *                 return False
+*/
+        __pyx_r = 0;
+        goto __pyx_L0;
+
+        /* "scalecodec/_value_decode.pyx":186
+ *             i += 3
+ *         elif c < 0xF5:
+ *             if (             # <<<<<<<<<<<<<<
+ *                 i + 4 > n
+ *                 or (s[i + 1] & 0xC0) != 0x80
+*/
+      }
+
+      /* "scalecodec/_value_decode.pyx":193
+ *             ):
+ *                 return False
+ *             if c == 0xF0 and s[i + 1] < 0x90:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             if c == 0xF4 and s[i + 1] > 0x8F:
+*/
+      __pyx_t_2 = (__pyx_v_c == 0xF0);
+      if (__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L28_bool_binop_done;
+      }
+      __pyx_t_2 = ((__pyx_v_s[(__pyx_v_i + 1)]) < 0x90);
+      __pyx_t_1 = __pyx_t_2;
+      __pyx_L28_bool_binop_done:;
+      if (__pyx_t_1) {
+
+        /* "scalecodec/_value_decode.pyx":194
+ *                 return False
+ *             if c == 0xF0 and s[i + 1] < 0x90:
+ *                 return False             # <<<<<<<<<<<<<<
+ *             if c == 0xF4 and s[i + 1] > 0x8F:
+ *                 return False
+*/
+        __pyx_r = 0;
+        goto __pyx_L0;
+
+        /* "scalecodec/_value_decode.pyx":193
+ *             ):
+ *                 return False
+ *             if c == 0xF0 and s[i + 1] < 0x90:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             if c == 0xF4 and s[i + 1] > 0x8F:
+*/
+      }
+
+      /* "scalecodec/_value_decode.pyx":195
+ *             if c == 0xF0 and s[i + 1] < 0x90:
+ *                 return False
+ *             if c == 0xF4 and s[i + 1] > 0x8F:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             i += 4
+*/
+      __pyx_t_2 = (__pyx_v_c == 0xF4);
+      if (__pyx_t_2) {
+      } else {
+        __pyx_t_1 = __pyx_t_2;
+        goto __pyx_L31_bool_binop_done;
+      }
+      __pyx_t_2 = ((__pyx_v_s[(__pyx_v_i + 1)]) > 0x8F);
+      __pyx_t_1 = __pyx_t_2;
+      __pyx_L31_bool_binop_done:;
+      if (__pyx_t_1) {
+
+        /* "scalecodec/_value_decode.pyx":196
+ *                 return False
+ *             if c == 0xF4 and s[i + 1] > 0x8F:
+ *                 return False             # <<<<<<<<<<<<<<
+ *             i += 4
+ *         else:
+*/
+        __pyx_r = 0;
+        goto __pyx_L0;
+
+        /* "scalecodec/_value_decode.pyx":195
+ *             if c == 0xF0 and s[i + 1] < 0x90:
+ *                 return False
+ *             if c == 0xF4 and s[i + 1] > 0x8F:             # <<<<<<<<<<<<<<
+ *                 return False
+ *             i += 4
+*/
+      }
+
+      /* "scalecodec/_value_decode.pyx":197
+ *             if c == 0xF4 and s[i + 1] > 0x8F:
+ *                 return False
+ *             i += 4             # <<<<<<<<<<<<<<
+ *         else:
+ *             return False
+*/
+      __pyx_v_i = (__pyx_v_i + 4);
+
+      /* "scalecodec/_value_decode.pyx":185
+ *                 return False
+ *             i += 3
+ *         elif c < 0xF5:             # <<<<<<<<<<<<<<
+ *             if (
+ *                 i + 4 > n
+*/
+      goto __pyx_L5;
+    }
+
+    /* "scalecodec/_value_decode.pyx":199
+ *             i += 4
+ *         else:
+ *             return False             # <<<<<<<<<<<<<<
+ *     return True
+ * 
+*/
+    /*else*/ {
+      __pyx_r = 0;
+      goto __pyx_L0;
+    }
+    __pyx_L5:;
+  }
+
+  /* "scalecodec/_value_decode.pyx":200
+ *         else:
+ *             return False
+ *     return True             # <<<<<<<<<<<<<<
+ * 
+ * 
+*/
+  __pyx_r = 1;
+  goto __pyx_L0;
+
+  /* "scalecodec/_value_decode.pyx":156
+ * 
+ * 
+ * cdef bint _utf8_valid(const unsigned char* s, Py_ssize_t n) noexcept:             # <<<<<<<<<<<<<<
+ *     """Strict UTF-8 validity (RFC 3629: no overlongs, surrogates, > U+10FFFF)."""
+ *     cdef Py_ssize_t i = 0
+*/
+
+  /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "scalecodec/_value_decode.pyx":203
+ * 
+ * 
+ * cdef inline object _utf8_or_hex(const unsigned char* p, Py_ssize_t n):             # <<<<<<<<<<<<<<
+ *     """Bytes/Str payload semantics: utf-8 when valid, else 0x-hex.
+ * 
+*/
+
+static CYTHON_INLINE PyObject *__pyx_f_10scalecodec_13_value_decode__utf8_or_hex(unsigned char const *__pyx_v_p, Py_ssize_t __pyx_v_n) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  int __pyx_t_6;
+  PyObject *__pyx_t_7 = NULL;
+  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_9 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_utf8_or_hex", 0);
+
+  /* "scalecodec/_value_decode.pyx":210
+ *     where an exception on the fallback path is noise next to the hex encode.
+ *     """
+ *     if n <= 4096:             # <<<<<<<<<<<<<<
+ *         if _utf8_valid(p, n):
+ *             return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+*/
+  __pyx_t_1 = (__pyx_v_n <= 0x1000);
+  if (__pyx_t_1) {
+
+    /* "scalecodec/_value_decode.pyx":211
+ *     """
+ *     if n <= 4096:
+ *         if _utf8_valid(p, n):             # <<<<<<<<<<<<<<
+ *             return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+ *         return _hex0x(p, n)
+*/
+    __pyx_t_1 = __pyx_f_10scalecodec_13_value_decode__utf8_valid(__pyx_v_p, __pyx_v_n);
+    if (__pyx_t_1) {
+
+      /* "scalecodec/_value_decode.pyx":212
+ *     if n <= 4096:
+ *         if _utf8_valid(p, n):
+ *             return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)             # <<<<<<<<<<<<<<
+ *         return _hex0x(p, n)
+ *     try:
+*/
+      __Pyx_XDECREF(__pyx_r);
+      __pyx_t_2 = PyUnicode_DecodeUTF8(((char const *)__pyx_v_p), __pyx_v_n, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 212, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __pyx_r = __pyx_t_2;
+      __pyx_t_2 = 0;
+      goto __pyx_L0;
+
+      /* "scalecodec/_value_decode.pyx":211
+ *     """
+ *     if n <= 4096:
+ *         if _utf8_valid(p, n):             # <<<<<<<<<<<<<<
+ *             return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+ *         return _hex0x(p, n)
+*/
+    }
+
+    /* "scalecodec/_value_decode.pyx":213
+ *         if _utf8_valid(p, n):
+ *             return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+ *         return _hex0x(p, n)             # <<<<<<<<<<<<<<
+ *     try:
+ *         return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+*/
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__hex0x(__pyx_v_p, __pyx_v_n); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 213, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_r = __pyx_t_2;
+    __pyx_t_2 = 0;
+    goto __pyx_L0;
+
+    /* "scalecodec/_value_decode.pyx":210
+ *     where an exception on the fallback path is noise next to the hex encode.
+ *     """
+ *     if n <= 4096:             # <<<<<<<<<<<<<<
+ *         if _utf8_valid(p, n):
+ *             return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+*/
+  }
+
+  /* "scalecodec/_value_decode.pyx":214
+ *             return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+ *         return _hex0x(p, n)
+ *     try:             # <<<<<<<<<<<<<<
+ *         return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+ *     except UnicodeDecodeError:
+*/
+  {
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ExceptionSave(&__pyx_t_3, &__pyx_t_4, &__pyx_t_5);
+    __Pyx_XGOTREF(__pyx_t_3);
+    __Pyx_XGOTREF(__pyx_t_4);
+    __Pyx_XGOTREF(__pyx_t_5);
+    /*try:*/ {
+
+      /* "scalecodec/_value_decode.pyx":215
+ *         return _hex0x(p, n)
+ *     try:
+ *         return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)             # <<<<<<<<<<<<<<
+ *     except UnicodeDecodeError:
+ *         return _hex0x(p, n)
+*/
+      __Pyx_XDECREF(__pyx_r);
+      __pyx_t_2 = PyUnicode_DecodeUTF8(((char const *)__pyx_v_p), __pyx_v_n, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 215, __pyx_L5_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __pyx_r = __pyx_t_2;
+      __pyx_t_2 = 0;
+      goto __pyx_L9_try_return;
+
+      /* "scalecodec/_value_decode.pyx":214
+ *             return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+ *         return _hex0x(p, n)
+ *     try:             # <<<<<<<<<<<<<<
+ *         return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+ *     except UnicodeDecodeError:
+*/
+    }
+    __pyx_L5_error:;
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+    /* "scalecodec/_value_decode.pyx":216
+ *     try:
+ *         return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+ *     except UnicodeDecodeError:             # <<<<<<<<<<<<<<
+ *         return _hex0x(p, n)
+ * 
+*/
+    __pyx_t_6 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(((PyTypeObject*)PyExc_UnicodeDecodeError))));
+    if (__pyx_t_6) {
+      __Pyx_AddTraceback("scalecodec._value_decode._utf8_or_hex", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      if (__Pyx_GetException(&__pyx_t_2, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 216, __pyx_L7_except_error)
+      __Pyx_XGOTREF(__pyx_t_2);
+      __Pyx_XGOTREF(__pyx_t_7);
+      __Pyx_XGOTREF(__pyx_t_8);
+
+      /* "scalecodec/_value_decode.pyx":217
+ *         return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+ *     except UnicodeDecodeError:
+ *         return _hex0x(p, n)             # <<<<<<<<<<<<<<
+ * 
+ * 
+*/
+      __Pyx_XDECREF(__pyx_r);
+      __pyx_t_9 = __pyx_f_10scalecodec_13_value_decode__hex0x(__pyx_v_p, __pyx_v_n); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 217, __pyx_L7_except_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_r = __pyx_t_9;
+      __pyx_t_9 = 0;
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+      goto __pyx_L8_except_return;
+    }
+    goto __pyx_L7_except_error;
+
+    /* "scalecodec/_value_decode.pyx":214
+ *             return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+ *         return _hex0x(p, n)
+ *     try:             # <<<<<<<<<<<<<<
+ *         return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+ *     except UnicodeDecodeError:
+*/
+    __pyx_L7_except_error:;
+    __Pyx_XGIVEREF(__pyx_t_3);
+    __Pyx_XGIVEREF(__pyx_t_4);
+    __Pyx_XGIVEREF(__pyx_t_5);
+    __Pyx_ExceptionReset(__pyx_t_3, __pyx_t_4, __pyx_t_5);
+    goto __pyx_L1_error;
+    __pyx_L9_try_return:;
+    __Pyx_XGIVEREF(__pyx_t_3);
+    __Pyx_XGIVEREF(__pyx_t_4);
+    __Pyx_XGIVEREF(__pyx_t_5);
+    __Pyx_ExceptionReset(__pyx_t_3, __pyx_t_4, __pyx_t_5);
+    goto __pyx_L0;
+    __pyx_L8_except_return:;
+    __Pyx_XGIVEREF(__pyx_t_3);
+    __Pyx_XGIVEREF(__pyx_t_4);
+    __Pyx_XGIVEREF(__pyx_t_5);
+    __Pyx_ExceptionReset(__pyx_t_3, __pyx_t_4, __pyx_t_5);
+    goto __pyx_L0;
+  }
+
+  /* "scalecodec/_value_decode.pyx":203
+ * 
+ * 
+ * cdef inline object _utf8_or_hex(const unsigned char* p, Py_ssize_t n):             # <<<<<<<<<<<<<<
+ *     """Bytes/Str payload semantics: utf-8 when valid, else 0x-hex.
+ * 
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_AddTraceback("scalecodec._value_decode._utf8_or_hex", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "scalecodec/_value_decode.pyx":220
+ * 
+ * 
+ * cdef Py_ssize_t _read_compact_len(             # <<<<<<<<<<<<<<
+ *     const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos
+ * ) except -1:
+*/
+
+static Py_ssize_t __pyx_f_10scalecodec_13_value_decode__read_compact_len(unsigned char const *__pyx_v_buf, Py_ssize_t __pyx_v_buflen, Py_ssize_t *__pyx_v_pos) {
+  Py_ssize_t __pyx_v_p;
+  unsigned int __pyx_v_b0;
+  unsigned int __pyx_v_mode;
+  Py_ssize_t __pyx_v_nb;
+  Py_ssize_t __pyx_v_i;
+  uint64_t __pyx_v_v;
+  Py_ssize_t __pyx_r;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  Py_ssize_t __pyx_t_2;
+  Py_ssize_t __pyx_t_3;
+  Py_ssize_t __pyx_t_4;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  PyObject *__pyx_t_7 = NULL;
+  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_9 = NULL;
+  PyObject *__pyx_t_10 = NULL;
+  PyObject *__pyx_t_11[7];
+  PyObject *__pyx_t_12 = NULL;
+  size_t __pyx_t_13;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_read_compact_len", 0);
+
+  /* "scalecodec/_value_decode.pyx":224
+ * ) except -1:
+ *     """A compact used as a length/count, read straight to C (no int object)."""
+ *     cdef Py_ssize_t p = pos[0]             # <<<<<<<<<<<<<<
+ *     _need(p, 1, buflen)
+ *     cdef unsigned int b0 = buf[p]
+*/
+  __pyx_v_p = (__pyx_v_pos[0]);
+
+  /* "scalecodec/_value_decode.pyx":225
+ *     """A compact used as a length/count, read straight to C (no int object)."""
+ *     cdef Py_ssize_t p = pos[0]
+ *     _need(p, 1, buflen)             # <<<<<<<<<<<<<<
+ *     cdef unsigned int b0 = buf[p]
+ *     cdef unsigned int mode = b0 & 3
+*/
+  __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 225, __pyx_L1_error)
+
+  /* "scalecodec/_value_decode.pyx":226
+ *     cdef Py_ssize_t p = pos[0]
+ *     _need(p, 1, buflen)
+ *     cdef unsigned int b0 = buf[p]             # <<<<<<<<<<<<<<
+ *     cdef unsigned int mode = b0 & 3
+ *     cdef Py_ssize_t nb, i
+*/
+  __pyx_v_b0 = (__pyx_v_buf[__pyx_v_p]);
+
+  /* "scalecodec/_value_decode.pyx":227
+ *     _need(p, 1, buflen)
+ *     cdef unsigned int b0 = buf[p]
+ *     cdef unsigned int mode = b0 & 3             # <<<<<<<<<<<<<<
+ *     cdef Py_ssize_t nb, i
+ *     cdef uint64_t v
+*/
+  __pyx_v_mode = (__pyx_v_b0 & 3);
+
+  /* "scalecodec/_value_decode.pyx":230
+ *     cdef Py_ssize_t nb, i
+ *     cdef uint64_t v
+ *     if mode == 0:             # <<<<<<<<<<<<<<
+ *         pos[0] = p + 1
+ *         return <Py_ssize_t>(b0 >> 2)
+*/
+  __pyx_t_1 = (__pyx_v_mode == 0);
+  if (__pyx_t_1) {
+
+    /* "scalecodec/_value_decode.pyx":231
+ *     cdef uint64_t v
+ *     if mode == 0:
+ *         pos[0] = p + 1             # <<<<<<<<<<<<<<
+ *         return <Py_ssize_t>(b0 >> 2)
+ *     if mode == 1:
+*/
+    (__pyx_v_pos[0]) = (__pyx_v_p + 1);
+
+    /* "scalecodec/_value_decode.pyx":232
+ *     if mode == 0:
+ *         pos[0] = p + 1
+ *         return <Py_ssize_t>(b0 >> 2)             # <<<<<<<<<<<<<<
+ *     if mode == 1:
+ *         _need(p, 2, buflen)
+*/
+    __pyx_r = ((Py_ssize_t)(__pyx_v_b0 >> 2));
+    goto __pyx_L0;
+
+    /* "scalecodec/_value_decode.pyx":230
+ *     cdef Py_ssize_t nb, i
+ *     cdef uint64_t v
+ *     if mode == 0:             # <<<<<<<<<<<<<<
+ *         pos[0] = p + 1
+ *         return <Py_ssize_t>(b0 >> 2)
+*/
+  }
+
+  /* "scalecodec/_value_decode.pyx":233
+ *         pos[0] = p + 1
+ *         return <Py_ssize_t>(b0 >> 2)
+ *     if mode == 1:             # <<<<<<<<<<<<<<
+ *         _need(p, 2, buflen)
+ *         pos[0] = p + 2
+*/
+  __pyx_t_1 = (__pyx_v_mode == 1);
+  if (__pyx_t_1) {
+
+    /* "scalecodec/_value_decode.pyx":234
+ *         return <Py_ssize_t>(b0 >> 2)
+ *     if mode == 1:
+ *         _need(p, 2, buflen)             # <<<<<<<<<<<<<<
+ *         pos[0] = p + 2
+ *         return <Py_ssize_t>(_read_uint(buf, p, 2) >> 2)
+*/
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 234, __pyx_L1_error)
+
+    /* "scalecodec/_value_decode.pyx":235
+ *     if mode == 1:
+ *         _need(p, 2, buflen)
+ *         pos[0] = p + 2             # <<<<<<<<<<<<<<
+ *         return <Py_ssize_t>(_read_uint(buf, p, 2) >> 2)
+ *     if mode == 2:
+*/
+    (__pyx_v_pos[0]) = (__pyx_v_p + 2);
+
+    /* "scalecodec/_value_decode.pyx":236
+ *         _need(p, 2, buflen)
+ *         pos[0] = p + 2
+ *         return <Py_ssize_t>(_read_uint(buf, p, 2) >> 2)             # <<<<<<<<<<<<<<
+ *     if mode == 2:
+ *         _need(p, 4, buflen)
+*/
+    __pyx_r = ((Py_ssize_t)(__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 2) >> 2));
+    goto __pyx_L0;
+
+    /* "scalecodec/_value_decode.pyx":233
+ *         pos[0] = p + 1
+ *         return <Py_ssize_t>(b0 >> 2)
+ *     if mode == 1:             # <<<<<<<<<<<<<<
+ *         _need(p, 2, buflen)
+ *         pos[0] = p + 2
+*/
+  }
+
+  /* "scalecodec/_value_decode.pyx":237
+ *         pos[0] = p + 2
+ *         return <Py_ssize_t>(_read_uint(buf, p, 2) >> 2)
+ *     if mode == 2:             # <<<<<<<<<<<<<<
+ *         _need(p, 4, buflen)
+ *         pos[0] = p + 4
+*/
+  __pyx_t_1 = (__pyx_v_mode == 2);
+  if (__pyx_t_1) {
+
+    /* "scalecodec/_value_decode.pyx":238
+ *         return <Py_ssize_t>(_read_uint(buf, p, 2) >> 2)
+ *     if mode == 2:
+ *         _need(p, 4, buflen)             # <<<<<<<<<<<<<<
+ *         pos[0] = p + 4
+ *         return <Py_ssize_t>(_read_uint(buf, p, 4) >> 2)
+*/
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 4, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 238, __pyx_L1_error)
+
+    /* "scalecodec/_value_decode.pyx":239
+ *     if mode == 2:
+ *         _need(p, 4, buflen)
+ *         pos[0] = p + 4             # <<<<<<<<<<<<<<
+ *         return <Py_ssize_t>(_read_uint(buf, p, 4) >> 2)
+ *     # big-integer mode; a count with more than 8 significant bytes (or beyond
+*/
+    (__pyx_v_pos[0]) = (__pyx_v_p + 4);
+
+    /* "scalecodec/_value_decode.pyx":240
+ *         _need(p, 4, buflen)
+ *         pos[0] = p + 4
+ *         return <Py_ssize_t>(_read_uint(buf, p, 4) >> 2)             # <<<<<<<<<<<<<<
+ *     # big-integer mode; a count with more than 8 significant bytes (or beyond
+ *     # Py_ssize_t) can never be satisfied by a real buffer
+*/
+    __pyx_r = ((Py_ssize_t)(__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 4) >> 2));
+    goto __pyx_L0;
+
+    /* "scalecodec/_value_decode.pyx":237
+ *         pos[0] = p + 2
+ *         return <Py_ssize_t>(_read_uint(buf, p, 2) >> 2)
+ *     if mode == 2:             # <<<<<<<<<<<<<<
+ *         _need(p, 4, buflen)
+ *         pos[0] = p + 4
+*/
+  }
+
+  /* "scalecodec/_value_decode.pyx":243
+ *     # big-integer mode; a count with more than 8 significant bytes (or beyond
+ *     # Py_ssize_t) can never be satisfied by a real buffer
+ *     nb = 4 + (b0 >> 2)             # <<<<<<<<<<<<<<
+ *     _need(p + 1, nb, buflen)
+ *     v = _read_uint(buf, p + 1, <int>(nb if nb < 8 else 8))
+*/
+  __pyx_v_nb = (4 + (__pyx_v_b0 >> 2));
+
+  /* "scalecodec/_value_decode.pyx":244
+ *     # Py_ssize_t) can never be satisfied by a real buffer
+ *     nb = 4 + (b0 >> 2)
+ *     _need(p + 1, nb, buflen)             # <<<<<<<<<<<<<<
+ *     v = _read_uint(buf, p + 1, <int>(nb if nb < 8 else 8))
+ *     for i in range(8, nb):
+*/
+  __pyx_f_10scalecodec_13_value_decode__need((__pyx_v_p + 1), __pyx_v_nb, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 244, __pyx_L1_error)
+
+  /* "scalecodec/_value_decode.pyx":245
+ *     nb = 4 + (b0 >> 2)
+ *     _need(p + 1, nb, buflen)
+ *     v = _read_uint(buf, p + 1, <int>(nb if nb < 8 else 8))             # <<<<<<<<<<<<<<
+ *     for i in range(8, nb):
+ *         if buf[p + 1 + i] != 0:
+*/
+  __pyx_t_1 = (__pyx_v_nb < 8);
+  if (__pyx_t_1) {
+    __pyx_t_2 = __pyx_v_nb;
+  } else {
+    __pyx_t_2 = 8;
+  }
+  __pyx_v_v = __pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, (__pyx_v_p + 1), ((int)__pyx_t_2));
+
+  /* "scalecodec/_value_decode.pyx":246
+ *     _need(p + 1, nb, buflen)
+ *     v = _read_uint(buf, p + 1, <int>(nb if nb < 8 else 8))
+ *     for i in range(8, nb):             # <<<<<<<<<<<<<<
+ *         if buf[p + 1 + i] != 0:
+ *             v = <uint64_t>-1
+*/
+  __pyx_t_2 = __pyx_v_nb;
+  __pyx_t_3 = __pyx_t_2;
+  for (__pyx_t_4 = 8; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
+    __pyx_v_i = __pyx_t_4;
+
+    /* "scalecodec/_value_decode.pyx":247
+ *     v = _read_uint(buf, p + 1, <int>(nb if nb < 8 else 8))
+ *     for i in range(8, nb):
+ *         if buf[p + 1 + i] != 0:             # <<<<<<<<<<<<<<
+ *             v = <uint64_t>-1
+ *             break
+*/
+    __pyx_t_1 = ((__pyx_v_buf[((__pyx_v_p + 1) + __pyx_v_i)]) != 0);
+    if (__pyx_t_1) {
+
+      /* "scalecodec/_value_decode.pyx":248
+ *     for i in range(8, nb):
+ *         if buf[p + 1 + i] != 0:
+ *             v = <uint64_t>-1             # <<<<<<<<<<<<<<
+ *             break
+ *     if v > <uint64_t>PY_SSIZE_T_MAX:
+*/
+      __pyx_v_v = ((uint64_t)-1L);
+
+      /* "scalecodec/_value_decode.pyx":249
+ *         if buf[p + 1 + i] != 0:
+ *             v = <uint64_t>-1
+ *             break             # <<<<<<<<<<<<<<
+ *     if v > <uint64_t>PY_SSIZE_T_MAX:
+ *         raise RemainingScaleBytesNotEmptyException(
+*/
+      goto __pyx_L7_break;
+
+      /* "scalecodec/_value_decode.pyx":247
+ *     v = _read_uint(buf, p + 1, <int>(nb if nb < 8 else 8))
+ *     for i in range(8, nb):
+ *         if buf[p + 1 + i] != 0:             # <<<<<<<<<<<<<<
+ *             v = <uint64_t>-1
+ *             break
+*/
+    }
+  }
+  __pyx_L7_break:;
+
+  /* "scalecodec/_value_decode.pyx":250
+ *             v = <uint64_t>-1
+ *             break
+ *     if v > <uint64_t>PY_SSIZE_T_MAX:             # <<<<<<<<<<<<<<
+ *         raise RemainingScaleBytesNotEmptyException(
+ *             f'No more bytes available (needs {v} at offset {p + 1 + nb}, length {buflen})'
+*/
+  __pyx_t_1 = (__pyx_v_v > ((uint64_t)PY_SSIZE_T_MAX));
+  if (unlikely(__pyx_t_1)) {
+
+    /* "scalecodec/_value_decode.pyx":251
+ *             break
+ *     if v > <uint64_t>PY_SSIZE_T_MAX:
+ *         raise RemainingScaleBytesNotEmptyException(             # <<<<<<<<<<<<<<
+ *             f'No more bytes available (needs {v} at offset {p + 1 + nb}, length {buflen})'
+ *         )
+*/
+    __pyx_t_6 = NULL;
+    __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_RemainingScaleBytesNotEmptyExcep); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 251, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_7);
+
+    /* "scalecodec/_value_decode.pyx":252
+ *     if v > <uint64_t>PY_SSIZE_T_MAX:
+ *         raise RemainingScaleBytesNotEmptyException(
+ *             f'No more bytes available (needs {v} at offset {p + 1 + nb}, length {buflen})'             # <<<<<<<<<<<<<<
+ *         )
+ *     pos[0] = p + 1 + nb
+*/
+    __pyx_t_8 = __Pyx_PyUnicode_From_uint64_t(__pyx_v_v, 0, ' ', 'd'); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 252, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_9 = __Pyx_PyUnicode_From_Py_ssize_t(((__pyx_v_p + 1) + __pyx_v_nb), 0, ' ', 'd'); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 252, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_9);
+    __pyx_t_10 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_buflen, 0, ' ', 'd'); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 252, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    __pyx_t_11[0] = __pyx_mstate_global->__pyx_kp_u_No_more_bytes_available_needs;
+    __pyx_t_11[1] = __pyx_t_8;
+    __pyx_t_11[2] = __pyx_mstate_global->__pyx_kp_u_at_offset;
+    __pyx_t_11[3] = __pyx_t_9;
+    __pyx_t_11[4] = __pyx_mstate_global->__pyx_kp_u_length;
+    __pyx_t_11[5] = __pyx_t_10;
+    __pyx_t_11[6] = __pyx_mstate_global->__pyx_kp_u__5;
+    __pyx_t_12 = __Pyx_PyUnicode_Join(__pyx_t_11, 7, 31 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_8) + 11 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_9) + 9 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_10) + 1, 127);
+    if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 252, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+    __pyx_t_13 = 1;
+    #if CYTHON_UNPACK_METHODS
+    if (unlikely(PyMethod_Check(__pyx_t_7))) {
+      __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_7);
+      assert(__pyx_t_6);
+      PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_7);
+      __Pyx_INCREF(__pyx_t_6);
+      __Pyx_INCREF(__pyx__function);
+      __Pyx_DECREF_SET(__pyx_t_7, __pyx__function);
+      __pyx_t_13 = 0;
+    }
+    #endif
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_6, __pyx_t_12};
+      __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_7, __pyx_callargs+__pyx_t_13, (2-__pyx_t_13) | (__pyx_t_13*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 251, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+    }
+    __Pyx_Raise(__pyx_t_5, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __PYX_ERR(0, 251, __pyx_L1_error)
+
+    /* "scalecodec/_value_decode.pyx":250
+ *             v = <uint64_t>-1
+ *             break
+ *     if v > <uint64_t>PY_SSIZE_T_MAX:             # <<<<<<<<<<<<<<
+ *         raise RemainingScaleBytesNotEmptyException(
+ *             f'No more bytes available (needs {v} at offset {p + 1 + nb}, length {buflen})'
+*/
+  }
+
+  /* "scalecodec/_value_decode.pyx":254
+ *             f'No more bytes available (needs {v} at offset {p + 1 + nb}, length {buflen})'
+ *         )
+ *     pos[0] = p + 1 + nb             # <<<<<<<<<<<<<<
+ *     return <Py_ssize_t>v
+ * 
+*/
+  (__pyx_v_pos[0]) = ((__pyx_v_p + 1) + __pyx_v_nb);
+
+  /* "scalecodec/_value_decode.pyx":255
+ *         )
+ *     pos[0] = p + 1 + nb
+ *     return <Py_ssize_t>v             # <<<<<<<<<<<<<<
+ * 
+ * 
+*/
+  __pyx_r = ((Py_ssize_t)__pyx_v_v);
+  goto __pyx_L0;
+
+  /* "scalecodec/_value_decode.pyx":220
+ * 
+ * 
+ * cdef Py_ssize_t _read_compact_len(             # <<<<<<<<<<<<<<
+ *     const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos
+ * ) except -1:
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_10);
+  __Pyx_XDECREF(__pyx_t_12);
+  __Pyx_AddTraceback("scalecodec._value_decode._read_compact_len", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1L;
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "scalecodec/_value_decode.pyx":258
  * 
  * 
  * cdef object _read_compact(const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):             # <<<<<<<<<<<<<<
@@ -16971,7 +18323,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_read_compact", 0);
 
-  /* "scalecodec/_value_decode.pyx":124
+  /* "scalecodec/_value_decode.pyx":259
  * 
  * cdef object _read_compact(const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):
  *     cdef Py_ssize_t p = pos[0]             # <<<<<<<<<<<<<<
@@ -16980,16 +18332,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
 */
   __pyx_v_p = (__pyx_v_pos[0]);
 
-  /* "scalecodec/_value_decode.pyx":125
+  /* "scalecodec/_value_decode.pyx":260
  * cdef object _read_compact(const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):
  *     cdef Py_ssize_t p = pos[0]
  *     _need(p, 1, buflen)             # <<<<<<<<<<<<<<
  *     cdef int b0 = buf[p]
  *     cdef int mode = b0 & 3
 */
-  __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 125, __pyx_L1_error)
+  __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 260, __pyx_L1_error)
 
-  /* "scalecodec/_value_decode.pyx":126
+  /* "scalecodec/_value_decode.pyx":261
  *     cdef Py_ssize_t p = pos[0]
  *     _need(p, 1, buflen)
  *     cdef int b0 = buf[p]             # <<<<<<<<<<<<<<
@@ -16998,7 +18350,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
 */
   __pyx_v_b0 = (__pyx_v_buf[__pyx_v_p]);
 
-  /* "scalecodec/_value_decode.pyx":127
+  /* "scalecodec/_value_decode.pyx":262
  *     _need(p, 1, buflen)
  *     cdef int b0 = buf[p]
  *     cdef int mode = b0 & 3             # <<<<<<<<<<<<<<
@@ -17007,7 +18359,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
 */
   __pyx_v_mode = (__pyx_v_b0 & 3);
 
-  /* "scalecodec/_value_decode.pyx":129
+  /* "scalecodec/_value_decode.pyx":264
  *     cdef int mode = b0 & 3
  *     cdef Py_ssize_t length
  *     if mode == 0:             # <<<<<<<<<<<<<<
@@ -17017,7 +18369,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
   switch (__pyx_v_mode) {
     case 0:
 
-    /* "scalecodec/_value_decode.pyx":130
+    /* "scalecodec/_value_decode.pyx":265
  *     cdef Py_ssize_t length
  *     if mode == 0:
  *         pos[0] = p + 1             # <<<<<<<<<<<<<<
@@ -17026,7 +18378,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 1);
 
-    /* "scalecodec/_value_decode.pyx":131
+    /* "scalecodec/_value_decode.pyx":266
  *     if mode == 0:
  *         pos[0] = p + 1
  *         return b0 >> 2             # <<<<<<<<<<<<<<
@@ -17034,13 +18386,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
  *         _need(p, 2, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_1 = __Pyx_PyLong_From_long((__pyx_v_b0 >> 2)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyLong_From_long((__pyx_v_b0 >> 2)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 266, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_r = __pyx_t_1;
     __pyx_t_1 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":129
+    /* "scalecodec/_value_decode.pyx":264
  *     cdef int mode = b0 & 3
  *     cdef Py_ssize_t length
  *     if mode == 0:             # <<<<<<<<<<<<<<
@@ -17050,16 +18402,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
     break;
     case 1:
 
-    /* "scalecodec/_value_decode.pyx":133
+    /* "scalecodec/_value_decode.pyx":268
  *         return b0 >> 2
  *     elif mode == 1:
  *         _need(p, 2, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 2
  *         return <object>((<uint64_t>_read_uint(buf, p, 2)) >> 2)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 133, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 268, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":134
+    /* "scalecodec/_value_decode.pyx":269
  *     elif mode == 1:
  *         _need(p, 2, buflen)
  *         pos[0] = p + 2             # <<<<<<<<<<<<<<
@@ -17068,7 +18420,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 2);
 
-    /* "scalecodec/_value_decode.pyx":135
+    /* "scalecodec/_value_decode.pyx":270
  *         _need(p, 2, buflen)
  *         pos[0] = p + 2
  *         return <object>((<uint64_t>_read_uint(buf, p, 2)) >> 2)             # <<<<<<<<<<<<<<
@@ -17076,14 +18428,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
  *         _need(p, 4, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_1 = __Pyx_PyLong_From_uint64_t((((uint64_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 2)) >> 2)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 135, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyLong_From_uint64_t((((uint64_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 2)) >> 2)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 270, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_INCREF(((PyObject *)__pyx_t_1));
     __pyx_r = __pyx_t_1;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":132
+    /* "scalecodec/_value_decode.pyx":267
  *         pos[0] = p + 1
  *         return b0 >> 2
  *     elif mode == 1:             # <<<<<<<<<<<<<<
@@ -17093,16 +18445,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
     break;
     case 2:
 
-    /* "scalecodec/_value_decode.pyx":137
+    /* "scalecodec/_value_decode.pyx":272
  *         return <object>((<uint64_t>_read_uint(buf, p, 2)) >> 2)
  *     elif mode == 2:
  *         _need(p, 4, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 4
  *         return <object>((<uint64_t>_read_uint(buf, p, 4)) >> 2)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 4, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 137, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 4, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 272, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":138
+    /* "scalecodec/_value_decode.pyx":273
  *     elif mode == 2:
  *         _need(p, 4, buflen)
  *         pos[0] = p + 4             # <<<<<<<<<<<<<<
@@ -17111,7 +18463,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 4);
 
-    /* "scalecodec/_value_decode.pyx":139
+    /* "scalecodec/_value_decode.pyx":274
  *         _need(p, 4, buflen)
  *         pos[0] = p + 4
  *         return <object>((<uint64_t>_read_uint(buf, p, 4)) >> 2)             # <<<<<<<<<<<<<<
@@ -17119,14 +18471,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
  *         # big-integer mode: the prefix byte encodes how many bytes follow
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_1 = __Pyx_PyLong_From_uint64_t((((uint64_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 4)) >> 2)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyLong_From_uint64_t((((uint64_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 4)) >> 2)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 274, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_INCREF(((PyObject *)__pyx_t_1));
     __pyx_r = __pyx_t_1;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":136
+    /* "scalecodec/_value_decode.pyx":271
  *         pos[0] = p + 2
  *         return <object>((<uint64_t>_read_uint(buf, p, 2)) >> 2)
  *     elif mode == 2:             # <<<<<<<<<<<<<<
@@ -17136,7 +18488,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
     break;
     default:
 
-    /* "scalecodec/_value_decode.pyx":142
+    /* "scalecodec/_value_decode.pyx":277
  *     else:
  *         # big-integer mode: the prefix byte encodes how many bytes follow
  *         length = 4 + (b0 >> 2)             # <<<<<<<<<<<<<<
@@ -17145,16 +18497,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
 */
     __pyx_v_length = (4 + (__pyx_v_b0 >> 2));
 
-    /* "scalecodec/_value_decode.pyx":143
+    /* "scalecodec/_value_decode.pyx":278
  *         # big-integer mode: the prefix byte encodes how many bytes follow
  *         length = 4 + (b0 >> 2)
  *         _need(p + 1, length, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 1 + length
  *         return int.from_bytes(
 */
-    __pyx_f_10scalecodec_13_value_decode__need((__pyx_v_p + 1), __pyx_v_length, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 143, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need((__pyx_v_p + 1), __pyx_v_length, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 278, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":144
+    /* "scalecodec/_value_decode.pyx":279
  *         length = 4 + (b0 >> 2)
  *         _need(p + 1, length, buflen)
  *         pos[0] = p + 1 + length             # <<<<<<<<<<<<<<
@@ -17163,7 +18515,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
 */
     (__pyx_v_pos[0]) = ((__pyx_v_p + 1) + __pyx_v_length);
 
-    /* "scalecodec/_value_decode.pyx":145
+    /* "scalecodec/_value_decode.pyx":280
  *         _need(p + 1, length, buflen)
  *         pos[0] = p + 1 + length
  *         return int.from_bytes(             # <<<<<<<<<<<<<<
@@ -17174,14 +18526,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
     __pyx_t_2 = ((PyObject *)(&PyLong_Type));
     __Pyx_INCREF(__pyx_t_2);
 
-    /* "scalecodec/_value_decode.pyx":146
+    /* "scalecodec/_value_decode.pyx":281
  *         pos[0] = p + 1 + length
  *         return int.from_bytes(
  *             PyBytes_FromStringAndSize(<const char*>(buf + p + 1), length), 'little'             # <<<<<<<<<<<<<<
  *         )
  * 
 */
-    __pyx_t_3 = PyBytes_FromStringAndSize(((char const *)((__pyx_v_buf + __pyx_v_p) + 1)), __pyx_v_length); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 146, __pyx_L1_error)
+    __pyx_t_3 = PyBytes_FromStringAndSize(((char const *)((__pyx_v_buf + __pyx_v_p) + 1)), __pyx_v_length); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 281, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_4 = 0;
     {
@@ -17189,7 +18541,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
       __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_from_bytes, __pyx_callargs+__pyx_t_4, (3-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 280, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __pyx_r = __pyx_t_1;
@@ -17198,7 +18550,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
     break;
   }
 
-  /* "scalecodec/_value_decode.pyx":123
+  /* "scalecodec/_value_decode.pyx":258
  * 
  * 
  * cdef object _read_compact(const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):             # <<<<<<<<<<<<<<
@@ -17219,7 +18571,1251 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__read_compact(unsigned cha
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":150
+/* "scalecodec/_value_decode.pyx":285
+ * 
+ * 
+ * cdef object _dec_list(             # <<<<<<<<<<<<<<
+ *     _Node child, Py_ssize_t count, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos
+ * ):
+*/
+
+static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_list(struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_v_child, Py_ssize_t __pyx_v_count, unsigned char const *__pyx_v_buf, Py_ssize_t __pyx_v_buflen, Py_ssize_t *__pyx_v_pos) {
+  int __pyx_v_cop;
+  Py_ssize_t __pyx_v_p;
+  Py_ssize_t __pyx_v_i;
+  Py_ssize_t __pyx_v_size;
+  PyObject *__pyx_v_out = 0;
+  PyObject *__pyx_v_v = 0;
+  PyObject *__pyx_v_fallback = 0;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  PyObject *__pyx_t_7 = NULL;
+  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_9 = NULL;
+  PyObject *__pyx_t_10[9];
+  PyObject *__pyx_t_11 = NULL;
+  size_t __pyx_t_12;
+  Py_ssize_t __pyx_t_13;
+  Py_ssize_t __pyx_t_14;
+  Py_ssize_t __pyx_t_15;
+  int __pyx_t_16;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_dec_list", 0);
+
+  /* "scalecodec/_value_decode.pyx":293
+ *     and filled in a tight loop; everything else recurses per element.
+ *     """
+ *     cdef int cop = child.op             # <<<<<<<<<<<<<<
+ *     cdef Py_ssize_t p = pos[0]
+ *     cdef Py_ssize_t i
+*/
+  __pyx_t_1 = __pyx_v_child->op;
+  __pyx_v_cop = __pyx_t_1;
+
+  /* "scalecodec/_value_decode.pyx":294
+ *     """
+ *     cdef int cop = child.op
+ *     cdef Py_ssize_t p = pos[0]             # <<<<<<<<<<<<<<
+ *     cdef Py_ssize_t i
+ *     cdef Py_ssize_t size = 0
+*/
+  __pyx_v_p = (__pyx_v_pos[0]);
+
+  /* "scalecodec/_value_decode.pyx":296
+ *     cdef Py_ssize_t p = pos[0]
+ *     cdef Py_ssize_t i
+ *     cdef Py_ssize_t size = 0             # <<<<<<<<<<<<<<
+ *     cdef object out, v
+ *     cdef list fallback
+*/
+  __pyx_v_size = 0;
+
+  /* "scalecodec/_value_decode.pyx":300
+ *     cdef list fallback
+ * 
+ *     if cop == OP_U8 or cop == OP_I8 or cop == OP_BOOL:             # <<<<<<<<<<<<<<
+ *         size = 1
+ *     elif cop == OP_U16 or cop == OP_I16:
+*/
+  switch (__pyx_v_cop) {
+    case 0:
+    case 6:
+    case 12:
+
+    /* "scalecodec/_value_decode.pyx":301
+ * 
+ *     if cop == OP_U8 or cop == OP_I8 or cop == OP_BOOL:
+ *         size = 1             # <<<<<<<<<<<<<<
+ *     elif cop == OP_U16 or cop == OP_I16:
+ *         size = 2
+*/
+    __pyx_v_size = 1;
+
+    /* "scalecodec/_value_decode.pyx":300
+ *     cdef list fallback
+ * 
+ *     if cop == OP_U8 or cop == OP_I8 or cop == OP_BOOL:             # <<<<<<<<<<<<<<
+ *         size = 1
+ *     elif cop == OP_U16 or cop == OP_I16:
+*/
+    break;
+    case 1:
+
+    /* "scalecodec/_value_decode.pyx":302
+ *     if cop == OP_U8 or cop == OP_I8 or cop == OP_BOOL:
+ *         size = 1
+ *     elif cop == OP_U16 or cop == OP_I16:             # <<<<<<<<<<<<<<
+ *         size = 2
+ *     elif cop == OP_U32 or cop == OP_I32:
+*/
+    case 7:
+
+    /* "scalecodec/_value_decode.pyx":303
+ *         size = 1
+ *     elif cop == OP_U16 or cop == OP_I16:
+ *         size = 2             # <<<<<<<<<<<<<<
+ *     elif cop == OP_U32 or cop == OP_I32:
+ *         size = 4
+*/
+    __pyx_v_size = 2;
+
+    /* "scalecodec/_value_decode.pyx":302
+ *     if cop == OP_U8 or cop == OP_I8 or cop == OP_BOOL:
+ *         size = 1
+ *     elif cop == OP_U16 or cop == OP_I16:             # <<<<<<<<<<<<<<
+ *         size = 2
+ *     elif cop == OP_U32 or cop == OP_I32:
+*/
+    break;
+    case 2:
+
+    /* "scalecodec/_value_decode.pyx":304
+ *     elif cop == OP_U16 or cop == OP_I16:
+ *         size = 2
+ *     elif cop == OP_U32 or cop == OP_I32:             # <<<<<<<<<<<<<<
+ *         size = 4
+ *     elif cop == OP_U64 or cop == OP_I64:
+*/
+    case 8:
+
+    /* "scalecodec/_value_decode.pyx":305
+ *         size = 2
+ *     elif cop == OP_U32 or cop == OP_I32:
+ *         size = 4             # <<<<<<<<<<<<<<
+ *     elif cop == OP_U64 or cop == OP_I64:
+ *         size = 8
+*/
+    __pyx_v_size = 4;
+
+    /* "scalecodec/_value_decode.pyx":304
+ *     elif cop == OP_U16 or cop == OP_I16:
+ *         size = 2
+ *     elif cop == OP_U32 or cop == OP_I32:             # <<<<<<<<<<<<<<
+ *         size = 4
+ *     elif cop == OP_U64 or cop == OP_I64:
+*/
+    break;
+    case 3:
+
+    /* "scalecodec/_value_decode.pyx":306
+ *     elif cop == OP_U32 or cop == OP_I32:
+ *         size = 4
+ *     elif cop == OP_U64 or cop == OP_I64:             # <<<<<<<<<<<<<<
+ *         size = 8
+ *     elif cop == OP_U128 or cop == OP_I128:
+*/
+    case 9:
+
+    /* "scalecodec/_value_decode.pyx":307
+ *         size = 4
+ *     elif cop == OP_U64 or cop == OP_I64:
+ *         size = 8             # <<<<<<<<<<<<<<
+ *     elif cop == OP_U128 or cop == OP_I128:
+ *         size = 16
+*/
+    __pyx_v_size = 8;
+
+    /* "scalecodec/_value_decode.pyx":306
+ *     elif cop == OP_U32 or cop == OP_I32:
+ *         size = 4
+ *     elif cop == OP_U64 or cop == OP_I64:             # <<<<<<<<<<<<<<
+ *         size = 8
+ *     elif cop == OP_U128 or cop == OP_I128:
+*/
+    break;
+    case 4:
+
+    /* "scalecodec/_value_decode.pyx":308
+ *     elif cop == OP_U64 or cop == OP_I64:
+ *         size = 8
+ *     elif cop == OP_U128 or cop == OP_I128:             # <<<<<<<<<<<<<<
+ *         size = 16
+ *     elif cop == OP_U256 or cop == OP_I256:
+*/
+    case 10:
+
+    /* "scalecodec/_value_decode.pyx":309
+ *         size = 8
+ *     elif cop == OP_U128 or cop == OP_I128:
+ *         size = 16             # <<<<<<<<<<<<<<
+ *     elif cop == OP_U256 or cop == OP_I256:
+ *         size = 32
+*/
+    __pyx_v_size = 16;
+
+    /* "scalecodec/_value_decode.pyx":308
+ *     elif cop == OP_U64 or cop == OP_I64:
+ *         size = 8
+ *     elif cop == OP_U128 or cop == OP_I128:             # <<<<<<<<<<<<<<
+ *         size = 16
+ *     elif cop == OP_U256 or cop == OP_I256:
+*/
+    break;
+    case 5:
+
+    /* "scalecodec/_value_decode.pyx":310
+ *     elif cop == OP_U128 or cop == OP_I128:
+ *         size = 16
+ *     elif cop == OP_U256 or cop == OP_I256:             # <<<<<<<<<<<<<<
+ *         size = 32
+ * 
+*/
+    case 11:
+
+    /* "scalecodec/_value_decode.pyx":311
+ *         size = 16
+ *     elif cop == OP_U256 or cop == OP_I256:
+ *         size = 32             # <<<<<<<<<<<<<<
+ * 
+ *     if size > 0:
+*/
+    __pyx_v_size = 32;
+
+    /* "scalecodec/_value_decode.pyx":310
+ *     elif cop == OP_U128 or cop == OP_I128:
+ *         size = 16
+ *     elif cop == OP_U256 or cop == OP_I256:             # <<<<<<<<<<<<<<
+ *         size = 32
+ * 
+*/
+    break;
+    default: break;
+  }
+
+  /* "scalecodec/_value_decode.pyx":313
+ *         size = 32
+ * 
+ *     if size > 0:             # <<<<<<<<<<<<<<
+ *         # division avoids count * size overflowing Py_ssize_t on bogus counts
+ *         if count > (buflen - p) // size:
+*/
+  __pyx_t_2 = (__pyx_v_size > 0);
+  if (__pyx_t_2) {
+
+    /* "scalecodec/_value_decode.pyx":315
+ *     if size > 0:
+ *         # division avoids count * size overflowing Py_ssize_t on bogus counts
+ *         if count > (buflen - p) // size:             # <<<<<<<<<<<<<<
+ *             raise RemainingScaleBytesNotEmptyException(
+ *                 f'No more bytes available (needs {size} x {count} at offset {p}, length {buflen})'
+*/
+    __pyx_t_2 = (__pyx_v_count > ((__pyx_v_buflen - __pyx_v_p) / __pyx_v_size));
+    if (unlikely(__pyx_t_2)) {
+
+      /* "scalecodec/_value_decode.pyx":316
+ *         # division avoids count * size overflowing Py_ssize_t on bogus counts
+ *         if count > (buflen - p) // size:
+ *             raise RemainingScaleBytesNotEmptyException(             # <<<<<<<<<<<<<<
+ *                 f'No more bytes available (needs {size} x {count} at offset {p}, length {buflen})'
+ *             )
+*/
+      __pyx_t_4 = NULL;
+      __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_RemainingScaleBytesNotEmptyExcep); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 316, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+
+      /* "scalecodec/_value_decode.pyx":317
+ *         if count > (buflen - p) // size:
+ *             raise RemainingScaleBytesNotEmptyException(
+ *                 f'No more bytes available (needs {size} x {count} at offset {p}, length {buflen})'             # <<<<<<<<<<<<<<
+ *             )
+ *         out = PyList_New(count)
+*/
+      __pyx_t_6 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_size, 0, ' ', 'd'); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 317, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __pyx_t_7 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_count, 0, ' ', 'd'); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 317, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_7);
+      __pyx_t_8 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_p, 0, ' ', 'd'); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 317, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_8);
+      __pyx_t_9 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_buflen, 0, ' ', 'd'); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 317, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_10[0] = __pyx_mstate_global->__pyx_kp_u_No_more_bytes_available_needs;
+      __pyx_t_10[1] = __pyx_t_6;
+      __pyx_t_10[2] = __pyx_mstate_global->__pyx_kp_u_x_2;
+      __pyx_t_10[3] = __pyx_t_7;
+      __pyx_t_10[4] = __pyx_mstate_global->__pyx_kp_u_at_offset;
+      __pyx_t_10[5] = __pyx_t_8;
+      __pyx_t_10[6] = __pyx_mstate_global->__pyx_kp_u_length;
+      __pyx_t_10[7] = __pyx_t_9;
+      __pyx_t_10[8] = __pyx_mstate_global->__pyx_kp_u__5;
+      __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_10, 9, 31 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_6) + 3 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_7) + 11 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_8) + 9 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_9) + 1, 127);
+      if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 317, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_11);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      __pyx_t_12 = 1;
+      #if CYTHON_UNPACK_METHODS
+      if (unlikely(PyMethod_Check(__pyx_t_5))) {
+        __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
+        assert(__pyx_t_4);
+        PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
+        __Pyx_INCREF(__pyx_t_4);
+        __Pyx_INCREF(__pyx__function);
+        __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
+        __pyx_t_12 = 0;
+      }
+      #endif
+      {
+        PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_t_11};
+        __pyx_t_3 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_5, __pyx_callargs+__pyx_t_12, (2-__pyx_t_12) | (__pyx_t_12*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+        __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 316, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+      }
+      __Pyx_Raise(__pyx_t_3, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __PYX_ERR(0, 316, __pyx_L1_error)
+
+      /* "scalecodec/_value_decode.pyx":315
+ *     if size > 0:
+ *         # division avoids count * size overflowing Py_ssize_t on bogus counts
+ *         if count > (buflen - p) // size:             # <<<<<<<<<<<<<<
+ *             raise RemainingScaleBytesNotEmptyException(
+ *                 f'No more bytes available (needs {size} x {count} at offset {p}, length {buflen})'
+*/
+    }
+
+    /* "scalecodec/_value_decode.pyx":319
+ *                 f'No more bytes available (needs {size} x {count} at offset {p}, length {buflen})'
+ *             )
+ *         out = PyList_New(count)             # <<<<<<<<<<<<<<
+ *         if cop == OP_U8:
+ *             for i in range(count):
+*/
+    __pyx_t_3 = PyList_New(__pyx_v_count); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 319, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_v_out = __pyx_t_3;
+    __pyx_t_3 = 0;
+
+    /* "scalecodec/_value_decode.pyx":320
+ *             )
+ *         out = PyList_New(count)
+ *         if cop == OP_U8:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 v = <object>buf[p + i]
+*/
+    switch (__pyx_v_cop) {
+      case 0:
+
+      /* "scalecodec/_value_decode.pyx":321
+ *         out = PyList_New(count)
+ *         if cop == OP_U8:
+ *             for i in range(count):             # <<<<<<<<<<<<<<
+ *                 v = <object>buf[p + i]
+ *                 Py_INCREF(v)
+*/
+      __pyx_t_13 = __pyx_v_count;
+      __pyx_t_14 = __pyx_t_13;
+      for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+        __pyx_v_i = __pyx_t_15;
+
+        /* "scalecodec/_value_decode.pyx":322
+ *         if cop == OP_U8:
+ *             for i in range(count):
+ *                 v = <object>buf[p + i]             # <<<<<<<<<<<<<<
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+*/
+        __pyx_t_3 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[(__pyx_v_p + __pyx_v_i)])); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 322, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __pyx_t_5 = __pyx_t_3;
+        __Pyx_INCREF(__pyx_t_5);
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_5);
+        __pyx_t_5 = 0;
+
+        /* "scalecodec/_value_decode.pyx":323
+ *             for i in range(count):
+ *                 v = <object>buf[p + i]
+ *                 Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U16:
+*/
+        Py_INCREF(__pyx_v_v);
+
+        /* "scalecodec/_value_decode.pyx":324
+ *                 v = <object>buf[p + i]
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *         elif cop == OP_U16:
+ *             for i in range(count):
+*/
+        PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+      }
+
+      /* "scalecodec/_value_decode.pyx":320
+ *             )
+ *         out = PyList_New(count)
+ *         if cop == OP_U8:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 v = <object>buf[p + i]
+*/
+      break;
+      case 1:
+
+      /* "scalecodec/_value_decode.pyx":326
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U16:
+ *             for i in range(count):             # <<<<<<<<<<<<<<
+ *                 v = <object>_read_uint(buf, p + 2 * i, 2)
+ *                 Py_INCREF(v)
+*/
+      __pyx_t_13 = __pyx_v_count;
+      __pyx_t_14 = __pyx_t_13;
+      for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+        __pyx_v_i = __pyx_t_15;
+
+        /* "scalecodec/_value_decode.pyx":327
+ *         elif cop == OP_U16:
+ *             for i in range(count):
+ *                 v = <object>_read_uint(buf, p + 2 * i, 2)             # <<<<<<<<<<<<<<
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+*/
+        __pyx_t_5 = __Pyx_PyLong_From_uint64_t(__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, (__pyx_v_p + (2 * __pyx_v_i)), 2)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 327, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __pyx_t_3 = __pyx_t_5;
+        __Pyx_INCREF(__pyx_t_3);
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_3);
+        __pyx_t_3 = 0;
+
+        /* "scalecodec/_value_decode.pyx":328
+ *             for i in range(count):
+ *                 v = <object>_read_uint(buf, p + 2 * i, 2)
+ *                 Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U32:
+*/
+        Py_INCREF(__pyx_v_v);
+
+        /* "scalecodec/_value_decode.pyx":329
+ *                 v = <object>_read_uint(buf, p + 2 * i, 2)
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *         elif cop == OP_U32:
+ *             for i in range(count):
+*/
+        PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+      }
+
+      /* "scalecodec/_value_decode.pyx":325
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U16:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 v = <object>_read_uint(buf, p + 2 * i, 2)
+*/
+      break;
+      case 2:
+
+      /* "scalecodec/_value_decode.pyx":331
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U32:
+ *             for i in range(count):             # <<<<<<<<<<<<<<
+ *                 v = <object>_read_uint(buf, p + 4 * i, 4)
+ *                 Py_INCREF(v)
+*/
+      __pyx_t_13 = __pyx_v_count;
+      __pyx_t_14 = __pyx_t_13;
+      for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+        __pyx_v_i = __pyx_t_15;
+
+        /* "scalecodec/_value_decode.pyx":332
+ *         elif cop == OP_U32:
+ *             for i in range(count):
+ *                 v = <object>_read_uint(buf, p + 4 * i, 4)             # <<<<<<<<<<<<<<
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+*/
+        __pyx_t_3 = __Pyx_PyLong_From_uint64_t(__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, (__pyx_v_p + (4 * __pyx_v_i)), 4)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 332, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __pyx_t_5 = __pyx_t_3;
+        __Pyx_INCREF(__pyx_t_5);
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_5);
+        __pyx_t_5 = 0;
+
+        /* "scalecodec/_value_decode.pyx":333
+ *             for i in range(count):
+ *                 v = <object>_read_uint(buf, p + 4 * i, 4)
+ *                 Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U64:
+*/
+        Py_INCREF(__pyx_v_v);
+
+        /* "scalecodec/_value_decode.pyx":334
+ *                 v = <object>_read_uint(buf, p + 4 * i, 4)
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *         elif cop == OP_U64:
+ *             for i in range(count):
+*/
+        PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+      }
+
+      /* "scalecodec/_value_decode.pyx":330
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U32:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 v = <object>_read_uint(buf, p + 4 * i, 4)
+*/
+      break;
+      case 3:
+
+      /* "scalecodec/_value_decode.pyx":336
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U64:
+ *             for i in range(count):             # <<<<<<<<<<<<<<
+ *                 v = <object>_read_uint(buf, p + 8 * i, 8)
+ *                 Py_INCREF(v)
+*/
+      __pyx_t_13 = __pyx_v_count;
+      __pyx_t_14 = __pyx_t_13;
+      for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+        __pyx_v_i = __pyx_t_15;
+
+        /* "scalecodec/_value_decode.pyx":337
+ *         elif cop == OP_U64:
+ *             for i in range(count):
+ *                 v = <object>_read_uint(buf, p + 8 * i, 8)             # <<<<<<<<<<<<<<
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+*/
+        __pyx_t_5 = __Pyx_PyLong_From_uint64_t(__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, (__pyx_v_p + (8 * __pyx_v_i)), 8)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 337, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __pyx_t_3 = __pyx_t_5;
+        __Pyx_INCREF(__pyx_t_3);
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_3);
+        __pyx_t_3 = 0;
+
+        /* "scalecodec/_value_decode.pyx":338
+ *             for i in range(count):
+ *                 v = <object>_read_uint(buf, p + 8 * i, 8)
+ *                 Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I8:
+*/
+        Py_INCREF(__pyx_v_v);
+
+        /* "scalecodec/_value_decode.pyx":339
+ *                 v = <object>_read_uint(buf, p + 8 * i, 8)
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *         elif cop == OP_I8:
+ *             for i in range(count):
+*/
+        PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+      }
+
+      /* "scalecodec/_value_decode.pyx":335
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U64:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 v = <object>_read_uint(buf, p + 8 * i, 8)
+*/
+      break;
+      case 6:
+
+      /* "scalecodec/_value_decode.pyx":341
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I8:
+ *             for i in range(count):             # <<<<<<<<<<<<<<
+ *                 v = <object>(<int8_t>buf[p + i])
+ *                 Py_INCREF(v)
+*/
+      __pyx_t_13 = __pyx_v_count;
+      __pyx_t_14 = __pyx_t_13;
+      for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+        __pyx_v_i = __pyx_t_15;
+
+        /* "scalecodec/_value_decode.pyx":342
+ *         elif cop == OP_I8:
+ *             for i in range(count):
+ *                 v = <object>(<int8_t>buf[p + i])             # <<<<<<<<<<<<<<
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+*/
+        __pyx_t_3 = __Pyx_PyLong_From_int8_t(((int8_t)(__pyx_v_buf[(__pyx_v_p + __pyx_v_i)]))); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 342, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __pyx_t_5 = __pyx_t_3;
+        __Pyx_INCREF(__pyx_t_5);
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_5);
+        __pyx_t_5 = 0;
+
+        /* "scalecodec/_value_decode.pyx":343
+ *             for i in range(count):
+ *                 v = <object>(<int8_t>buf[p + i])
+ *                 Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I16:
+*/
+        Py_INCREF(__pyx_v_v);
+
+        /* "scalecodec/_value_decode.pyx":344
+ *                 v = <object>(<int8_t>buf[p + i])
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *         elif cop == OP_I16:
+ *             for i in range(count):
+*/
+        PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+      }
+
+      /* "scalecodec/_value_decode.pyx":340
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I8:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 v = <object>(<int8_t>buf[p + i])
+*/
+      break;
+      case 7:
+
+      /* "scalecodec/_value_decode.pyx":346
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I16:
+ *             for i in range(count):             # <<<<<<<<<<<<<<
+ *                 v = <object>(<int16_t>_read_uint(buf, p + 2 * i, 2))
+ *                 Py_INCREF(v)
+*/
+      __pyx_t_13 = __pyx_v_count;
+      __pyx_t_14 = __pyx_t_13;
+      for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+        __pyx_v_i = __pyx_t_15;
+
+        /* "scalecodec/_value_decode.pyx":347
+ *         elif cop == OP_I16:
+ *             for i in range(count):
+ *                 v = <object>(<int16_t>_read_uint(buf, p + 2 * i, 2))             # <<<<<<<<<<<<<<
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+*/
+        __pyx_t_5 = __Pyx_PyLong_From_int16_t(((int16_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, (__pyx_v_p + (2 * __pyx_v_i)), 2))); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 347, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __pyx_t_3 = __pyx_t_5;
+        __Pyx_INCREF(__pyx_t_3);
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_3);
+        __pyx_t_3 = 0;
+
+        /* "scalecodec/_value_decode.pyx":348
+ *             for i in range(count):
+ *                 v = <object>(<int16_t>_read_uint(buf, p + 2 * i, 2))
+ *                 Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I32:
+*/
+        Py_INCREF(__pyx_v_v);
+
+        /* "scalecodec/_value_decode.pyx":349
+ *                 v = <object>(<int16_t>_read_uint(buf, p + 2 * i, 2))
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *         elif cop == OP_I32:
+ *             for i in range(count):
+*/
+        PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+      }
+
+      /* "scalecodec/_value_decode.pyx":345
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I16:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 v = <object>(<int16_t>_read_uint(buf, p + 2 * i, 2))
+*/
+      break;
+      case 8:
+
+      /* "scalecodec/_value_decode.pyx":351
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I32:
+ *             for i in range(count):             # <<<<<<<<<<<<<<
+ *                 v = <object>(<int32_t>_read_uint(buf, p + 4 * i, 4))
+ *                 Py_INCREF(v)
+*/
+      __pyx_t_13 = __pyx_v_count;
+      __pyx_t_14 = __pyx_t_13;
+      for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+        __pyx_v_i = __pyx_t_15;
+
+        /* "scalecodec/_value_decode.pyx":352
+ *         elif cop == OP_I32:
+ *             for i in range(count):
+ *                 v = <object>(<int32_t>_read_uint(buf, p + 4 * i, 4))             # <<<<<<<<<<<<<<
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+*/
+        __pyx_t_3 = __Pyx_PyLong_From_int32_t(((int32_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, (__pyx_v_p + (4 * __pyx_v_i)), 4))); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 352, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __pyx_t_5 = __pyx_t_3;
+        __Pyx_INCREF(__pyx_t_5);
+        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+        __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_5);
+        __pyx_t_5 = 0;
+
+        /* "scalecodec/_value_decode.pyx":353
+ *             for i in range(count):
+ *                 v = <object>(<int32_t>_read_uint(buf, p + 4 * i, 4))
+ *                 Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I64:
+*/
+        Py_INCREF(__pyx_v_v);
+
+        /* "scalecodec/_value_decode.pyx":354
+ *                 v = <object>(<int32_t>_read_uint(buf, p + 4 * i, 4))
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *         elif cop == OP_I64:
+ *             for i in range(count):
+*/
+        PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+      }
+
+      /* "scalecodec/_value_decode.pyx":350
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I32:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 v = <object>(<int32_t>_read_uint(buf, p + 4 * i, 4))
+*/
+      break;
+      case 9:
+
+      /* "scalecodec/_value_decode.pyx":356
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I64:
+ *             for i in range(count):             # <<<<<<<<<<<<<<
+ *                 v = <object>(<int64_t>_read_uint(buf, p + 8 * i, 8))
+ *                 Py_INCREF(v)
+*/
+      __pyx_t_13 = __pyx_v_count;
+      __pyx_t_14 = __pyx_t_13;
+      for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+        __pyx_v_i = __pyx_t_15;
+
+        /* "scalecodec/_value_decode.pyx":357
+ *         elif cop == OP_I64:
+ *             for i in range(count):
+ *                 v = <object>(<int64_t>_read_uint(buf, p + 8 * i, 8))             # <<<<<<<<<<<<<<
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+*/
+        __pyx_t_5 = __Pyx_PyLong_From_int64_t(((int64_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, (__pyx_v_p + (8 * __pyx_v_i)), 8))); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 357, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __pyx_t_3 = __pyx_t_5;
+        __Pyx_INCREF(__pyx_t_3);
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_3);
+        __pyx_t_3 = 0;
+
+        /* "scalecodec/_value_decode.pyx":358
+ *             for i in range(count):
+ *                 v = <object>(<int64_t>_read_uint(buf, p + 8 * i, 8))
+ *                 Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_BOOL:
+*/
+        Py_INCREF(__pyx_v_v);
+
+        /* "scalecodec/_value_decode.pyx":359
+ *                 v = <object>(<int64_t>_read_uint(buf, p + 8 * i, 8))
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *         elif cop == OP_BOOL:
+ *             for i in range(count):
+*/
+        PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+      }
+
+      /* "scalecodec/_value_decode.pyx":355
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_I64:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 v = <object>(<int64_t>_read_uint(buf, p + 8 * i, 8))
+*/
+      break;
+      case 12:
+
+      /* "scalecodec/_value_decode.pyx":361
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_BOOL:
+ *             for i in range(count):             # <<<<<<<<<<<<<<
+ *                 if buf[p + i] == 0:
+ *                     v = False
+*/
+      __pyx_t_13 = __pyx_v_count;
+      __pyx_t_14 = __pyx_t_13;
+      for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+        __pyx_v_i = __pyx_t_15;
+
+        /* "scalecodec/_value_decode.pyx":362
+ *         elif cop == OP_BOOL:
+ *             for i in range(count):
+ *                 if buf[p + i] == 0:             # <<<<<<<<<<<<<<
+ *                     v = False
+ *                 elif buf[p + i] == 1:
+*/
+        __pyx_t_2 = ((__pyx_v_buf[(__pyx_v_p + __pyx_v_i)]) == 0);
+        if (__pyx_t_2) {
+
+          /* "scalecodec/_value_decode.pyx":363
+ *             for i in range(count):
+ *                 if buf[p + i] == 0:
+ *                     v = False             # <<<<<<<<<<<<<<
+ *                 elif buf[p + i] == 1:
+ *                     v = True
+*/
+          __Pyx_INCREF(Py_False);
+          __Pyx_XDECREF_SET(__pyx_v_v, Py_False);
+
+          /* "scalecodec/_value_decode.pyx":362
+ *         elif cop == OP_BOOL:
+ *             for i in range(count):
+ *                 if buf[p + i] == 0:             # <<<<<<<<<<<<<<
+ *                     v = False
+ *                 elif buf[p + i] == 1:
+*/
+          goto __pyx_L23;
+        }
+
+        /* "scalecodec/_value_decode.pyx":364
+ *                 if buf[p + i] == 0:
+ *                     v = False
+ *                 elif buf[p + i] == 1:             # <<<<<<<<<<<<<<
+ *                     v = True
+ *                 else:
+*/
+        __pyx_t_2 = ((__pyx_v_buf[(__pyx_v_p + __pyx_v_i)]) == 1);
+        if (likely(__pyx_t_2)) {
+
+          /* "scalecodec/_value_decode.pyx":365
+ *                     v = False
+ *                 elif buf[p + i] == 1:
+ *                     v = True             # <<<<<<<<<<<<<<
+ *                 else:
+ *                     raise InvalidScaleTypeValueException('Invalid value for datatype "bool"')
+*/
+          __Pyx_INCREF(Py_True);
+          __Pyx_XDECREF_SET(__pyx_v_v, Py_True);
+
+          /* "scalecodec/_value_decode.pyx":364
+ *                 if buf[p + i] == 0:
+ *                     v = False
+ *                 elif buf[p + i] == 1:             # <<<<<<<<<<<<<<
+ *                     v = True
+ *                 else:
+*/
+          goto __pyx_L23;
+        }
+
+        /* "scalecodec/_value_decode.pyx":367
+ *                     v = True
+ *                 else:
+ *                     raise InvalidScaleTypeValueException('Invalid value for datatype "bool"')             # <<<<<<<<<<<<<<
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+*/
+        /*else*/ {
+          __pyx_t_5 = NULL;
+          __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_InvalidScaleTypeValueException); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 367, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_11);
+          __pyx_t_12 = 1;
+          #if CYTHON_UNPACK_METHODS
+          if (unlikely(PyMethod_Check(__pyx_t_11))) {
+            __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_11);
+            assert(__pyx_t_5);
+            PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_11);
+            __Pyx_INCREF(__pyx_t_5);
+            __Pyx_INCREF(__pyx__function);
+            __Pyx_DECREF_SET(__pyx_t_11, __pyx__function);
+            __pyx_t_12 = 0;
+          }
+          #endif
+          {
+            PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_mstate_global->__pyx_kp_u_Invalid_value_for_datatype_bool};
+            __pyx_t_3 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_11, __pyx_callargs+__pyx_t_12, (2-__pyx_t_12) | (__pyx_t_12*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+            __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+            __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+            if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 367, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_3);
+          }
+          __Pyx_Raise(__pyx_t_3, 0, 0, 0);
+          __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+          __PYX_ERR(0, 367, __pyx_L1_error)
+        }
+        __pyx_L23:;
+
+        /* "scalecodec/_value_decode.pyx":368
+ *                 else:
+ *                     raise InvalidScaleTypeValueException('Invalid value for datatype "bool"')
+ *                 Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U128 or cop == OP_U256:
+*/
+        Py_INCREF(__pyx_v_v);
+
+        /* "scalecodec/_value_decode.pyx":369
+ *                     raise InvalidScaleTypeValueException('Invalid value for datatype "bool"')
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *         elif cop == OP_U128 or cop == OP_U256:
+ *             for i in range(count):
+*/
+        PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+      }
+
+      /* "scalecodec/_value_decode.pyx":360
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_BOOL:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 if buf[p + i] == 0:
+*/
+      break;
+      case 4:
+
+      /* "scalecodec/_value_decode.pyx":370
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U128 or cop == OP_U256:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 0)
+*/
+      case 5:
+
+      /* "scalecodec/_value_decode.pyx":371
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U128 or cop == OP_U256:
+ *             for i in range(count):             # <<<<<<<<<<<<<<
+ *                 v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 0)
+ *                 Py_INCREF(v)
+*/
+      __pyx_t_13 = __pyx_v_count;
+      __pyx_t_14 = __pyx_t_13;
+      for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+        __pyx_v_i = __pyx_t_15;
+
+        /* "scalecodec/_value_decode.pyx":372
+ *         elif cop == OP_U128 or cop == OP_U256:
+ *             for i in range(count):
+ *                 v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 0)             # <<<<<<<<<<<<<<
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+*/
+        __pyx_t_3 = _PyLong_FromByteArray(((__pyx_v_buf + __pyx_v_p) + (__pyx_v_size * __pyx_v_i)), __pyx_v_size, 1, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 372, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_3);
+        __pyx_t_3 = 0;
+
+        /* "scalecodec/_value_decode.pyx":373
+ *             for i in range(count):
+ *                 v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 0)
+ *                 Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *                 PyList_SET_ITEM(out, i, v)
+ *         else:  # OP_I128 / OP_I256
+*/
+        Py_INCREF(__pyx_v_v);
+
+        /* "scalecodec/_value_decode.pyx":374
+ *                 v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 0)
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *         else:  # OP_I128 / OP_I256
+ *             for i in range(count):
+*/
+        PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+      }
+
+      /* "scalecodec/_value_decode.pyx":370
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+ *         elif cop == OP_U128 or cop == OP_U256:             # <<<<<<<<<<<<<<
+ *             for i in range(count):
+ *                 v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 0)
+*/
+      break;
+      default:
+
+      /* "scalecodec/_value_decode.pyx":376
+ *                 PyList_SET_ITEM(out, i, v)
+ *         else:  # OP_I128 / OP_I256
+ *             for i in range(count):             # <<<<<<<<<<<<<<
+ *                 v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 1)
+ *                 Py_INCREF(v)
+*/
+      __pyx_t_13 = __pyx_v_count;
+      __pyx_t_14 = __pyx_t_13;
+      for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+        __pyx_v_i = __pyx_t_15;
+
+        /* "scalecodec/_value_decode.pyx":377
+ *         else:  # OP_I128 / OP_I256
+ *             for i in range(count):
+ *                 v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 1)             # <<<<<<<<<<<<<<
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+*/
+        __pyx_t_3 = _PyLong_FromByteArray(((__pyx_v_buf + __pyx_v_p) + (__pyx_v_size * __pyx_v_i)), __pyx_v_size, 1, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 377, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+        __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_3);
+        __pyx_t_3 = 0;
+
+        /* "scalecodec/_value_decode.pyx":378
+ *             for i in range(count):
+ *                 v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 1)
+ *                 Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *                 PyList_SET_ITEM(out, i, v)
+ *         pos[0] = p + count * size
+*/
+        Py_INCREF(__pyx_v_v);
+
+        /* "scalecodec/_value_decode.pyx":379
+ *                 v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 1)
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *         pos[0] = p + count * size
+ *         return out
+*/
+        PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+      }
+      break;
+    }
+
+    /* "scalecodec/_value_decode.pyx":380
+ *                 Py_INCREF(v)
+ *                 PyList_SET_ITEM(out, i, v)
+ *         pos[0] = p + count * size             # <<<<<<<<<<<<<<
+ *         return out
+ * 
+*/
+    (__pyx_v_pos[0]) = (__pyx_v_p + (__pyx_v_count * __pyx_v_size));
+
+    /* "scalecodec/_value_decode.pyx":381
+ *                 PyList_SET_ITEM(out, i, v)
+ *         pos[0] = p + count * size
+ *         return out             # <<<<<<<<<<<<<<
+ * 
+ *     if count > buflen - p:
+*/
+    __Pyx_XDECREF(__pyx_r);
+    __Pyx_INCREF(__pyx_v_out);
+    __pyx_r = __pyx_v_out;
+    goto __pyx_L0;
+
+    /* "scalecodec/_value_decode.pyx":313
+ *         size = 32
+ * 
+ *     if size > 0:             # <<<<<<<<<<<<<<
+ *         # division avoids count * size overflowing Py_ssize_t on bogus counts
+ *         if count > (buflen - p) // size:
+*/
+  }
+
+  /* "scalecodec/_value_decode.pyx":383
+ *         return out
+ * 
+ *     if count > buflen - p:             # <<<<<<<<<<<<<<
+ *         # more claimed elements than remaining bytes: only decodable if the
+ *         # element type consumes nothing, so grow lazily instead of presizing
+*/
+  __pyx_t_2 = (__pyx_v_count > (__pyx_v_buflen - __pyx_v_p));
+  if (__pyx_t_2) {
+
+    /* "scalecodec/_value_decode.pyx":387
+ *         # element type consumes nothing, so grow lazily instead of presizing
+ *         # (a bogus huge count then fails on its first element, not on alloc)
+ *         fallback = []             # <<<<<<<<<<<<<<
+ *         for i in range(count):
+ *             fallback.append(_dec(child, buf, buflen, pos))
+*/
+    __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 387, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_v_fallback = ((PyObject*)__pyx_t_3);
+    __pyx_t_3 = 0;
+
+    /* "scalecodec/_value_decode.pyx":388
+ *         # (a bogus huge count then fails on its first element, not on alloc)
+ *         fallback = []
+ *         for i in range(count):             # <<<<<<<<<<<<<<
+ *             fallback.append(_dec(child, buf, buflen, pos))
+ *         return fallback
+*/
+    __pyx_t_13 = __pyx_v_count;
+    __pyx_t_14 = __pyx_t_13;
+    for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+      __pyx_v_i = __pyx_t_15;
+
+      /* "scalecodec/_value_decode.pyx":389
+ *         fallback = []
+ *         for i in range(count):
+ *             fallback.append(_dec(child, buf, buflen, pos))             # <<<<<<<<<<<<<<
+ *         return fallback
+ * 
+*/
+      __pyx_t_3 = __pyx_f_10scalecodec_13_value_decode__dec(__pyx_v_child, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 389, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+      __pyx_t_16 = __Pyx_PyList_Append(__pyx_v_fallback, __pyx_t_3); if (unlikely(__pyx_t_16 == ((int)-1))) __PYX_ERR(0, 389, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    }
+
+    /* "scalecodec/_value_decode.pyx":390
+ *         for i in range(count):
+ *             fallback.append(_dec(child, buf, buflen, pos))
+ *         return fallback             # <<<<<<<<<<<<<<
+ * 
+ *     out = PyList_New(count)
+*/
+    __Pyx_XDECREF(__pyx_r);
+    __Pyx_INCREF(__pyx_v_fallback);
+    __pyx_r = __pyx_v_fallback;
+    goto __pyx_L0;
+
+    /* "scalecodec/_value_decode.pyx":383
+ *         return out
+ * 
+ *     if count > buflen - p:             # <<<<<<<<<<<<<<
+ *         # more claimed elements than remaining bytes: only decodable if the
+ *         # element type consumes nothing, so grow lazily instead of presizing
+*/
+  }
+
+  /* "scalecodec/_value_decode.pyx":392
+ *         return fallback
+ * 
+ *     out = PyList_New(count)             # <<<<<<<<<<<<<<
+ *     for i in range(count):
+ *         v = _dec(child, buf, buflen, pos)
+*/
+  __pyx_t_3 = PyList_New(__pyx_v_count); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 392, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_v_out = __pyx_t_3;
+  __pyx_t_3 = 0;
+
+  /* "scalecodec/_value_decode.pyx":393
+ * 
+ *     out = PyList_New(count)
+ *     for i in range(count):             # <<<<<<<<<<<<<<
+ *         v = _dec(child, buf, buflen, pos)
+ *         Py_INCREF(v)
+*/
+  __pyx_t_13 = __pyx_v_count;
+  __pyx_t_14 = __pyx_t_13;
+  for (__pyx_t_15 = 0; __pyx_t_15 < __pyx_t_14; __pyx_t_15+=1) {
+    __pyx_v_i = __pyx_t_15;
+
+    /* "scalecodec/_value_decode.pyx":394
+ *     out = PyList_New(count)
+ *     for i in range(count):
+ *         v = _dec(child, buf, buflen, pos)             # <<<<<<<<<<<<<<
+ *         Py_INCREF(v)
+ *         PyList_SET_ITEM(out, i, v)
+*/
+    __pyx_t_3 = __pyx_f_10scalecodec_13_value_decode__dec(__pyx_v_child, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 394, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_3);
+    __pyx_t_3 = 0;
+
+    /* "scalecodec/_value_decode.pyx":395
+ *     for i in range(count):
+ *         v = _dec(child, buf, buflen, pos)
+ *         Py_INCREF(v)             # <<<<<<<<<<<<<<
+ *         PyList_SET_ITEM(out, i, v)
+ *     return out
+*/
+    Py_INCREF(__pyx_v_v);
+
+    /* "scalecodec/_value_decode.pyx":396
+ *         v = _dec(child, buf, buflen, pos)
+ *         Py_INCREF(v)
+ *         PyList_SET_ITEM(out, i, v)             # <<<<<<<<<<<<<<
+ *     return out
+ * 
+*/
+    PyList_SET_ITEM(__pyx_v_out, __pyx_v_i, __pyx_v_v);
+  }
+
+  /* "scalecodec/_value_decode.pyx":397
+ *         Py_INCREF(v)
+ *         PyList_SET_ITEM(out, i, v)
+ *     return out             # <<<<<<<<<<<<<<
+ * 
+ * 
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_v_out);
+  __pyx_r = __pyx_v_out;
+  goto __pyx_L0;
+
+  /* "scalecodec/_value_decode.pyx":285
+ * 
+ * 
+ * cdef object _dec_list(             # <<<<<<<<<<<<<<
+ *     _Node child, Py_ssize_t count, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos
+ * ):
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_11);
+  __Pyx_AddTraceback("scalecodec._value_decode._dec_list", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = 0;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_out);
+  __Pyx_XDECREF(__pyx_v_v);
+  __Pyx_XDECREF(__pyx_v_fallback);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "scalecodec/_value_decode.pyx":400
  * 
  * 
  * cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):             # <<<<<<<<<<<<<<
@@ -17235,6 +19831,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
   Py_ssize_t __pyx_v_total;
   int __pyx_v_idx;
   PyObject *__pyx_v_v = 0;
+  PyObject *__pyx_v_item = 0;
   PyObject *__pyx_v_out = 0;
   PyObject *__pyx_v_d = 0;
   struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_v_child = 0;
@@ -17259,18 +19856,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
   PyObject *__pyx_t_5 = NULL;
   PyObject *__pyx_t_6 = NULL;
   size_t __pyx_t_7;
-  PyObject *__pyx_t_8 = NULL;
-  PyObject *__pyx_t_9 = NULL;
+  Py_ssize_t __pyx_t_8;
+  Py_ssize_t __pyx_t_9;
   PyObject *__pyx_t_10 = NULL;
   PyObject *__pyx_t_11 = NULL;
-  PyObject *__pyx_t_12 = NULL;
-  Py_ssize_t __pyx_t_13;
-  Py_ssize_t __pyx_t_14;
-  int __pyx_t_15;
-  int __pyx_t_16;
-  PyObject *(*__pyx_t_17)(PyObject *);
-  PyObject *__pyx_t_18 = NULL;
-  PyObject *(*__pyx_t_19)(PyObject *);
+  int __pyx_t_12;
+  PyObject *__pyx_t_13 = NULL;
+  PyObject *__pyx_t_14 = NULL;
+  PyObject *__pyx_t_15 = NULL;
+  PyObject *(*__pyx_t_16)(PyObject *);
+  PyObject *__pyx_t_17 = NULL;
+  PyObject *(*__pyx_t_18)(PyObject *);
+  int __pyx_t_19;
   PyObject *__pyx_t_20[3];
   PyObject *__pyx_t_21 = NULL;
   PyObject *__pyx_t_22 = NULL;
@@ -17280,7 +19877,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_dec", 0);
 
-  /* "scalecodec/_value_decode.pyx":151
+  /* "scalecodec/_value_decode.pyx":401
  * 
  * cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):
  *     cdef int op = nd.op             # <<<<<<<<<<<<<<
@@ -17290,7 +19887,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
   __pyx_t_1 = __pyx_v_nd->op;
   __pyx_v_op = __pyx_t_1;
 
-  /* "scalecodec/_value_decode.pyx":152
+  /* "scalecodec/_value_decode.pyx":402
  * cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):
  *     cdef int op = nd.op
  *     cdef Py_ssize_t p = pos[0]             # <<<<<<<<<<<<<<
@@ -17299,7 +19896,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
   __pyx_v_p = (__pyx_v_pos[0]);
 
-  /* "scalecodec/_value_decode.pyx":163
+  /* "scalecodec/_value_decode.pyx":413
  *     cdef double f64val
  * 
  *     if op == OP_U8:             # <<<<<<<<<<<<<<
@@ -17309,16 +19906,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
   switch (__pyx_v_op) {
     case 0:
 
-    /* "scalecodec/_value_decode.pyx":164
+    /* "scalecodec/_value_decode.pyx":414
  * 
  *     if op == OP_U8:
  *         _need(p, 1, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 1
  *         return <object>buf[p]
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 164, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 414, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":165
+    /* "scalecodec/_value_decode.pyx":415
  *     if op == OP_U8:
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1             # <<<<<<<<<<<<<<
@@ -17327,7 +19924,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 1);
 
-    /* "scalecodec/_value_decode.pyx":166
+    /* "scalecodec/_value_decode.pyx":416
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1
  *         return <object>buf[p]             # <<<<<<<<<<<<<<
@@ -17335,14 +19932,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         _need(p, 2, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 416, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(((PyObject *)__pyx_t_2));
     __pyx_r = __pyx_t_2;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":163
+    /* "scalecodec/_value_decode.pyx":413
  *     cdef double f64val
  * 
  *     if op == OP_U8:             # <<<<<<<<<<<<<<
@@ -17352,16 +19949,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 1:
 
-    /* "scalecodec/_value_decode.pyx":168
+    /* "scalecodec/_value_decode.pyx":418
  *         return <object>buf[p]
  *     elif op == OP_U16:
  *         _need(p, 2, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 2
  *         return <object>_read_uint(buf, p, 2)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 168, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 418, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":169
+    /* "scalecodec/_value_decode.pyx":419
  *     elif op == OP_U16:
  *         _need(p, 2, buflen)
  *         pos[0] = p + 2             # <<<<<<<<<<<<<<
@@ -17370,7 +19967,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 2);
 
-    /* "scalecodec/_value_decode.pyx":170
+    /* "scalecodec/_value_decode.pyx":420
  *         _need(p, 2, buflen)
  *         pos[0] = p + 2
  *         return <object>_read_uint(buf, p, 2)             # <<<<<<<<<<<<<<
@@ -17378,14 +19975,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         _need(p, 4, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = __Pyx_PyLong_From_uint64_t(__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 2)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 170, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyLong_From_uint64_t(__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 2)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 420, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(((PyObject *)__pyx_t_2));
     __pyx_r = __pyx_t_2;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":167
+    /* "scalecodec/_value_decode.pyx":417
  *         pos[0] = p + 1
  *         return <object>buf[p]
  *     elif op == OP_U16:             # <<<<<<<<<<<<<<
@@ -17395,16 +19992,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 2:
 
-    /* "scalecodec/_value_decode.pyx":172
+    /* "scalecodec/_value_decode.pyx":422
  *         return <object>_read_uint(buf, p, 2)
  *     elif op == OP_U32:
  *         _need(p, 4, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 4
  *         return <object>_read_uint(buf, p, 4)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 4, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 172, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 4, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 422, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":173
+    /* "scalecodec/_value_decode.pyx":423
  *     elif op == OP_U32:
  *         _need(p, 4, buflen)
  *         pos[0] = p + 4             # <<<<<<<<<<<<<<
@@ -17413,7 +20010,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 4);
 
-    /* "scalecodec/_value_decode.pyx":174
+    /* "scalecodec/_value_decode.pyx":424
  *         _need(p, 4, buflen)
  *         pos[0] = p + 4
  *         return <object>_read_uint(buf, p, 4)             # <<<<<<<<<<<<<<
@@ -17421,14 +20018,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         _need(p, 8, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = __Pyx_PyLong_From_uint64_t(__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 4)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyLong_From_uint64_t(__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 4)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 424, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(((PyObject *)__pyx_t_2));
     __pyx_r = __pyx_t_2;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":171
+    /* "scalecodec/_value_decode.pyx":421
  *         pos[0] = p + 2
  *         return <object>_read_uint(buf, p, 2)
  *     elif op == OP_U32:             # <<<<<<<<<<<<<<
@@ -17438,16 +20035,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 3:
 
-    /* "scalecodec/_value_decode.pyx":176
+    /* "scalecodec/_value_decode.pyx":426
  *         return <object>_read_uint(buf, p, 4)
  *     elif op == OP_U64:
  *         _need(p, 8, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 8
  *         return <object>_read_uint(buf, p, 8)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 8, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 176, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 8, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 426, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":177
+    /* "scalecodec/_value_decode.pyx":427
  *     elif op == OP_U64:
  *         _need(p, 8, buflen)
  *         pos[0] = p + 8             # <<<<<<<<<<<<<<
@@ -17456,7 +20053,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 8);
 
-    /* "scalecodec/_value_decode.pyx":178
+    /* "scalecodec/_value_decode.pyx":428
  *         _need(p, 8, buflen)
  *         pos[0] = p + 8
  *         return <object>_read_uint(buf, p, 8)             # <<<<<<<<<<<<<<
@@ -17464,14 +20061,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         total = 16 if op == OP_U128 else 32
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = __Pyx_PyLong_From_uint64_t(__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 8)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 178, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyLong_From_uint64_t(__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 8)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 428, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(((PyObject *)__pyx_t_2));
     __pyx_r = __pyx_t_2;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":175
+    /* "scalecodec/_value_decode.pyx":425
  *         pos[0] = p + 4
  *         return <object>_read_uint(buf, p, 4)
  *     elif op == OP_U64:             # <<<<<<<<<<<<<<
@@ -17481,7 +20078,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 4:
 
-    /* "scalecodec/_value_decode.pyx":179
+    /* "scalecodec/_value_decode.pyx":429
  *         pos[0] = p + 8
  *         return <object>_read_uint(buf, p, 8)
  *     elif op == OP_U128 or op == OP_U256:             # <<<<<<<<<<<<<<
@@ -17490,7 +20087,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     case 5:
 
-    /* "scalecodec/_value_decode.pyx":180
+    /* "scalecodec/_value_decode.pyx":430
  *         return <object>_read_uint(buf, p, 8)
  *     elif op == OP_U128 or op == OP_U256:
  *         total = 16 if op == OP_U128 else 32             # <<<<<<<<<<<<<<
@@ -17505,50 +20102,39 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     }
     __pyx_v_total = __pyx_t_3;
 
-    /* "scalecodec/_value_decode.pyx":181
+    /* "scalecodec/_value_decode.pyx":431
  *     elif op == OP_U128 or op == OP_U256:
  *         total = 16 if op == OP_U128 else 32
  *         _need(p, total, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + total
- *         return int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')
+ *         return _PyLong_FromByteArray(buf + p, total, 1, 0)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_total, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 181, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_total, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 431, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":182
+    /* "scalecodec/_value_decode.pyx":432
  *         total = 16 if op == OP_U128 else 32
  *         _need(p, total, buflen)
  *         pos[0] = p + total             # <<<<<<<<<<<<<<
- *         return int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')
+ *         return _PyLong_FromByteArray(buf + p, total, 1, 0)
  *     elif op == OP_I8:
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + __pyx_v_total);
 
-    /* "scalecodec/_value_decode.pyx":183
+    /* "scalecodec/_value_decode.pyx":433
  *         _need(p, total, buflen)
  *         pos[0] = p + total
- *         return int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')             # <<<<<<<<<<<<<<
+ *         return _PyLong_FromByteArray(buf + p, total, 1, 0)             # <<<<<<<<<<<<<<
  *     elif op == OP_I8:
  *         _need(p, 1, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_5 = ((PyObject *)(&PyLong_Type));
-    __Pyx_INCREF(__pyx_t_5);
-    __pyx_t_6 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), __pyx_v_total); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 183, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = 0;
-    {
-      PyObject *__pyx_callargs[3] = {__pyx_t_5, __pyx_t_6, __pyx_mstate_global->__pyx_n_u_little};
-      __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_from_bytes, __pyx_callargs+__pyx_t_7, (3-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-    }
+    __pyx_t_2 = _PyLong_FromByteArray((__pyx_v_buf + __pyx_v_p), __pyx_v_total, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 433, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":179
+    /* "scalecodec/_value_decode.pyx":429
  *         pos[0] = p + 8
  *         return <object>_read_uint(buf, p, 8)
  *     elif op == OP_U128 or op == OP_U256:             # <<<<<<<<<<<<<<
@@ -17558,16 +20144,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 6:
 
-    /* "scalecodec/_value_decode.pyx":185
- *         return int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')
+    /* "scalecodec/_value_decode.pyx":435
+ *         return _PyLong_FromByteArray(buf + p, total, 1, 0)
  *     elif op == OP_I8:
  *         _need(p, 1, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 1
  *         return <object>(<int8_t>buf[p])
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 185, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 435, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":186
+    /* "scalecodec/_value_decode.pyx":436
  *     elif op == OP_I8:
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1             # <<<<<<<<<<<<<<
@@ -17576,7 +20162,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 1);
 
-    /* "scalecodec/_value_decode.pyx":187
+    /* "scalecodec/_value_decode.pyx":437
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1
  *         return <object>(<int8_t>buf[p])             # <<<<<<<<<<<<<<
@@ -17584,16 +20170,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         _need(p, 2, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = __Pyx_PyLong_From_int8_t(((int8_t)(__pyx_v_buf[__pyx_v_p]))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 187, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyLong_From_int8_t(((int8_t)(__pyx_v_buf[__pyx_v_p]))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 437, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(((PyObject *)__pyx_t_2));
     __pyx_r = __pyx_t_2;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":184
+    /* "scalecodec/_value_decode.pyx":434
  *         pos[0] = p + total
- *         return int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')
+ *         return _PyLong_FromByteArray(buf + p, total, 1, 0)
  *     elif op == OP_I8:             # <<<<<<<<<<<<<<
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1
@@ -17601,16 +20187,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 7:
 
-    /* "scalecodec/_value_decode.pyx":189
+    /* "scalecodec/_value_decode.pyx":439
  *         return <object>(<int8_t>buf[p])
  *     elif op == OP_I16:
  *         _need(p, 2, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 2
  *         return <object>(<int16_t>_read_uint(buf, p, 2))
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 189, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 439, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":190
+    /* "scalecodec/_value_decode.pyx":440
  *     elif op == OP_I16:
  *         _need(p, 2, buflen)
  *         pos[0] = p + 2             # <<<<<<<<<<<<<<
@@ -17619,7 +20205,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 2);
 
-    /* "scalecodec/_value_decode.pyx":191
+    /* "scalecodec/_value_decode.pyx":441
  *         _need(p, 2, buflen)
  *         pos[0] = p + 2
  *         return <object>(<int16_t>_read_uint(buf, p, 2))             # <<<<<<<<<<<<<<
@@ -17627,14 +20213,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         _need(p, 4, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = __Pyx_PyLong_From_int16_t(((int16_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 2))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 191, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyLong_From_int16_t(((int16_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 2))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 441, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(((PyObject *)__pyx_t_2));
     __pyx_r = __pyx_t_2;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":188
+    /* "scalecodec/_value_decode.pyx":438
  *         pos[0] = p + 1
  *         return <object>(<int8_t>buf[p])
  *     elif op == OP_I16:             # <<<<<<<<<<<<<<
@@ -17644,16 +20230,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 8:
 
-    /* "scalecodec/_value_decode.pyx":193
+    /* "scalecodec/_value_decode.pyx":443
  *         return <object>(<int16_t>_read_uint(buf, p, 2))
  *     elif op == OP_I32:
  *         _need(p, 4, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 4
  *         return <object>(<int32_t>_read_uint(buf, p, 4))
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 4, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 193, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 4, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 443, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":194
+    /* "scalecodec/_value_decode.pyx":444
  *     elif op == OP_I32:
  *         _need(p, 4, buflen)
  *         pos[0] = p + 4             # <<<<<<<<<<<<<<
@@ -17662,7 +20248,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 4);
 
-    /* "scalecodec/_value_decode.pyx":195
+    /* "scalecodec/_value_decode.pyx":445
  *         _need(p, 4, buflen)
  *         pos[0] = p + 4
  *         return <object>(<int32_t>_read_uint(buf, p, 4))             # <<<<<<<<<<<<<<
@@ -17670,14 +20256,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         _need(p, 8, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = __Pyx_PyLong_From_int32_t(((int32_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 4))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 195, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyLong_From_int32_t(((int32_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 4))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 445, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(((PyObject *)__pyx_t_2));
     __pyx_r = __pyx_t_2;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":192
+    /* "scalecodec/_value_decode.pyx":442
  *         pos[0] = p + 2
  *         return <object>(<int16_t>_read_uint(buf, p, 2))
  *     elif op == OP_I32:             # <<<<<<<<<<<<<<
@@ -17687,16 +20273,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 9:
 
-    /* "scalecodec/_value_decode.pyx":197
+    /* "scalecodec/_value_decode.pyx":447
  *         return <object>(<int32_t>_read_uint(buf, p, 4))
  *     elif op == OP_I64:
  *         _need(p, 8, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 8
  *         return <object>(<int64_t>_read_uint(buf, p, 8))
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 8, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 197, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 8, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 447, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":198
+    /* "scalecodec/_value_decode.pyx":448
  *     elif op == OP_I64:
  *         _need(p, 8, buflen)
  *         pos[0] = p + 8             # <<<<<<<<<<<<<<
@@ -17705,7 +20291,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 8);
 
-    /* "scalecodec/_value_decode.pyx":199
+    /* "scalecodec/_value_decode.pyx":449
  *         _need(p, 8, buflen)
  *         pos[0] = p + 8
  *         return <object>(<int64_t>_read_uint(buf, p, 8))             # <<<<<<<<<<<<<<
@@ -17713,14 +20299,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         total = 16 if op == OP_I128 else 32
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = __Pyx_PyLong_From_int64_t(((int64_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 8))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 199, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyLong_From_int64_t(((int64_t)__pyx_f_10scalecodec_13_value_decode__read_uint(__pyx_v_buf, __pyx_v_p, 8))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 449, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_INCREF(((PyObject *)__pyx_t_2));
     __pyx_r = __pyx_t_2;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":196
+    /* "scalecodec/_value_decode.pyx":446
  *         pos[0] = p + 4
  *         return <object>(<int32_t>_read_uint(buf, p, 4))
  *     elif op == OP_I64:             # <<<<<<<<<<<<<<
@@ -17730,7 +20316,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 10:
 
-    /* "scalecodec/_value_decode.pyx":200
+    /* "scalecodec/_value_decode.pyx":450
  *         pos[0] = p + 8
  *         return <object>(<int64_t>_read_uint(buf, p, 8))
  *     elif op == OP_I128 or op == OP_I256:             # <<<<<<<<<<<<<<
@@ -17739,7 +20325,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     case 11:
 
-    /* "scalecodec/_value_decode.pyx":201
+    /* "scalecodec/_value_decode.pyx":451
  *         return <object>(<int64_t>_read_uint(buf, p, 8))
  *     elif op == OP_I128 or op == OP_I256:
  *         total = 16 if op == OP_I128 else 32             # <<<<<<<<<<<<<<
@@ -17754,62 +20340,39 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     }
     __pyx_v_total = __pyx_t_3;
 
-    /* "scalecodec/_value_decode.pyx":202
+    /* "scalecodec/_value_decode.pyx":452
  *     elif op == OP_I128 or op == OP_I256:
  *         total = 16 if op == OP_I128 else 32
  *         _need(p, total, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + total
- *         return int.from_bytes(
+ *         return _PyLong_FromByteArray(buf + p, total, 1, 1)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_total, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 202, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_total, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 452, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":203
+    /* "scalecodec/_value_decode.pyx":453
  *         total = 16 if op == OP_I128 else 32
  *         _need(p, total, buflen)
  *         pos[0] = p + total             # <<<<<<<<<<<<<<
- *         return int.from_bytes(
- *             PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little', signed=True
+ *         return _PyLong_FromByteArray(buf + p, total, 1, 1)
+ *     elif op == OP_BOOL:
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + __pyx_v_total);
 
-    /* "scalecodec/_value_decode.pyx":204
+    /* "scalecodec/_value_decode.pyx":454
  *         _need(p, total, buflen)
  *         pos[0] = p + total
- *         return int.from_bytes(             # <<<<<<<<<<<<<<
- *             PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little', signed=True
- *         )
+ *         return _PyLong_FromByteArray(buf + p, total, 1, 1)             # <<<<<<<<<<<<<<
+ *     elif op == OP_BOOL:
+ *         _need(p, 1, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_6 = ((PyObject *)(&PyLong_Type));
-    __Pyx_INCREF(__pyx_t_6);
-
-    /* "scalecodec/_value_decode.pyx":205
- *         pos[0] = p + total
- *         return int.from_bytes(
- *             PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little', signed=True             # <<<<<<<<<<<<<<
- *         )
- *     elif op == OP_BOOL:
-*/
-    __pyx_t_5 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), __pyx_v_total); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 205, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_7 = 0;
-    {
-      PyObject *__pyx_callargs[3 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_6, __pyx_t_5, __pyx_mstate_global->__pyx_n_u_little};
-      __pyx_t_8 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 204, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-      if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_signed, Py_True, __pyx_t_8, __pyx_callargs+3, 0) < (0)) __PYX_ERR(0, 204, __pyx_L1_error)
-      __pyx_t_2 = __Pyx_Object_VectorcallMethod_CallFromBuilder((PyObject*)__pyx_mstate_global->__pyx_n_u_from_bytes, __pyx_callargs+__pyx_t_7, (3-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_8);
-      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 204, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-    }
+    __pyx_t_2 = _PyLong_FromByteArray((__pyx_v_buf + __pyx_v_p), __pyx_v_total, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 454, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":200
+    /* "scalecodec/_value_decode.pyx":450
  *         pos[0] = p + 8
  *         return <object>(<int64_t>_read_uint(buf, p, 8))
  *     elif op == OP_I128 or op == OP_I256:             # <<<<<<<<<<<<<<
@@ -17819,16 +20382,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 12:
 
-    /* "scalecodec/_value_decode.pyx":208
- *         )
+    /* "scalecodec/_value_decode.pyx":456
+ *         return _PyLong_FromByteArray(buf + p, total, 1, 1)
  *     elif op == OP_BOOL:
  *         _need(p, 1, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 1
  *         if buf[p] == 0:
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 208, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 456, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":209
+    /* "scalecodec/_value_decode.pyx":457
  *     elif op == OP_BOOL:
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1             # <<<<<<<<<<<<<<
@@ -17837,7 +20400,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 1);
 
-    /* "scalecodec/_value_decode.pyx":210
+    /* "scalecodec/_value_decode.pyx":458
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1
  *         if buf[p] == 0:             # <<<<<<<<<<<<<<
@@ -17847,7 +20410,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_t_4 = ((__pyx_v_buf[__pyx_v_p]) == 0);
     if (__pyx_t_4) {
 
-      /* "scalecodec/_value_decode.pyx":211
+      /* "scalecodec/_value_decode.pyx":459
  *         pos[0] = p + 1
  *         if buf[p] == 0:
  *             return False             # <<<<<<<<<<<<<<
@@ -17859,7 +20422,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
       __pyx_r = Py_False;
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":210
+      /* "scalecodec/_value_decode.pyx":458
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1
  *         if buf[p] == 0:             # <<<<<<<<<<<<<<
@@ -17868,7 +20431,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":212
+    /* "scalecodec/_value_decode.pyx":460
  *         if buf[p] == 0:
  *             return False
  *         elif buf[p] == 1:             # <<<<<<<<<<<<<<
@@ -17878,7 +20441,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_t_4 = ((__pyx_v_buf[__pyx_v_p]) == 1);
     if (__pyx_t_4) {
 
-      /* "scalecodec/_value_decode.pyx":213
+      /* "scalecodec/_value_decode.pyx":461
  *             return False
  *         elif buf[p] == 1:
  *             return True             # <<<<<<<<<<<<<<
@@ -17890,7 +20453,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
       __pyx_r = Py_True;
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":212
+      /* "scalecodec/_value_decode.pyx":460
  *         if buf[p] == 0:
  *             return False
  *         elif buf[p] == 1:             # <<<<<<<<<<<<<<
@@ -17899,43 +20462,43 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":214
+    /* "scalecodec/_value_decode.pyx":462
  *         elif buf[p] == 1:
  *             return True
  *         raise InvalidScaleTypeValueException('Invalid value for datatype "bool"')             # <<<<<<<<<<<<<<
  *     elif op == OP_COMPACT:
  *         return _read_compact(buf, buflen, pos)
 */
-    __pyx_t_8 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_InvalidScaleTypeValueException); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 214, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
+    __pyx_t_5 = NULL;
+    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_InvalidScaleTypeValueException); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 462, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_7 = 1;
     #if CYTHON_UNPACK_METHODS
-    if (unlikely(PyMethod_Check(__pyx_t_5))) {
-      __pyx_t_8 = PyMethod_GET_SELF(__pyx_t_5);
-      assert(__pyx_t_8);
-      PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
-      __Pyx_INCREF(__pyx_t_8);
+    if (unlikely(PyMethod_Check(__pyx_t_6))) {
+      __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_6);
+      assert(__pyx_t_5);
+      PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_6);
+      __Pyx_INCREF(__pyx_t_5);
       __Pyx_INCREF(__pyx__function);
-      __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
+      __Pyx_DECREF_SET(__pyx_t_6, __pyx__function);
       __pyx_t_7 = 0;
     }
     #endif
     {
-      PyObject *__pyx_callargs[2] = {__pyx_t_8, __pyx_mstate_global->__pyx_kp_u_Invalid_value_for_datatype_bool};
-      __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_5, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 214, __pyx_L1_error)
+      PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_mstate_global->__pyx_kp_u_Invalid_value_for_datatype_bool};
+      __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_6, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 462, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
     }
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 214, __pyx_L1_error)
+    __PYX_ERR(0, 462, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":207
- *             PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little', signed=True
- *         )
+    /* "scalecodec/_value_decode.pyx":455
+ *         pos[0] = p + total
+ *         return _PyLong_FromByteArray(buf + p, total, 1, 1)
  *     elif op == OP_BOOL:             # <<<<<<<<<<<<<<
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1
@@ -17943,21 +20506,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 13:
 
-    /* "scalecodec/_value_decode.pyx":216
+    /* "scalecodec/_value_decode.pyx":464
  *         raise InvalidScaleTypeValueException('Invalid value for datatype "bool"')
  *     elif op == OP_COMPACT:
  *         return _read_compact(buf, buflen, pos)             # <<<<<<<<<<<<<<
  *     elif op == OP_BYTES:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+ *         count = _read_compact_len(buf, buflen, pos)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__read_compact(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 216, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__read_compact(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 464, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":215
+    /* "scalecodec/_value_decode.pyx":463
  *             return True
  *         raise InvalidScaleTypeValueException('Invalid value for datatype "bool"')
  *     elif op == OP_COMPACT:             # <<<<<<<<<<<<<<
@@ -17967,270 +20530,110 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 14:
 
-    /* "scalecodec/_value_decode.pyx":218
+    /* "scalecodec/_value_decode.pyx":466
  *         return _read_compact(buf, buflen, pos)
  *     elif op == OP_BYTES:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)             # <<<<<<<<<<<<<<
+ *         count = _read_compact_len(buf, buflen, pos)             # <<<<<<<<<<<<<<
  *         p = pos[0]
  *         _need(p, count, buflen)
 */
-    __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__read_compact(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 218, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = __Pyx_PyIndex_AsSsize_t(__pyx_t_2); if (unlikely((__pyx_t_3 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 218, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_v_count = ((Py_ssize_t)__pyx_t_3);
+    __pyx_t_3 = __pyx_f_10scalecodec_13_value_decode__read_compact_len(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1L))) __PYX_ERR(0, 466, __pyx_L1_error)
+    __pyx_v_count = __pyx_t_3;
 
-    /* "scalecodec/_value_decode.pyx":219
+    /* "scalecodec/_value_decode.pyx":467
  *     elif op == OP_BYTES:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+ *         count = _read_compact_len(buf, buflen, pos)
  *         p = pos[0]             # <<<<<<<<<<<<<<
  *         _need(p, count, buflen)
  *         pos[0] = p + count
 */
     __pyx_v_p = (__pyx_v_pos[0]);
 
-    /* "scalecodec/_value_decode.pyx":220
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+    /* "scalecodec/_value_decode.pyx":468
+ *         count = _read_compact_len(buf, buflen, pos)
  *         p = pos[0]
  *         _need(p, count, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + count
- *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
+ *         return _utf8_or_hex(buf + p, count)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_count, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 220, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_count, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 468, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":221
+    /* "scalecodec/_value_decode.pyx":469
  *         p = pos[0]
  *         _need(p, count, buflen)
  *         pos[0] = p + count             # <<<<<<<<<<<<<<
- *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
- *         try:
+ *         return _utf8_or_hex(buf + p, count)
+ *     elif op == OP_VEC:
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + __pyx_v_count);
 
-    /* "scalecodec/_value_decode.pyx":222
+    /* "scalecodec/_value_decode.pyx":470
  *         _need(p, count, buflen)
  *         pos[0] = p + count
- *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)             # <<<<<<<<<<<<<<
- *         try:
- *             return raw.decode()
+ *         return _utf8_or_hex(buf + p, count)             # <<<<<<<<<<<<<<
+ *     elif op == OP_VEC:
+ *         count = _read_compact_len(buf, buflen, pos)
 */
-    __pyx_t_2 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), __pyx_v_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__utf8_or_hex((__pyx_v_buf + __pyx_v_p), __pyx_v_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 470, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_v_raw = ((PyObject*)__pyx_t_2);
+    __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
+    goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":223
- *         pos[0] = p + count
- *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
- *         try:             # <<<<<<<<<<<<<<
- *             return raw.decode()
- *         except UnicodeDecodeError:
-*/
-    {
-      __Pyx_PyThreadState_declare
-      __Pyx_PyThreadState_assign
-      __Pyx_ExceptionSave(&__pyx_t_9, &__pyx_t_10, &__pyx_t_11);
-      __Pyx_XGOTREF(__pyx_t_9);
-      __Pyx_XGOTREF(__pyx_t_10);
-      __Pyx_XGOTREF(__pyx_t_11);
-      /*try:*/ {
-
-        /* "scalecodec/_value_decode.pyx":224
- *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
- *         try:
- *             return raw.decode()             # <<<<<<<<<<<<<<
- *         except UnicodeDecodeError:
- *             return '0x' + raw.hex()
-*/
-        __Pyx_XDECREF(__pyx_r);
-        if (unlikely(__pyx_v_raw == Py_None)) {
-          PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "decode");
-          __PYX_ERR(0, 224, __pyx_L4_error)
-        }
-        __pyx_t_2 = __Pyx_decode_bytes(__pyx_v_raw, 0, PY_SSIZE_T_MAX, NULL, NULL, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 224, __pyx_L4_error)
-        __Pyx_GOTREF(__pyx_t_2);
-        __pyx_r = __pyx_t_2;
-        __pyx_t_2 = 0;
-        goto __pyx_L8_try_return;
-
-        /* "scalecodec/_value_decode.pyx":223
- *         pos[0] = p + count
- *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
- *         try:             # <<<<<<<<<<<<<<
- *             return raw.decode()
- *         except UnicodeDecodeError:
-*/
-      }
-      __pyx_L4_error:;
-      __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-
-      /* "scalecodec/_value_decode.pyx":225
- *         try:
- *             return raw.decode()
- *         except UnicodeDecodeError:             # <<<<<<<<<<<<<<
- *             return '0x' + raw.hex()
- *     elif op == OP_VEC:
-*/
-      __pyx_t_1 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(((PyTypeObject*)PyExc_UnicodeDecodeError))));
-      if (__pyx_t_1) {
-        __Pyx_AddTraceback("scalecodec._value_decode._dec", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_2, &__pyx_t_5, &__pyx_t_8) < 0) __PYX_ERR(0, 225, __pyx_L6_except_error)
-        __Pyx_XGOTREF(__pyx_t_2);
-        __Pyx_XGOTREF(__pyx_t_5);
-        __Pyx_XGOTREF(__pyx_t_8);
-
-        /* "scalecodec/_value_decode.pyx":226
- *             return raw.decode()
- *         except UnicodeDecodeError:
- *             return '0x' + raw.hex()             # <<<<<<<<<<<<<<
- *     elif op == OP_VEC:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
-*/
-        __Pyx_XDECREF(__pyx_r);
-        __pyx_t_6 = __Pyx_CallUnboundCMethod0(&__pyx_mstate_global->__pyx_umethod_PyBytes_Type__hex, __pyx_v_raw); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 226, __pyx_L6_except_error)
-        __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_12 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_0x, __pyx_t_6); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 226, __pyx_L6_except_error)
-        __Pyx_GOTREF(__pyx_t_12);
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __pyx_r = __pyx_t_12;
-        __pyx_t_12 = 0;
-        __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-        goto __pyx_L7_except_return;
-      }
-      goto __pyx_L6_except_error;
-
-      /* "scalecodec/_value_decode.pyx":223
- *         pos[0] = p + count
- *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
- *         try:             # <<<<<<<<<<<<<<
- *             return raw.decode()
- *         except UnicodeDecodeError:
-*/
-      __pyx_L6_except_error:;
-      __Pyx_XGIVEREF(__pyx_t_9);
-      __Pyx_XGIVEREF(__pyx_t_10);
-      __Pyx_XGIVEREF(__pyx_t_11);
-      __Pyx_ExceptionReset(__pyx_t_9, __pyx_t_10, __pyx_t_11);
-      goto __pyx_L1_error;
-      __pyx_L8_try_return:;
-      __Pyx_XGIVEREF(__pyx_t_9);
-      __Pyx_XGIVEREF(__pyx_t_10);
-      __Pyx_XGIVEREF(__pyx_t_11);
-      __Pyx_ExceptionReset(__pyx_t_9, __pyx_t_10, __pyx_t_11);
-      goto __pyx_L0;
-      __pyx_L7_except_return:;
-      __Pyx_XGIVEREF(__pyx_t_9);
-      __Pyx_XGIVEREF(__pyx_t_10);
-      __Pyx_XGIVEREF(__pyx_t_11);
-      __Pyx_ExceptionReset(__pyx_t_9, __pyx_t_10, __pyx_t_11);
-      goto __pyx_L0;
-    }
-
-    /* "scalecodec/_value_decode.pyx":217
+    /* "scalecodec/_value_decode.pyx":465
  *     elif op == OP_COMPACT:
  *         return _read_compact(buf, buflen, pos)
  *     elif op == OP_BYTES:             # <<<<<<<<<<<<<<
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+ *         count = _read_compact_len(buf, buflen, pos)
  *         p = pos[0]
 */
     break;
     case 15:
 
-    /* "scalecodec/_value_decode.pyx":228
- *             return '0x' + raw.hex()
+    /* "scalecodec/_value_decode.pyx":472
+ *         return _utf8_or_hex(buf + p, count)
  *     elif op == OP_VEC:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)             # <<<<<<<<<<<<<<
- *         child = <_Node>nd.children[0]
- *         out = []
-*/
-    __pyx_t_8 = __pyx_f_10scalecodec_13_value_decode__read_compact(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 228, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_3 = __Pyx_PyIndex_AsSsize_t(__pyx_t_8); if (unlikely((__pyx_t_3 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 228, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_v_count = ((Py_ssize_t)__pyx_t_3);
-
-    /* "scalecodec/_value_decode.pyx":229
- *     elif op == OP_VEC:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
- *         child = <_Node>nd.children[0]             # <<<<<<<<<<<<<<
- *         out = []
- *         for i in range(count):
-*/
-    if (unlikely(__pyx_v_nd->children == Py_None)) {
-      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 229, __pyx_L1_error)
-    }
-    __pyx_t_8 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
-    __Pyx_INCREF(__pyx_t_8);
-    __pyx_v_child = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_8);
-    __pyx_t_8 = 0;
-
-    /* "scalecodec/_value_decode.pyx":230
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
- *         child = <_Node>nd.children[0]
- *         out = []             # <<<<<<<<<<<<<<
- *         for i in range(count):
- *             out.append(_dec(child, buf, buflen, pos))
-*/
-    __pyx_t_8 = PyList_New(0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 230, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_v_out = ((PyObject*)__pyx_t_8);
-    __pyx_t_8 = 0;
-
-    /* "scalecodec/_value_decode.pyx":231
- *         child = <_Node>nd.children[0]
- *         out = []
- *         for i in range(count):             # <<<<<<<<<<<<<<
- *             out.append(_dec(child, buf, buflen, pos))
- *         return out
-*/
-    __pyx_t_3 = __pyx_v_count;
-    __pyx_t_13 = __pyx_t_3;
-    for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
-      __pyx_v_i = __pyx_t_14;
-
-      /* "scalecodec/_value_decode.pyx":232
- *         out = []
- *         for i in range(count):
- *             out.append(_dec(child, buf, buflen, pos))             # <<<<<<<<<<<<<<
- *         return out
+ *         count = _read_compact_len(buf, buflen, pos)             # <<<<<<<<<<<<<<
+ *         return _dec_list(<_Node>nd.children[0], count, buf, buflen, pos)
  *     elif op == OP_ARRAY_U8:
 */
-      __pyx_t_8 = __pyx_f_10scalecodec_13_value_decode__dec(__pyx_v_child, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 232, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-      __pyx_t_15 = __Pyx_PyList_Append(__pyx_v_out, __pyx_t_8); if (unlikely(__pyx_t_15 == ((int)-1))) __PYX_ERR(0, 232, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    }
+    __pyx_t_3 = __pyx_f_10scalecodec_13_value_decode__read_compact_len(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1L))) __PYX_ERR(0, 472, __pyx_L1_error)
+    __pyx_v_count = __pyx_t_3;
 
-    /* "scalecodec/_value_decode.pyx":233
- *         for i in range(count):
- *             out.append(_dec(child, buf, buflen, pos))
- *         return out             # <<<<<<<<<<<<<<
+    /* "scalecodec/_value_decode.pyx":473
+ *     elif op == OP_VEC:
+ *         count = _read_compact_len(buf, buflen, pos)
+ *         return _dec_list(<_Node>nd.children[0], count, buf, buflen, pos)             # <<<<<<<<<<<<<<
  *     elif op == OP_ARRAY_U8:
  *         count = nd.n
 */
     __Pyx_XDECREF(__pyx_r);
-    __Pyx_INCREF(__pyx_v_out);
-    __pyx_r = __pyx_v_out;
+    if (unlikely(__pyx_v_nd->children == Py_None)) {
+      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+      __PYX_ERR(0, 473, __pyx_L1_error)
+    }
+    __pyx_t_2 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
+    __Pyx_INCREF(__pyx_t_2);
+    __pyx_t_6 = __pyx_f_10scalecodec_13_value_decode__dec_list(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_2), __pyx_v_count, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 473, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_r = __pyx_t_6;
+    __pyx_t_6 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":227
- *         except UnicodeDecodeError:
- *             return '0x' + raw.hex()
+    /* "scalecodec/_value_decode.pyx":471
+ *         pos[0] = p + count
+ *         return _utf8_or_hex(buf + p, count)
  *     elif op == OP_VEC:             # <<<<<<<<<<<<<<
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
- *         child = <_Node>nd.children[0]
+ *         count = _read_compact_len(buf, buflen, pos)
+ *         return _dec_list(<_Node>nd.children[0], count, buf, buflen, pos)
 */
     break;
     case 16:
 
-    /* "scalecodec/_value_decode.pyx":235
- *         return out
+    /* "scalecodec/_value_decode.pyx":475
+ *         return _dec_list(<_Node>nd.children[0], count, buf, buflen, pos)
  *     elif op == OP_ARRAY_U8:
  *         count = nd.n             # <<<<<<<<<<<<<<
  *         if count == 0:
@@ -18239,7 +20642,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_t_3 = __pyx_v_nd->n;
     __pyx_v_count = __pyx_t_3;
 
-    /* "scalecodec/_value_decode.pyx":236
+    /* "scalecodec/_value_decode.pyx":476
  *     elif op == OP_ARRAY_U8:
  *         count = nd.n
  *         if count == 0:             # <<<<<<<<<<<<<<
@@ -18249,7 +20652,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_t_4 = (__pyx_v_count == 0);
     if (__pyx_t_4) {
 
-      /* "scalecodec/_value_decode.pyx":237
+      /* "scalecodec/_value_decode.pyx":477
  *         count = nd.n
  *         if count == 0:
  *             return []             # <<<<<<<<<<<<<<
@@ -18257,13 +20660,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         pos[0] = p + count
 */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_8 = PyList_New(0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 237, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-      __pyx_r = __pyx_t_8;
-      __pyx_t_8 = 0;
+      __pyx_t_6 = PyList_New(0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 477, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __pyx_r = __pyx_t_6;
+      __pyx_t_6 = 0;
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":236
+      /* "scalecodec/_value_decode.pyx":476
  *     elif op == OP_ARRAY_U8:
  *         count = nd.n
  *         if count == 0:             # <<<<<<<<<<<<<<
@@ -18272,55 +20675,41 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":238
+    /* "scalecodec/_value_decode.pyx":478
  *         if count == 0:
  *             return []
  *         _need(p, count, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + count
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()
+ *         return _hex0x(buf + p, count)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_count, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 238, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_count, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 478, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":239
+    /* "scalecodec/_value_decode.pyx":479
  *             return []
  *         _need(p, count, buflen)
  *         pos[0] = p + count             # <<<<<<<<<<<<<<
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()
+ *         return _hex0x(buf + p, count)
  *     elif op == OP_ARRAY:
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + __pyx_v_count);
 
-    /* "scalecodec/_value_decode.pyx":240
+    /* "scalecodec/_value_decode.pyx":480
  *         _need(p, count, buflen)
  *         pos[0] = p + count
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()             # <<<<<<<<<<<<<<
+ *         return _hex0x(buf + p, count)             # <<<<<<<<<<<<<<
  *     elif op == OP_ARRAY:
- *         child = <_Node>nd.children[0]
+ *         return _dec_list(<_Node>nd.children[0], nd.n, buf, buflen, pos)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), __pyx_v_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 240, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = __pyx_t_2;
-    __Pyx_INCREF(__pyx_t_5);
-    __pyx_t_7 = 0;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_5, NULL};
-      __pyx_t_8 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_hex, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 240, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-    }
-    __pyx_t_2 = __Pyx_PyUnicode_ConcatSafe(__pyx_mstate_global->__pyx_kp_u_0x, __pyx_t_8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 240, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_r = __pyx_t_2;
-    __pyx_t_2 = 0;
+    __pyx_t_6 = __pyx_f_10scalecodec_13_value_decode__hex0x((__pyx_v_buf + __pyx_v_p), __pyx_v_count); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 480, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_r = __pyx_t_6;
+    __pyx_t_6 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":234
- *             out.append(_dec(child, buf, buflen, pos))
- *         return out
+    /* "scalecodec/_value_decode.pyx":474
+ *         count = _read_compact_len(buf, buflen, pos)
+ *         return _dec_list(<_Node>nd.children[0], count, buf, buflen, pos)
  *     elif op == OP_ARRAY_U8:             # <<<<<<<<<<<<<<
  *         count = nd.n
  *         if count == 0:
@@ -18328,94 +20717,50 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 17:
 
-    /* "scalecodec/_value_decode.pyx":242
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()
+    /* "scalecodec/_value_decode.pyx":482
+ *         return _hex0x(buf + p, count)
  *     elif op == OP_ARRAY:
- *         child = <_Node>nd.children[0]             # <<<<<<<<<<<<<<
- *         out = []
- *         for i in range(nd.n):
-*/
-    if (unlikely(__pyx_v_nd->children == Py_None)) {
-      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 242, __pyx_L1_error)
-    }
-    __pyx_t_2 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
-    __Pyx_INCREF(__pyx_t_2);
-    __pyx_v_child = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_2);
-    __pyx_t_2 = 0;
-
-    /* "scalecodec/_value_decode.pyx":243
- *     elif op == OP_ARRAY:
- *         child = <_Node>nd.children[0]
- *         out = []             # <<<<<<<<<<<<<<
- *         for i in range(nd.n):
- *             out.append(_dec(child, buf, buflen, pos))
-*/
-    __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_v_out = ((PyObject*)__pyx_t_2);
-    __pyx_t_2 = 0;
-
-    /* "scalecodec/_value_decode.pyx":244
- *         child = <_Node>nd.children[0]
- *         out = []
- *         for i in range(nd.n):             # <<<<<<<<<<<<<<
- *             out.append(_dec(child, buf, buflen, pos))
- *         return out
-*/
-    __pyx_t_3 = __pyx_v_nd->n;
-    __pyx_t_13 = __pyx_t_3;
-    for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
-      __pyx_v_i = __pyx_t_14;
-
-      /* "scalecodec/_value_decode.pyx":245
- *         out = []
- *         for i in range(nd.n):
- *             out.append(_dec(child, buf, buflen, pos))             # <<<<<<<<<<<<<<
- *         return out
- *     elif op == OP_STRUCT:
-*/
-      __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__dec(__pyx_v_child, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 245, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_15 = __Pyx_PyList_Append(__pyx_v_out, __pyx_t_2); if (unlikely(__pyx_t_15 == ((int)-1))) __PYX_ERR(0, 245, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    }
-
-    /* "scalecodec/_value_decode.pyx":246
- *         for i in range(nd.n):
- *             out.append(_dec(child, buf, buflen, pos))
- *         return out             # <<<<<<<<<<<<<<
+ *         return _dec_list(<_Node>nd.children[0], nd.n, buf, buflen, pos)             # <<<<<<<<<<<<<<
  *     elif op == OP_STRUCT:
  *         d = {}
 */
     __Pyx_XDECREF(__pyx_r);
-    __Pyx_INCREF(__pyx_v_out);
-    __pyx_r = __pyx_v_out;
+    if (unlikely(__pyx_v_nd->children == Py_None)) {
+      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+      __PYX_ERR(0, 482, __pyx_L1_error)
+    }
+    __pyx_t_6 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
+    __Pyx_INCREF(__pyx_t_6);
+    __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__dec_list(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_6), __pyx_v_nd->n, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 482, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __pyx_r = __pyx_t_2;
+    __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":241
+    /* "scalecodec/_value_decode.pyx":481
  *         pos[0] = p + count
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()
+ *         return _hex0x(buf + p, count)
  *     elif op == OP_ARRAY:             # <<<<<<<<<<<<<<
- *         child = <_Node>nd.children[0]
- *         out = []
+ *         return _dec_list(<_Node>nd.children[0], nd.n, buf, buflen, pos)
+ *     elif op == OP_STRUCT:
 */
     break;
     case 18:
 
-    /* "scalecodec/_value_decode.pyx":248
- *         return out
+    /* "scalecodec/_value_decode.pyx":484
+ *         return _dec_list(<_Node>nd.children[0], nd.n, buf, buflen, pos)
  *     elif op == OP_STRUCT:
  *         d = {}             # <<<<<<<<<<<<<<
  *         for i in range(len(nd.children)):
  *             d[nd.keys[i]] = _dec(<_Node>nd.children[i], buf, buflen, pos)
 */
-    __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 248, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 484, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_v_d = ((PyObject*)__pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "scalecodec/_value_decode.pyx":249
+    /* "scalecodec/_value_decode.pyx":485
  *     elif op == OP_STRUCT:
  *         d = {}
  *         for i in range(len(nd.children)):             # <<<<<<<<<<<<<<
@@ -18426,15 +20771,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __Pyx_INCREF(__pyx_t_2);
     if (unlikely(__pyx_t_2 == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 249, __pyx_L1_error)
+      __PYX_ERR(0, 485, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_t_2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 249, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_t_2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 485, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_13 = __pyx_t_3;
-    for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
-      __pyx_v_i = __pyx_t_14;
+    __pyx_t_8 = __pyx_t_3;
+    for (__pyx_t_9 = 0; __pyx_t_9 < __pyx_t_8; __pyx_t_9+=1) {
+      __pyx_v_i = __pyx_t_9;
 
-      /* "scalecodec/_value_decode.pyx":250
+      /* "scalecodec/_value_decode.pyx":486
  *         d = {}
  *         for i in range(len(nd.children)):
  *             d[nd.keys[i]] = _dec(<_Node>nd.children[i], buf, buflen, pos)             # <<<<<<<<<<<<<<
@@ -18443,36 +20788,36 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
       if (unlikely(__pyx_v_nd->children == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 250, __pyx_L1_error)
+        __PYX_ERR(0, 486, __pyx_L1_error)
       }
       __pyx_t_2 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, __pyx_v_i);
       __Pyx_INCREF(__pyx_t_2);
-      __pyx_t_8 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_2), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 250, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
+      __pyx_t_6 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_2), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 486, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       if (unlikely(__pyx_v_nd->keys == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 250, __pyx_L1_error)
+        __PYX_ERR(0, 486, __pyx_L1_error)
       }
-      if (unlikely((PyDict_SetItem(__pyx_v_d, __Pyx_PyList_GET_ITEM(__pyx_v_nd->keys, __pyx_v_i), __pyx_t_8) < 0))) __PYX_ERR(0, 250, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+      if (unlikely((PyDict_SetItem(__pyx_v_d, __Pyx_PyList_GET_ITEM(__pyx_v_nd->keys, __pyx_v_i), __pyx_t_6) < 0))) __PYX_ERR(0, 486, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     }
 
-    /* "scalecodec/_value_decode.pyx":251
+    /* "scalecodec/_value_decode.pyx":487
  *         for i in range(len(nd.children)):
  *             d[nd.keys[i]] = _dec(<_Node>nd.children[i], buf, buflen, pos)
  *         return d             # <<<<<<<<<<<<<<
  *     elif op == OP_TUPLE:
- *         out = []
+ *         count = len(nd.children)
 */
     __Pyx_XDECREF(__pyx_r);
     __Pyx_INCREF(__pyx_v_d);
     __pyx_r = __pyx_v_d;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":247
- *             out.append(_dec(child, buf, buflen, pos))
- *         return out
+    /* "scalecodec/_value_decode.pyx":483
+ *     elif op == OP_ARRAY:
+ *         return _dec_list(<_Node>nd.children[0], nd.n, buf, buflen, pos)
  *     elif op == OP_STRUCT:             # <<<<<<<<<<<<<<
  *         d = {}
  *         for i in range(len(nd.children)):
@@ -18480,92 +20825,118 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 19:
 
-    /* "scalecodec/_value_decode.pyx":253
+    /* "scalecodec/_value_decode.pyx":489
  *         return d
  *     elif op == OP_TUPLE:
- *         out = []             # <<<<<<<<<<<<<<
- *         for i in range(len(nd.children)):
- *             out.append(_dec(<_Node>nd.children[i], buf, buflen, pos))
+ *         count = len(nd.children)             # <<<<<<<<<<<<<<
+ *         v = PyTuple_New(count)
+ *         for i in range(count):
 */
-    __pyx_t_8 = PyList_New(0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 253, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_v_out = ((PyObject*)__pyx_t_8);
-    __pyx_t_8 = 0;
-
-    /* "scalecodec/_value_decode.pyx":254
- *     elif op == OP_TUPLE:
- *         out = []
- *         for i in range(len(nd.children)):             # <<<<<<<<<<<<<<
- *             out.append(_dec(<_Node>nd.children[i], buf, buflen, pos))
- *         return tuple(out)
-*/
-    __pyx_t_8 = __pyx_v_nd->children;
-    __Pyx_INCREF(__pyx_t_8);
-    if (unlikely(__pyx_t_8 == Py_None)) {
+    __pyx_t_6 = __pyx_v_nd->children;
+    __Pyx_INCREF(__pyx_t_6);
+    if (unlikely(__pyx_t_6 == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 254, __pyx_L1_error)
+      __PYX_ERR(0, 489, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_t_8); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 254, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_13 = __pyx_t_3;
-    for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
-      __pyx_v_i = __pyx_t_14;
+    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_t_6); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 489, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __pyx_v_count = __pyx_t_3;
 
-      /* "scalecodec/_value_decode.pyx":255
- *         out = []
- *         for i in range(len(nd.children)):
- *             out.append(_dec(<_Node>nd.children[i], buf, buflen, pos))             # <<<<<<<<<<<<<<
- *         return tuple(out)
- *     elif op == OP_TUPLE1 or op == OP_WRAP:
+    /* "scalecodec/_value_decode.pyx":490
+ *     elif op == OP_TUPLE:
+ *         count = len(nd.children)
+ *         v = PyTuple_New(count)             # <<<<<<<<<<<<<<
+ *         for i in range(count):
+ *             item = _dec(<_Node>nd.children[i], buf, buflen, pos)
+*/
+    __pyx_t_6 = PyTuple_New(__pyx_v_count); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 490, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_v_v = __pyx_t_6;
+    __pyx_t_6 = 0;
+
+    /* "scalecodec/_value_decode.pyx":491
+ *         count = len(nd.children)
+ *         v = PyTuple_New(count)
+ *         for i in range(count):             # <<<<<<<<<<<<<<
+ *             item = _dec(<_Node>nd.children[i], buf, buflen, pos)
+ *             Py_INCREF(item)
+*/
+    __pyx_t_3 = __pyx_v_count;
+    __pyx_t_8 = __pyx_t_3;
+    for (__pyx_t_9 = 0; __pyx_t_9 < __pyx_t_8; __pyx_t_9+=1) {
+      __pyx_v_i = __pyx_t_9;
+
+      /* "scalecodec/_value_decode.pyx":492
+ *         v = PyTuple_New(count)
+ *         for i in range(count):
+ *             item = _dec(<_Node>nd.children[i], buf, buflen, pos)             # <<<<<<<<<<<<<<
+ *             Py_INCREF(item)
+ *             PyTuple_SET_ITEM(v, i, item)
 */
       if (unlikely(__pyx_v_nd->children == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 255, __pyx_L1_error)
+        __PYX_ERR(0, 492, __pyx_L1_error)
       }
-      __pyx_t_8 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, __pyx_v_i);
-      __Pyx_INCREF(__pyx_t_8);
-      __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_8), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, __pyx_v_i);
+      __Pyx_INCREF(__pyx_t_6);
+      __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_6), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 492, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      __pyx_t_15 = __Pyx_PyList_Append(__pyx_v_out, __pyx_t_2); if (unlikely(__pyx_t_15 == ((int)-1))) __PYX_ERR(0, 255, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_XDECREF_SET(__pyx_v_item, __pyx_t_2);
+      __pyx_t_2 = 0;
+
+      /* "scalecodec/_value_decode.pyx":493
+ *         for i in range(count):
+ *             item = _dec(<_Node>nd.children[i], buf, buflen, pos)
+ *             Py_INCREF(item)             # <<<<<<<<<<<<<<
+ *             PyTuple_SET_ITEM(v, i, item)
+ *         return v
+*/
+      Py_INCREF(__pyx_v_item);
+
+      /* "scalecodec/_value_decode.pyx":494
+ *             item = _dec(<_Node>nd.children[i], buf, buflen, pos)
+ *             Py_INCREF(item)
+ *             PyTuple_SET_ITEM(v, i, item)             # <<<<<<<<<<<<<<
+ *         return v
+ *     elif op == OP_TUPLE1 or op == OP_WRAP:
+*/
+      PyTuple_SET_ITEM(__pyx_v_v, __pyx_v_i, __pyx_v_item);
     }
 
-    /* "scalecodec/_value_decode.pyx":256
- *         for i in range(len(nd.children)):
- *             out.append(_dec(<_Node>nd.children[i], buf, buflen, pos))
- *         return tuple(out)             # <<<<<<<<<<<<<<
+    /* "scalecodec/_value_decode.pyx":495
+ *             Py_INCREF(item)
+ *             PyTuple_SET_ITEM(v, i, item)
+ *         return v             # <<<<<<<<<<<<<<
  *     elif op == OP_TUPLE1 or op == OP_WRAP:
  *         return _dec(<_Node>nd.children[0], buf, buflen, pos)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = PyList_AsTuple(__pyx_v_out); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 256, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_r = __pyx_t_2;
-    __pyx_t_2 = 0;
+    __Pyx_INCREF(__pyx_v_v);
+    __pyx_r = __pyx_v_v;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":252
+    /* "scalecodec/_value_decode.pyx":488
  *             d[nd.keys[i]] = _dec(<_Node>nd.children[i], buf, buflen, pos)
  *         return d
  *     elif op == OP_TUPLE:             # <<<<<<<<<<<<<<
- *         out = []
- *         for i in range(len(nd.children)):
+ *         count = len(nd.children)
+ *         v = PyTuple_New(count)
 */
     break;
     case 20:
 
-    /* "scalecodec/_value_decode.pyx":257
- *             out.append(_dec(<_Node>nd.children[i], buf, buflen, pos))
- *         return tuple(out)
+    /* "scalecodec/_value_decode.pyx":496
+ *             PyTuple_SET_ITEM(v, i, item)
+ *         return v
  *     elif op == OP_TUPLE1 or op == OP_WRAP:             # <<<<<<<<<<<<<<
  *         return _dec(<_Node>nd.children[0], buf, buflen, pos)
  *     elif op == OP_ENUM:
 */
     case 31:
 
-    /* "scalecodec/_value_decode.pyx":258
- *         return tuple(out)
+    /* "scalecodec/_value_decode.pyx":497
+ *         return v
  *     elif op == OP_TUPLE1 or op == OP_WRAP:
  *         return _dec(<_Node>nd.children[0], buf, buflen, pos)             # <<<<<<<<<<<<<<
  *     elif op == OP_ENUM:
@@ -18574,20 +20945,20 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __Pyx_XDECREF(__pyx_r);
     if (unlikely(__pyx_v_nd->children == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 258, __pyx_L1_error)
+      __PYX_ERR(0, 497, __pyx_L1_error)
     }
     __pyx_t_2 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
     __Pyx_INCREF(__pyx_t_2);
-    __pyx_t_8 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_2), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 258, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_6 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_2), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 497, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_r = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_r = __pyx_t_6;
+    __pyx_t_6 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":257
- *             out.append(_dec(<_Node>nd.children[i], buf, buflen, pos))
- *         return tuple(out)
+    /* "scalecodec/_value_decode.pyx":496
+ *             PyTuple_SET_ITEM(v, i, item)
+ *         return v
  *     elif op == OP_TUPLE1 or op == OP_WRAP:             # <<<<<<<<<<<<<<
  *         return _dec(<_Node>nd.children[0], buf, buflen, pos)
  *     elif op == OP_ENUM:
@@ -18595,16 +20966,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 21:
 
-    /* "scalecodec/_value_decode.pyx":260
+    /* "scalecodec/_value_decode.pyx":499
  *         return _dec(<_Node>nd.children[0], buf, buflen, pos)
  *     elif op == OP_ENUM:
  *         _need(p, 1, buflen)             # <<<<<<<<<<<<<<
  *         idx = buf[p]
  *         pos[0] = p + 1
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 260, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 499, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":261
+    /* "scalecodec/_value_decode.pyx":500
  *     elif op == OP_ENUM:
  *         _need(p, 1, buflen)
  *         idx = buf[p]             # <<<<<<<<<<<<<<
@@ -18613,7 +20984,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __pyx_v_idx = (__pyx_v_buf[__pyx_v_p]);
 
-    /* "scalecodec/_value_decode.pyx":262
+    /* "scalecodec/_value_decode.pyx":501
  *         _need(p, 1, buflen)
  *         idx = buf[p]
  *         pos[0] = p + 1             # <<<<<<<<<<<<<<
@@ -18622,25 +20993,25 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 1);
 
-    /* "scalecodec/_value_decode.pyx":263
+    /* "scalecodec/_value_decode.pyx":502
  *         idx = buf[p]
  *         pos[0] = p + 1
  *         if idx >= len(nd.children):             # <<<<<<<<<<<<<<
  *             raise ValueError("Index '{}' not present in Enum type mapping".format(idx))
  *         v = nd.keys[idx]
 */
-    __pyx_t_8 = __pyx_v_nd->children;
-    __Pyx_INCREF(__pyx_t_8);
-    if (unlikely(__pyx_t_8 == Py_None)) {
+    __pyx_t_6 = __pyx_v_nd->children;
+    __Pyx_INCREF(__pyx_t_6);
+    if (unlikely(__pyx_t_6 == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 263, __pyx_L1_error)
+      __PYX_ERR(0, 502, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_t_8); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 263, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_t_6); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 502, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_4 = (__pyx_v_idx >= __pyx_t_3);
     if (unlikely(__pyx_t_4)) {
 
-      /* "scalecodec/_value_decode.pyx":264
+      /* "scalecodec/_value_decode.pyx":503
  *         pos[0] = p + 1
  *         if idx >= len(nd.children):
  *             raise ValueError("Index '{}' not present in Enum type mapping".format(idx))             # <<<<<<<<<<<<<<
@@ -18648,33 +21019,33 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         child = <_Node>nd.children[idx]
 */
       __pyx_t_2 = NULL;
-      __pyx_t_12 = __pyx_mstate_global->__pyx_kp_u_Index_not_present_in_Enum_type_m;
-      __Pyx_INCREF(__pyx_t_12);
-      __pyx_t_6 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 264, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
+      __pyx_t_10 = __pyx_mstate_global->__pyx_kp_u_Index_not_present_in_Enum_type_m;
+      __Pyx_INCREF(__pyx_t_10);
+      __pyx_t_11 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 503, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_11);
       __pyx_t_7 = 0;
       {
-        PyObject *__pyx_callargs[2] = {__pyx_t_12, __pyx_t_6};
+        PyObject *__pyx_callargs[2] = {__pyx_t_10, __pyx_t_11};
         __pyx_t_5 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_format, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 264, __pyx_L1_error)
+        __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+        __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 503, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
       }
       __pyx_t_7 = 1;
       {
         PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_t_5};
-        __pyx_t_8 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __pyx_t_6 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 264, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_8);
+        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 503, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_6);
       }
-      __Pyx_Raise(__pyx_t_8, 0, 0, 0);
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      __PYX_ERR(0, 264, __pyx_L1_error)
+      __Pyx_Raise(__pyx_t_6, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __PYX_ERR(0, 503, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":263
+      /* "scalecodec/_value_decode.pyx":502
  *         idx = buf[p]
  *         pos[0] = p + 1
  *         if idx >= len(nd.children):             # <<<<<<<<<<<<<<
@@ -18683,7 +21054,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":265
+    /* "scalecodec/_value_decode.pyx":504
  *         if idx >= len(nd.children):
  *             raise ValueError("Index '{}' not present in Enum type mapping".format(idx))
  *         v = nd.keys[idx]             # <<<<<<<<<<<<<<
@@ -18692,14 +21063,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_nd->keys == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 265, __pyx_L1_error)
+      __PYX_ERR(0, 504, __pyx_L1_error)
     }
-    __pyx_t_8 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->keys, __pyx_v_idx);
-    __Pyx_INCREF(__pyx_t_8);
-    __pyx_v_v = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_t_6 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->keys, __pyx_v_idx);
+    __Pyx_INCREF(__pyx_t_6);
+    __pyx_v_v = __pyx_t_6;
+    __pyx_t_6 = 0;
 
-    /* "scalecodec/_value_decode.pyx":266
+    /* "scalecodec/_value_decode.pyx":505
  *             raise ValueError("Index '{}' not present in Enum type mapping".format(idx))
  *         v = nd.keys[idx]
  *         child = <_Node>nd.children[idx]             # <<<<<<<<<<<<<<
@@ -18708,14 +21079,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_nd->children == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 266, __pyx_L1_error)
+      __PYX_ERR(0, 505, __pyx_L1_error)
     }
-    __pyx_t_8 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, __pyx_v_idx);
-    __Pyx_INCREF(__pyx_t_8);
-    __pyx_v_child = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_8);
-    __pyx_t_8 = 0;
+    __pyx_t_6 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, __pyx_v_idx);
+    __Pyx_INCREF(__pyx_t_6);
+    __pyx_v_child = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_6);
+    __pyx_t_6 = 0;
 
-    /* "scalecodec/_value_decode.pyx":267
+    /* "scalecodec/_value_decode.pyx":506
  *         v = nd.keys[idx]
  *         child = <_Node>nd.children[idx]
  *         if child is None:             # <<<<<<<<<<<<<<
@@ -18725,7 +21096,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_t_4 = (((PyObject *)__pyx_v_child) == Py_None);
     if (__pyx_t_4) {
 
-      /* "scalecodec/_value_decode.pyx":270
+      /* "scalecodec/_value_decode.pyx":509
  *             # unit variant  including (None, 'Null') gap placeholders, which the
  *             # classic path also decodes to the bare variant name (None)
  *             return v             # <<<<<<<<<<<<<<
@@ -18737,7 +21108,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
       __pyx_r = __pyx_v_v;
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":267
+      /* "scalecodec/_value_decode.pyx":506
  *         v = nd.keys[idx]
  *         child = <_Node>nd.children[idx]
  *         if child is None:             # <<<<<<<<<<<<<<
@@ -18746,7 +21117,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":271
+    /* "scalecodec/_value_decode.pyx":510
  *             # classic path also decodes to the bare variant name (None)
  *             return v
  *         return {v: _dec(child, buf, buflen, pos)}             # <<<<<<<<<<<<<<
@@ -18754,17 +21125,17 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         _need(p, 1, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_8 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 271, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_5 = __pyx_f_10scalecodec_13_value_decode__dec(__pyx_v_child, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 271, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 510, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_t_5 = __pyx_f_10scalecodec_13_value_decode__dec(__pyx_v_child, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 510, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    if (PyDict_SetItem(__pyx_t_8, __pyx_v_v, __pyx_t_5) < (0)) __PYX_ERR(0, 271, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_6, __pyx_v_v, __pyx_t_5) < (0)) __PYX_ERR(0, 510, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_r = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_r = __pyx_t_6;
+    __pyx_t_6 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":259
+    /* "scalecodec/_value_decode.pyx":498
  *     elif op == OP_TUPLE1 or op == OP_WRAP:
  *         return _dec(<_Node>nd.children[0], buf, buflen, pos)
  *     elif op == OP_ENUM:             # <<<<<<<<<<<<<<
@@ -18774,16 +21145,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 22:
 
-    /* "scalecodec/_value_decode.pyx":273
+    /* "scalecodec/_value_decode.pyx":512
  *         return {v: _dec(child, buf, buflen, pos)}
  *     elif op == OP_ENUM_VALUES:
  *         _need(p, 1, buflen)             # <<<<<<<<<<<<<<
  *         idx = buf[p]
  *         pos[0] = p + 1
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 273, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 512, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":274
+    /* "scalecodec/_value_decode.pyx":513
  *     elif op == OP_ENUM_VALUES:
  *         _need(p, 1, buflen)
  *         idx = buf[p]             # <<<<<<<<<<<<<<
@@ -18792,7 +21163,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __pyx_v_idx = (__pyx_v_buf[__pyx_v_p]);
 
-    /* "scalecodec/_value_decode.pyx":275
+    /* "scalecodec/_value_decode.pyx":514
  *         _need(p, 1, buflen)
  *         idx = buf[p]
  *         pos[0] = p + 1             # <<<<<<<<<<<<<<
@@ -18801,25 +21172,25 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 1);
 
-    /* "scalecodec/_value_decode.pyx":276
+    /* "scalecodec/_value_decode.pyx":515
  *         idx = buf[p]
  *         pos[0] = p + 1
  *         if idx >= len(<list>nd.aux):             # <<<<<<<<<<<<<<
  *             raise ValueError("Index '{}' not present in Enum value list".format(idx))
  *         return (<list>nd.aux)[idx]
 */
-    __pyx_t_8 = __pyx_v_nd->aux;
-    __Pyx_INCREF(__pyx_t_8);
-    if (unlikely(__pyx_t_8 == Py_None)) {
+    __pyx_t_6 = __pyx_v_nd->aux;
+    __Pyx_INCREF(__pyx_t_6);
+    if (unlikely(__pyx_t_6 == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 276, __pyx_L1_error)
+      __PYX_ERR(0, 515, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_t_8); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 276, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_t_6); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 515, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_4 = (__pyx_v_idx >= __pyx_t_3);
     if (unlikely(__pyx_t_4)) {
 
-      /* "scalecodec/_value_decode.pyx":277
+      /* "scalecodec/_value_decode.pyx":516
  *         pos[0] = p + 1
  *         if idx >= len(<list>nd.aux):
  *             raise ValueError("Index '{}' not present in Enum value list".format(idx))             # <<<<<<<<<<<<<<
@@ -18827,33 +21198,33 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *     elif op == OP_OPTION:
 */
       __pyx_t_5 = NULL;
-      __pyx_t_6 = __pyx_mstate_global->__pyx_kp_u_Index_not_present_in_Enum_value;
-      __Pyx_INCREF(__pyx_t_6);
-      __pyx_t_12 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 277, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_12);
+      __pyx_t_11 = __pyx_mstate_global->__pyx_kp_u_Index_not_present_in_Enum_value;
+      __Pyx_INCREF(__pyx_t_11);
+      __pyx_t_10 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 516, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_10);
       __pyx_t_7 = 0;
       {
-        PyObject *__pyx_callargs[2] = {__pyx_t_6, __pyx_t_12};
+        PyObject *__pyx_callargs[2] = {__pyx_t_11, __pyx_t_10};
         __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_format, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 277, __pyx_L1_error)
+        __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
+        __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 516, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
       }
       __pyx_t_7 = 1;
       {
         PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_2};
-        __pyx_t_8 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __pyx_t_6 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 277, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_8);
+        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 516, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_6);
       }
-      __Pyx_Raise(__pyx_t_8, 0, 0, 0);
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      __PYX_ERR(0, 277, __pyx_L1_error)
+      __Pyx_Raise(__pyx_t_6, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __PYX_ERR(0, 516, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":276
+      /* "scalecodec/_value_decode.pyx":515
  *         idx = buf[p]
  *         pos[0] = p + 1
  *         if idx >= len(<list>nd.aux):             # <<<<<<<<<<<<<<
@@ -18862,7 +21233,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":278
+    /* "scalecodec/_value_decode.pyx":517
  *         if idx >= len(<list>nd.aux):
  *             raise ValueError("Index '{}' not present in Enum value list".format(idx))
  *         return (<list>nd.aux)[idx]             # <<<<<<<<<<<<<<
@@ -18872,13 +21243,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __Pyx_XDECREF(__pyx_r);
     if (unlikely(__pyx_v_nd->aux == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 278, __pyx_L1_error)
+      __PYX_ERR(0, 517, __pyx_L1_error)
     }
     __Pyx_INCREF(__Pyx_PyList_GET_ITEM(((PyObject*)__pyx_v_nd->aux), __pyx_v_idx));
     __pyx_r = __Pyx_PyList_GET_ITEM(((PyObject*)__pyx_v_nd->aux), __pyx_v_idx);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":272
+    /* "scalecodec/_value_decode.pyx":511
  *             return v
  *         return {v: _dec(child, buf, buflen, pos)}
  *     elif op == OP_ENUM_VALUES:             # <<<<<<<<<<<<<<
@@ -18888,16 +21259,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 23:
 
-    /* "scalecodec/_value_decode.pyx":280
+    /* "scalecodec/_value_decode.pyx":519
  *         return (<list>nd.aux)[idx]
  *     elif op == OP_OPTION:
  *         _need(p, 1, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 1
  *         if nd.children is not None and buf[p] != 0:
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 280, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 519, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":281
+    /* "scalecodec/_value_decode.pyx":520
  *     elif op == OP_OPTION:
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1             # <<<<<<<<<<<<<<
@@ -18906,25 +21277,25 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 1);
 
-    /* "scalecodec/_value_decode.pyx":282
+    /* "scalecodec/_value_decode.pyx":521
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1
  *         if nd.children is not None and buf[p] != 0:             # <<<<<<<<<<<<<<
  *             return _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         return None
 */
-    __pyx_t_16 = (__pyx_v_nd->children != ((PyObject*)Py_None));
-    if (__pyx_t_16) {
+    __pyx_t_12 = (__pyx_v_nd->children != ((PyObject*)Py_None));
+    if (__pyx_t_12) {
     } else {
-      __pyx_t_4 = __pyx_t_16;
-      goto __pyx_L25_bool_binop_done;
+      __pyx_t_4 = __pyx_t_12;
+      goto __pyx_L13_bool_binop_done;
     }
-    __pyx_t_16 = ((__pyx_v_buf[__pyx_v_p]) != 0);
-    __pyx_t_4 = __pyx_t_16;
-    __pyx_L25_bool_binop_done:;
+    __pyx_t_12 = ((__pyx_v_buf[__pyx_v_p]) != 0);
+    __pyx_t_4 = __pyx_t_12;
+    __pyx_L13_bool_binop_done:;
     if (__pyx_t_4) {
 
-      /* "scalecodec/_value_decode.pyx":283
+      /* "scalecodec/_value_decode.pyx":522
  *         pos[0] = p + 1
  *         if nd.children is not None and buf[p] != 0:
  *             return _dec(<_Node>nd.children[0], buf, buflen, pos)             # <<<<<<<<<<<<<<
@@ -18934,18 +21305,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
       __Pyx_XDECREF(__pyx_r);
       if (unlikely(__pyx_v_nd->children == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 283, __pyx_L1_error)
+        __PYX_ERR(0, 522, __pyx_L1_error)
       }
-      __pyx_t_8 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
-      __Pyx_INCREF(__pyx_t_8);
-      __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_8), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 283, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
+      __Pyx_INCREF(__pyx_t_6);
+      __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_6), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 522, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __pyx_r = __pyx_t_2;
       __pyx_t_2 = 0;
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":282
+      /* "scalecodec/_value_decode.pyx":521
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1
  *         if nd.children is not None and buf[p] != 0:             # <<<<<<<<<<<<<<
@@ -18954,7 +21325,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":284
+    /* "scalecodec/_value_decode.pyx":523
  *         if nd.children is not None and buf[p] != 0:
  *             return _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         return None             # <<<<<<<<<<<<<<
@@ -18965,7 +21336,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":279
+    /* "scalecodec/_value_decode.pyx":518
  *             raise ValueError("Index '{}' not present in Enum value list".format(idx))
  *         return (<list>nd.aux)[idx]
  *     elif op == OP_OPTION:             # <<<<<<<<<<<<<<
@@ -18975,211 +21346,97 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 35:
 
-    /* "scalecodec/_value_decode.pyx":286
+    /* "scalecodec/_value_decode.pyx":525
  *         return None
  *     elif op == OP_OPTION_BYTES:
  *         _need(p, 1, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 1
  *         if buf[p] != 0:
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 286, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 525, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":287
+    /* "scalecodec/_value_decode.pyx":526
  *     elif op == OP_OPTION_BYTES:
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1             # <<<<<<<<<<<<<<
  *         if buf[p] != 0:
- *             count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+ *             count = _read_compact_len(buf, buflen, pos)
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 1);
 
-    /* "scalecodec/_value_decode.pyx":288
+    /* "scalecodec/_value_decode.pyx":527
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1
  *         if buf[p] != 0:             # <<<<<<<<<<<<<<
- *             count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+ *             count = _read_compact_len(buf, buflen, pos)
  *             p = pos[0]
 */
     __pyx_t_4 = ((__pyx_v_buf[__pyx_v_p]) != 0);
     if (__pyx_t_4) {
 
-      /* "scalecodec/_value_decode.pyx":289
+      /* "scalecodec/_value_decode.pyx":528
  *         pos[0] = p + 1
  *         if buf[p] != 0:
- *             count = <Py_ssize_t>_read_compact(buf, buflen, pos)             # <<<<<<<<<<<<<<
+ *             count = _read_compact_len(buf, buflen, pos)             # <<<<<<<<<<<<<<
  *             p = pos[0]
  *             _need(p, count, buflen)
 */
-      __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__read_compact(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 289, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_3 = __Pyx_PyIndex_AsSsize_t(__pyx_t_2); if (unlikely((__pyx_t_3 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 289, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_v_count = ((Py_ssize_t)__pyx_t_3);
+      __pyx_t_3 = __pyx_f_10scalecodec_13_value_decode__read_compact_len(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1L))) __PYX_ERR(0, 528, __pyx_L1_error)
+      __pyx_v_count = __pyx_t_3;
 
-      /* "scalecodec/_value_decode.pyx":290
+      /* "scalecodec/_value_decode.pyx":529
  *         if buf[p] != 0:
- *             count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+ *             count = _read_compact_len(buf, buflen, pos)
  *             p = pos[0]             # <<<<<<<<<<<<<<
  *             _need(p, count, buflen)
  *             pos[0] = p + count
 */
       __pyx_v_p = (__pyx_v_pos[0]);
 
-      /* "scalecodec/_value_decode.pyx":291
- *             count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+      /* "scalecodec/_value_decode.pyx":530
+ *             count = _read_compact_len(buf, buflen, pos)
  *             p = pos[0]
  *             _need(p, count, buflen)             # <<<<<<<<<<<<<<
  *             pos[0] = p + count
- *             raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
+ *             return _utf8_or_hex(buf + p, count)
 */
-      __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_count, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_count, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 530, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":292
+      /* "scalecodec/_value_decode.pyx":531
  *             p = pos[0]
  *             _need(p, count, buflen)
  *             pos[0] = p + count             # <<<<<<<<<<<<<<
- *             raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
- *             try:
+ *             return _utf8_or_hex(buf + p, count)
+ *         return None
 */
       (__pyx_v_pos[0]) = (__pyx_v_p + __pyx_v_count);
 
-      /* "scalecodec/_value_decode.pyx":293
+      /* "scalecodec/_value_decode.pyx":532
  *             _need(p, count, buflen)
  *             pos[0] = p + count
- *             raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)             # <<<<<<<<<<<<<<
- *             try:
- *                 return raw.decode()
-*/
-      __pyx_t_2 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), __pyx_v_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 293, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      __pyx_v_raw = ((PyObject*)__pyx_t_2);
-      __pyx_t_2 = 0;
-
-      /* "scalecodec/_value_decode.pyx":294
- *             pos[0] = p + count
- *             raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
- *             try:             # <<<<<<<<<<<<<<
- *                 return raw.decode()
- *             except UnicodeDecodeError:
-*/
-      {
-        __Pyx_PyThreadState_declare
-        __Pyx_PyThreadState_assign
-        __Pyx_ExceptionSave(&__pyx_t_11, &__pyx_t_10, &__pyx_t_9);
-        __Pyx_XGOTREF(__pyx_t_11);
-        __Pyx_XGOTREF(__pyx_t_10);
-        __Pyx_XGOTREF(__pyx_t_9);
-        /*try:*/ {
-
-          /* "scalecodec/_value_decode.pyx":295
- *             raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
- *             try:
- *                 return raw.decode()             # <<<<<<<<<<<<<<
- *             except UnicodeDecodeError:
- *                 return '0x' + raw.hex()
-*/
-          __Pyx_XDECREF(__pyx_r);
-          if (unlikely(__pyx_v_raw == Py_None)) {
-            PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "decode");
-            __PYX_ERR(0, 295, __pyx_L28_error)
-          }
-          __pyx_t_2 = __Pyx_decode_bytes(__pyx_v_raw, 0, PY_SSIZE_T_MAX, NULL, NULL, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 295, __pyx_L28_error)
-          __Pyx_GOTREF(__pyx_t_2);
-          __pyx_r = __pyx_t_2;
-          __pyx_t_2 = 0;
-          goto __pyx_L32_try_return;
-
-          /* "scalecodec/_value_decode.pyx":294
- *             pos[0] = p + count
- *             raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
- *             try:             # <<<<<<<<<<<<<<
- *                 return raw.decode()
- *             except UnicodeDecodeError:
-*/
-        }
-        __pyx_L28_error:;
-        __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-        __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-
-        /* "scalecodec/_value_decode.pyx":296
- *             try:
- *                 return raw.decode()
- *             except UnicodeDecodeError:             # <<<<<<<<<<<<<<
- *                 return '0x' + raw.hex()
- *         return None
-*/
-        __pyx_t_1 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(((PyTypeObject*)PyExc_UnicodeDecodeError))));
-        if (__pyx_t_1) {
-          __Pyx_AddTraceback("scalecodec._value_decode._dec", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_2, &__pyx_t_8, &__pyx_t_5) < 0) __PYX_ERR(0, 296, __pyx_L30_except_error)
-          __Pyx_XGOTREF(__pyx_t_2);
-          __Pyx_XGOTREF(__pyx_t_8);
-          __Pyx_XGOTREF(__pyx_t_5);
-
-          /* "scalecodec/_value_decode.pyx":297
- *                 return raw.decode()
- *             except UnicodeDecodeError:
- *                 return '0x' + raw.hex()             # <<<<<<<<<<<<<<
+ *             return _utf8_or_hex(buf + p, count)             # <<<<<<<<<<<<<<
  *         return None
  *     elif op == OP_ACCOUNT_ID:
 */
-          __Pyx_XDECREF(__pyx_r);
-          __pyx_t_12 = __Pyx_CallUnboundCMethod0(&__pyx_mstate_global->__pyx_umethod_PyBytes_Type__hex, __pyx_v_raw); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 297, __pyx_L30_except_error)
-          __Pyx_GOTREF(__pyx_t_12);
-          __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_0x, __pyx_t_12); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 297, __pyx_L30_except_error)
-          __Pyx_GOTREF(__pyx_t_6);
-          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-          __pyx_r = __pyx_t_6;
-          __pyx_t_6 = 0;
-          __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-          __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-          goto __pyx_L31_except_return;
-        }
-        goto __pyx_L30_except_error;
+      __Pyx_XDECREF(__pyx_r);
+      __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__utf8_or_hex((__pyx_v_buf + __pyx_v_p), __pyx_v_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 532, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __pyx_r = __pyx_t_2;
+      __pyx_t_2 = 0;
+      goto __pyx_L0;
 
-        /* "scalecodec/_value_decode.pyx":294
- *             pos[0] = p + count
- *             raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
- *             try:             # <<<<<<<<<<<<<<
- *                 return raw.decode()
- *             except UnicodeDecodeError:
-*/
-        __pyx_L30_except_error:;
-        __Pyx_XGIVEREF(__pyx_t_11);
-        __Pyx_XGIVEREF(__pyx_t_10);
-        __Pyx_XGIVEREF(__pyx_t_9);
-        __Pyx_ExceptionReset(__pyx_t_11, __pyx_t_10, __pyx_t_9);
-        goto __pyx_L1_error;
-        __pyx_L32_try_return:;
-        __Pyx_XGIVEREF(__pyx_t_11);
-        __Pyx_XGIVEREF(__pyx_t_10);
-        __Pyx_XGIVEREF(__pyx_t_9);
-        __Pyx_ExceptionReset(__pyx_t_11, __pyx_t_10, __pyx_t_9);
-        goto __pyx_L0;
-        __pyx_L31_except_return:;
-        __Pyx_XGIVEREF(__pyx_t_11);
-        __Pyx_XGIVEREF(__pyx_t_10);
-        __Pyx_XGIVEREF(__pyx_t_9);
-        __Pyx_ExceptionReset(__pyx_t_11, __pyx_t_10, __pyx_t_9);
-        goto __pyx_L0;
-      }
-
-      /* "scalecodec/_value_decode.pyx":288
+      /* "scalecodec/_value_decode.pyx":527
  *         _need(p, 1, buflen)
  *         pos[0] = p + 1
  *         if buf[p] != 0:             # <<<<<<<<<<<<<<
- *             count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+ *             count = _read_compact_len(buf, buflen, pos)
  *             p = pos[0]
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":298
- *             except UnicodeDecodeError:
- *                 return '0x' + raw.hex()
+    /* "scalecodec/_value_decode.pyx":533
+ *             pos[0] = p + count
+ *             return _utf8_or_hex(buf + p, count)
  *         return None             # <<<<<<<<<<<<<<
  *     elif op == OP_ACCOUNT_ID:
  *         _need(p, 32, buflen)
@@ -19188,7 +21445,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":285
+    /* "scalecodec/_value_decode.pyx":524
  *             return _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         return None
  *     elif op == OP_OPTION_BYTES:             # <<<<<<<<<<<<<<
@@ -19198,16 +21455,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 24:
 
-    /* "scalecodec/_value_decode.pyx":300
+    /* "scalecodec/_value_decode.pyx":535
  *         return None
  *     elif op == OP_ACCOUNT_ID:
  *         _need(p, 32, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 32
  *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), 32)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 32, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 300, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 32, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 535, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":301
+    /* "scalecodec/_value_decode.pyx":536
  *     elif op == OP_ACCOUNT_ID:
  *         _need(p, 32, buflen)
  *         pos[0] = p + 32             # <<<<<<<<<<<<<<
@@ -19216,31 +21473,31 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 32);
 
-    /* "scalecodec/_value_decode.pyx":302
+    /* "scalecodec/_value_decode.pyx":537
  *         _need(p, 32, buflen)
  *         pos[0] = p + 32
  *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), 32)             # <<<<<<<<<<<<<<
  *         v = nd.aux.ss58_format
  *         if v is not None:
 */
-    __pyx_t_5 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), 32); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 302, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_v_raw = ((PyObject*)__pyx_t_5);
-    __pyx_t_5 = 0;
+    __pyx_t_2 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), 32); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 537, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_v_raw = ((PyObject*)__pyx_t_2);
+    __pyx_t_2 = 0;
 
-    /* "scalecodec/_value_decode.pyx":303
+    /* "scalecodec/_value_decode.pyx":538
  *         pos[0] = p + 32
  *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), 32)
  *         v = nd.aux.ss58_format             # <<<<<<<<<<<<<<
  *         if v is not None:
  *             try:
 */
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_nd->aux, __pyx_mstate_global->__pyx_n_u_ss58_format); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 303, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_v_v = __pyx_t_5;
-    __pyx_t_5 = 0;
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_nd->aux, __pyx_mstate_global->__pyx_n_u_ss58_format); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 538, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_v_v = __pyx_t_2;
+    __pyx_t_2 = 0;
 
-    /* "scalecodec/_value_decode.pyx":304
+    /* "scalecodec/_value_decode.pyx":539
  *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), 32)
  *         v = nd.aux.ss58_format
  *         if v is not None:             # <<<<<<<<<<<<<<
@@ -19250,7 +21507,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_t_4 = (__pyx_v_v != Py_None);
     if (__pyx_t_4) {
 
-      /* "scalecodec/_value_decode.pyx":305
+      /* "scalecodec/_value_decode.pyx":540
  *         v = nd.aux.ss58_format
  *         if v is not None:
  *             try:             # <<<<<<<<<<<<<<
@@ -19260,13 +21517,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
       {
         __Pyx_PyThreadState_declare
         __Pyx_PyThreadState_assign
-        __Pyx_ExceptionSave(&__pyx_t_9, &__pyx_t_10, &__pyx_t_11);
-        __Pyx_XGOTREF(__pyx_t_9);
-        __Pyx_XGOTREF(__pyx_t_10);
-        __Pyx_XGOTREF(__pyx_t_11);
+        __Pyx_ExceptionSave(&__pyx_t_13, &__pyx_t_14, &__pyx_t_15);
+        __Pyx_XGOTREF(__pyx_t_13);
+        __Pyx_XGOTREF(__pyx_t_14);
+        __Pyx_XGOTREF(__pyx_t_15);
         /*try:*/ {
 
-          /* "scalecodec/_value_decode.pyx":306
+          /* "scalecodec/_value_decode.pyx":541
  *         if v is not None:
  *             try:
  *                 return ss58_encode_fast(raw, v)             # <<<<<<<<<<<<<<
@@ -19274,34 +21531,34 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *                 pass
 */
           __Pyx_XDECREF(__pyx_r);
-          __pyx_t_8 = NULL;
-          __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_ss58_encode_fast); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 306, __pyx_L37_error)
-          __Pyx_GOTREF(__pyx_t_2);
+          __pyx_t_6 = NULL;
+          __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_ss58_encode_fast); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 541, __pyx_L17_error)
+          __Pyx_GOTREF(__pyx_t_5);
           __pyx_t_7 = 1;
           #if CYTHON_UNPACK_METHODS
-          if (unlikely(PyMethod_Check(__pyx_t_2))) {
-            __pyx_t_8 = PyMethod_GET_SELF(__pyx_t_2);
-            assert(__pyx_t_8);
-            PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_2);
-            __Pyx_INCREF(__pyx_t_8);
+          if (unlikely(PyMethod_Check(__pyx_t_5))) {
+            __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_5);
+            assert(__pyx_t_6);
+            PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
+            __Pyx_INCREF(__pyx_t_6);
             __Pyx_INCREF(__pyx__function);
-            __Pyx_DECREF_SET(__pyx_t_2, __pyx__function);
+            __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
             __pyx_t_7 = 0;
           }
           #endif
           {
-            PyObject *__pyx_callargs[3] = {__pyx_t_8, __pyx_v_raw, __pyx_v_v};
-            __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_7, (3-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-            __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-            __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-            if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 306, __pyx_L37_error)
-            __Pyx_GOTREF(__pyx_t_5);
+            PyObject *__pyx_callargs[3] = {__pyx_t_6, __pyx_v_raw, __pyx_v_v};
+            __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_5, __pyx_callargs+__pyx_t_7, (3-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+            __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+            __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+            if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 541, __pyx_L17_error)
+            __Pyx_GOTREF(__pyx_t_2);
           }
-          __pyx_r = __pyx_t_5;
-          __pyx_t_5 = 0;
-          goto __pyx_L41_try_return;
+          __pyx_r = __pyx_t_2;
+          __pyx_t_2 = 0;
+          goto __pyx_L21_try_return;
 
-          /* "scalecodec/_value_decode.pyx":305
+          /* "scalecodec/_value_decode.pyx":540
  *         v = nd.aux.ss58_format
  *         if v is not None:
  *             try:             # <<<<<<<<<<<<<<
@@ -19309,54 +21566,54 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *             except ValueError:
 */
         }
-        __pyx_L37_error:;
-        __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
+        __pyx_L17_error:;
+        __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+        __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-        /* "scalecodec/_value_decode.pyx":307
+        /* "scalecodec/_value_decode.pyx":542
  *             try:
  *                 return ss58_encode_fast(raw, v)
  *             except ValueError:             # <<<<<<<<<<<<<<
  *                 pass
- *         return '0x' + raw.hex()
+ *         return _hex0x(buf + p, 32)
 */
         __pyx_t_1 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(((PyTypeObject*)PyExc_ValueError))));
         if (__pyx_t_1) {
           __Pyx_ErrRestore(0,0,0);
-          goto __pyx_L38_exception_handled;
+          goto __pyx_L18_exception_handled;
         }
-        goto __pyx_L39_except_error;
+        goto __pyx_L19_except_error;
 
-        /* "scalecodec/_value_decode.pyx":305
+        /* "scalecodec/_value_decode.pyx":540
  *         v = nd.aux.ss58_format
  *         if v is not None:
  *             try:             # <<<<<<<<<<<<<<
  *                 return ss58_encode_fast(raw, v)
  *             except ValueError:
 */
-        __pyx_L39_except_error:;
-        __Pyx_XGIVEREF(__pyx_t_9);
-        __Pyx_XGIVEREF(__pyx_t_10);
-        __Pyx_XGIVEREF(__pyx_t_11);
-        __Pyx_ExceptionReset(__pyx_t_9, __pyx_t_10, __pyx_t_11);
+        __pyx_L19_except_error:;
+        __Pyx_XGIVEREF(__pyx_t_13);
+        __Pyx_XGIVEREF(__pyx_t_14);
+        __Pyx_XGIVEREF(__pyx_t_15);
+        __Pyx_ExceptionReset(__pyx_t_13, __pyx_t_14, __pyx_t_15);
         goto __pyx_L1_error;
-        __pyx_L41_try_return:;
-        __Pyx_XGIVEREF(__pyx_t_9);
-        __Pyx_XGIVEREF(__pyx_t_10);
-        __Pyx_XGIVEREF(__pyx_t_11);
-        __Pyx_ExceptionReset(__pyx_t_9, __pyx_t_10, __pyx_t_11);
+        __pyx_L21_try_return:;
+        __Pyx_XGIVEREF(__pyx_t_13);
+        __Pyx_XGIVEREF(__pyx_t_14);
+        __Pyx_XGIVEREF(__pyx_t_15);
+        __Pyx_ExceptionReset(__pyx_t_13, __pyx_t_14, __pyx_t_15);
         goto __pyx_L0;
-        __pyx_L38_exception_handled:;
-        __Pyx_XGIVEREF(__pyx_t_9);
-        __Pyx_XGIVEREF(__pyx_t_10);
-        __Pyx_XGIVEREF(__pyx_t_11);
-        __Pyx_ExceptionReset(__pyx_t_9, __pyx_t_10, __pyx_t_11);
+        __pyx_L18_exception_handled:;
+        __Pyx_XGIVEREF(__pyx_t_13);
+        __Pyx_XGIVEREF(__pyx_t_14);
+        __Pyx_XGIVEREF(__pyx_t_15);
+        __Pyx_ExceptionReset(__pyx_t_13, __pyx_t_14, __pyx_t_15);
       }
 
-      /* "scalecodec/_value_decode.pyx":304
+      /* "scalecodec/_value_decode.pyx":539
  *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), 32)
  *         v = nd.aux.ss58_format
  *         if v is not None:             # <<<<<<<<<<<<<<
@@ -19365,25 +21622,22 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":309
+    /* "scalecodec/_value_decode.pyx":544
  *             except ValueError:
  *                 pass
- *         return '0x' + raw.hex()             # <<<<<<<<<<<<<<
+ *         return _hex0x(buf + p, 32)             # <<<<<<<<<<<<<<
  *     elif op == OP_H160 or op == OP_H256 or op == OP_H512:
  *         total = 20 if op == OP_H160 else (32 if op == OP_H256 else 64)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_5 = __Pyx_CallUnboundCMethod0(&__pyx_mstate_global->__pyx_umethod_PyBytes_Type__hex, __pyx_v_raw); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 309, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_2 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_0x, __pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 309, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__hex0x((__pyx_v_buf + __pyx_v_p), 32); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 544, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":299
- *                 return '0x' + raw.hex()
+    /* "scalecodec/_value_decode.pyx":534
+ *             return _utf8_or_hex(buf + p, count)
  *         return None
  *     elif op == OP_ACCOUNT_ID:             # <<<<<<<<<<<<<<
  *         _need(p, 32, buflen)
@@ -19392,9 +21646,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 25:
 
-    /* "scalecodec/_value_decode.pyx":310
+    /* "scalecodec/_value_decode.pyx":545
  *                 pass
- *         return '0x' + raw.hex()
+ *         return _hex0x(buf + p, 32)
  *     elif op == OP_H160 or op == OP_H256 or op == OP_H512:             # <<<<<<<<<<<<<<
  *         total = 20 if op == OP_H160 else (32 if op == OP_H256 else 64)
  *         _need(p, total, buflen)
@@ -19402,8 +21656,8 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     case 26:
     case 27:
 
-    /* "scalecodec/_value_decode.pyx":311
- *         return '0x' + raw.hex()
+    /* "scalecodec/_value_decode.pyx":546
+ *         return _hex0x(buf + p, 32)
  *     elif op == OP_H160 or op == OP_H256 or op == OP_H512:
  *         total = 20 if op == OP_H160 else (32 if op == OP_H256 else 64)             # <<<<<<<<<<<<<<
  *         _need(p, total, buflen)
@@ -19413,65 +21667,51 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     if (__pyx_t_4) {
       __pyx_t_3 = 20;
     } else {
-      __pyx_t_16 = (__pyx_v_op == 26);
-      if (__pyx_t_16) {
-        __pyx_t_13 = 32;
+      __pyx_t_12 = (__pyx_v_op == 26);
+      if (__pyx_t_12) {
+        __pyx_t_8 = 32;
       } else {
-        __pyx_t_13 = 64;
+        __pyx_t_8 = 64;
       }
-      __pyx_t_3 = __pyx_t_13;
+      __pyx_t_3 = __pyx_t_8;
     }
     __pyx_v_total = __pyx_t_3;
 
-    /* "scalecodec/_value_decode.pyx":312
+    /* "scalecodec/_value_decode.pyx":547
  *     elif op == OP_H160 or op == OP_H256 or op == OP_H512:
  *         total = 20 if op == OP_H160 else (32 if op == OP_H256 else 64)
  *         _need(p, total, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + total
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), total).hex()
+ *         return _hex0x(buf + p, total)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_total, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 312, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_total, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 547, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":313
+    /* "scalecodec/_value_decode.pyx":548
  *         total = 20 if op == OP_H160 else (32 if op == OP_H256 else 64)
  *         _need(p, total, buflen)
  *         pos[0] = p + total             # <<<<<<<<<<<<<<
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), total).hex()
+ *         return _hex0x(buf + p, total)
  *     elif op == OP_BITVEC:
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + __pyx_v_total);
 
-    /* "scalecodec/_value_decode.pyx":314
+    /* "scalecodec/_value_decode.pyx":549
  *         _need(p, total, buflen)
  *         pos[0] = p + total
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), total).hex()             # <<<<<<<<<<<<<<
+ *         return _hex0x(buf + p, total)             # <<<<<<<<<<<<<<
  *     elif op == OP_BITVEC:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)  # number of bits
+ *         count = _read_compact_len(buf, buflen, pos)  # number of bits
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_8 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), __pyx_v_total); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 314, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_5 = __pyx_t_8;
-    __Pyx_INCREF(__pyx_t_5);
-    __pyx_t_7 = 0;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_5, NULL};
-      __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_hex, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 314, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-    }
-    __pyx_t_8 = __Pyx_PyUnicode_ConcatSafe(__pyx_mstate_global->__pyx_kp_u_0x, __pyx_t_2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 314, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_r = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__hex0x((__pyx_v_buf + __pyx_v_p), __pyx_v_total); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 549, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_r = __pyx_t_2;
+    __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":310
+    /* "scalecodec/_value_decode.pyx":545
  *                 pass
- *         return '0x' + raw.hex()
+ *         return _hex0x(buf + p, 32)
  *     elif op == OP_H160 or op == OP_H256 or op == OP_H512:             # <<<<<<<<<<<<<<
  *         total = 20 if op == OP_H160 else (32 if op == OP_H256 else 64)
  *         _need(p, total, buflen)
@@ -19479,30 +21719,27 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 28:
 
-    /* "scalecodec/_value_decode.pyx":316
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), total).hex()
+    /* "scalecodec/_value_decode.pyx":551
+ *         return _hex0x(buf + p, total)
  *     elif op == OP_BITVEC:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)  # number of bits             # <<<<<<<<<<<<<<
+ *         count = _read_compact_len(buf, buflen, pos)  # number of bits             # <<<<<<<<<<<<<<
  *         total = (count + 7) // 8
  *         p = pos[0]
 */
-    __pyx_t_8 = __pyx_f_10scalecodec_13_value_decode__read_compact(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 316, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_3 = __Pyx_PyIndex_AsSsize_t(__pyx_t_8); if (unlikely((__pyx_t_3 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 316, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_v_count = ((Py_ssize_t)__pyx_t_3);
+    __pyx_t_3 = __pyx_f_10scalecodec_13_value_decode__read_compact_len(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1L))) __PYX_ERR(0, 551, __pyx_L1_error)
+    __pyx_v_count = __pyx_t_3;
 
-    /* "scalecodec/_value_decode.pyx":317
+    /* "scalecodec/_value_decode.pyx":552
  *     elif op == OP_BITVEC:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)  # number of bits
+ *         count = _read_compact_len(buf, buflen, pos)  # number of bits
  *         total = (count + 7) // 8             # <<<<<<<<<<<<<<
  *         p = pos[0]
  *         _need(p, total, buflen)
 */
     __pyx_v_total = ((__pyx_v_count + 7) / 8);
 
-    /* "scalecodec/_value_decode.pyx":318
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)  # number of bits
+    /* "scalecodec/_value_decode.pyx":553
+ *         count = _read_compact_len(buf, buflen, pos)  # number of bits
  *         total = (count + 7) // 8
  *         p = pos[0]             # <<<<<<<<<<<<<<
  *         _need(p, total, buflen)
@@ -19510,96 +21747,85 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __pyx_v_p = (__pyx_v_pos[0]);
 
-    /* "scalecodec/_value_decode.pyx":319
+    /* "scalecodec/_value_decode.pyx":554
  *         total = (count + 7) // 8
  *         p = pos[0]
  *         _need(p, total, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + total
- *         v = int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')
+ *         v = _PyLong_FromByteArray(buf + p, total, 1, 0)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_total, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 319, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_total, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 554, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":320
+    /* "scalecodec/_value_decode.pyx":555
  *         p = pos[0]
  *         _need(p, total, buflen)
  *         pos[0] = p + total             # <<<<<<<<<<<<<<
- *         v = int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')
+ *         v = _PyLong_FromByteArray(buf + p, total, 1, 0)
  *         return '0b' + bin(v)[2:].zfill(count)
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + __pyx_v_total);
 
-    /* "scalecodec/_value_decode.pyx":321
+    /* "scalecodec/_value_decode.pyx":556
  *         _need(p, total, buflen)
  *         pos[0] = p + total
- *         v = int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')             # <<<<<<<<<<<<<<
+ *         v = _PyLong_FromByteArray(buf + p, total, 1, 0)             # <<<<<<<<<<<<<<
  *         return '0b' + bin(v)[2:].zfill(count)
  *     elif op == OP_NULL:
 */
-    __pyx_t_2 = ((PyObject *)(&PyLong_Type));
-    __Pyx_INCREF(__pyx_t_2);
-    __pyx_t_5 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), __pyx_v_total); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 321, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_7 = 0;
-    {
-      PyObject *__pyx_callargs[3] = {__pyx_t_2, __pyx_t_5, __pyx_mstate_global->__pyx_n_u_little};
-      __pyx_t_8 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_from_bytes, __pyx_callargs+__pyx_t_7, (3-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 321, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-    }
-    __pyx_v_v = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_t_2 = _PyLong_FromByteArray((__pyx_v_buf + __pyx_v_p), __pyx_v_total, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 556, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_v_v = __pyx_t_2;
+    __pyx_t_2 = 0;
 
-    /* "scalecodec/_value_decode.pyx":322
+    /* "scalecodec/_value_decode.pyx":557
  *         pos[0] = p + total
- *         v = int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')
+ *         v = _PyLong_FromByteArray(buf + p, total, 1, 0)
  *         return '0b' + bin(v)[2:].zfill(count)             # <<<<<<<<<<<<<<
  *     elif op == OP_NULL:
  *         return None
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = __Pyx_PyNumber_Bin(__pyx_v_v); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 322, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    if (unlikely(__pyx_t_2 == Py_None)) {
-      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 322, __pyx_L1_error)
-    }
-    __pyx_t_6 = __Pyx_PyUnicode_Substring(__pyx_t_2, 2, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 322, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyNumber_Bin(__pyx_v_v); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 557, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_5 = __pyx_t_6;
+    if (unlikely(__pyx_t_6 == Py_None)) {
+      PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
+      __PYX_ERR(0, 557, __pyx_L1_error)
+    }
+    __pyx_t_10 = __Pyx_PyUnicode_Substring(__pyx_t_6, 2, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 557, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __pyx_t_5 = __pyx_t_10;
     __Pyx_INCREF(__pyx_t_5);
-    __pyx_t_2 = PyLong_FromSsize_t(__pyx_v_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 322, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_6 = PyLong_FromSsize_t(__pyx_v_count); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 557, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_7 = 0;
     {
-      PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_2};
-      __pyx_t_8 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_zfill, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_6};
+      __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_zfill, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 322, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 557, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
     }
-    __pyx_t_6 = __Pyx_PyUnicode_ConcatSafe(__pyx_mstate_global->__pyx_kp_u_0b, __pyx_t_8); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 322, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_r = __pyx_t_6;
-    __pyx_t_6 = 0;
+    __pyx_t_10 = __Pyx_PyUnicode_ConcatSafe(__pyx_mstate_global->__pyx_kp_u_0b, __pyx_t_2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 557, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_r = __pyx_t_10;
+    __pyx_t_10 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":315
+    /* "scalecodec/_value_decode.pyx":550
  *         pos[0] = p + total
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), total).hex()
+ *         return _hex0x(buf + p, total)
  *     elif op == OP_BITVEC:             # <<<<<<<<<<<<<<
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)  # number of bits
+ *         count = _read_compact_len(buf, buflen, pos)  # number of bits
  *         total = (count + 7) // 8
 */
     break;
     case 29:
 
-    /* "scalecodec/_value_decode.pyx":324
+    /* "scalecodec/_value_decode.pyx":559
  *         return '0b' + bin(v)[2:].zfill(count)
  *     elif op == OP_NULL:
  *         return None             # <<<<<<<<<<<<<<
@@ -19610,8 +21836,8 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":323
- *         v = int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')
+    /* "scalecodec/_value_decode.pyx":558
+ *         v = _PyLong_FromByteArray(buf + p, total, 1, 0)
  *         return '0b' + bin(v)[2:].zfill(count)
  *     elif op == OP_NULL:             # <<<<<<<<<<<<<<
  *         return None
@@ -19620,7 +21846,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 30:
 
-    /* "scalecodec/_value_decode.pyx":326
+    /* "scalecodec/_value_decode.pyx":561
  *         return None
  *     elif op == OP_BTREEMAP:
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)             # <<<<<<<<<<<<<<
@@ -19629,17 +21855,17 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_nd->children == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 326, __pyx_L1_error)
+      __PYX_ERR(0, 561, __pyx_L1_error)
     }
-    __pyx_t_6 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
-    __Pyx_INCREF(__pyx_t_6);
-    __pyx_t_8 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_6), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 326, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_v_v = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_t_10 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
+    __Pyx_INCREF(__pyx_t_10);
+    __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_10), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 561, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+    __pyx_v_v = __pyx_t_2;
+    __pyx_t_2 = 0;
 
-    /* "scalecodec/_value_decode.pyx":327
+    /* "scalecodec/_value_decode.pyx":562
  *     elif op == OP_BTREEMAP:
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         return {             # <<<<<<<<<<<<<<
@@ -19648,10 +21874,10 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __Pyx_XDECREF(__pyx_r);
     { /* enter inner scope */
-      __pyx_t_8 = PyDict_New(); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 327, __pyx_L47_error)
-      __Pyx_GOTREF(__pyx_t_8);
+      __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 562, __pyx_L27_error)
+      __Pyx_GOTREF(__pyx_t_2);
 
-      /* "scalecodec/_value_decode.pyx":329
+      /* "scalecodec/_value_decode.pyx":564
  *         return {
  *             (tuple(key) if isinstance(key, list) else key): value
  *             for key, value in v             # <<<<<<<<<<<<<<
@@ -19659,110 +21885,110 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *     elif op == OP_F32:
 */
       if (likely(PyList_CheckExact(__pyx_v_v)) || PyTuple_CheckExact(__pyx_v_v)) {
-        __pyx_t_6 = __pyx_v_v; __Pyx_INCREF(__pyx_t_6);
+        __pyx_t_10 = __pyx_v_v; __Pyx_INCREF(__pyx_t_10);
         __pyx_t_3 = 0;
-        __pyx_t_17 = NULL;
+        __pyx_t_16 = NULL;
       } else {
-        __pyx_t_3 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_v_v); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 329, __pyx_L47_error)
-        __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_17 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_6); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 329, __pyx_L47_error)
+        __pyx_t_3 = -1; __pyx_t_10 = PyObject_GetIter(__pyx_v_v); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 564, __pyx_L27_error)
+        __Pyx_GOTREF(__pyx_t_10);
+        __pyx_t_16 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_10); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 564, __pyx_L27_error)
       }
       for (;;) {
-        if (likely(!__pyx_t_17)) {
-          if (likely(PyList_CheckExact(__pyx_t_6))) {
+        if (likely(!__pyx_t_16)) {
+          if (likely(PyList_CheckExact(__pyx_t_10))) {
             {
-              Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_6);
+              Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_10);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 329, __pyx_L47_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 564, __pyx_L27_error)
               #endif
               if (__pyx_t_3 >= __pyx_temp) break;
             }
-            __pyx_t_2 = __Pyx_PyList_GET_ITEM_REF(__pyx_t_6, __pyx_t_3, __Pyx_ReferenceSharing_OwnStrongReference);
+            __pyx_t_6 = __Pyx_PyList_GET_ITEM_REF(__pyx_t_10, __pyx_t_3, __Pyx_ReferenceSharing_OwnStrongReference);
             ++__pyx_t_3;
           } else {
             {
-              Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_6);
+              Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_10);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 329, __pyx_L47_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 564, __pyx_L27_error)
               #endif
               if (__pyx_t_3 >= __pyx_temp) break;
             }
             #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-            __pyx_t_2 = __Pyx_NewRef(PyTuple_GET_ITEM(__pyx_t_6, __pyx_t_3));
+            __pyx_t_6 = __Pyx_NewRef(PyTuple_GET_ITEM(__pyx_t_10, __pyx_t_3));
             #else
-            __pyx_t_2 = __Pyx_PySequence_ITEM(__pyx_t_6, __pyx_t_3);
+            __pyx_t_6 = __Pyx_PySequence_ITEM(__pyx_t_10, __pyx_t_3);
             #endif
             ++__pyx_t_3;
           }
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 329, __pyx_L47_error)
+          if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 564, __pyx_L27_error)
         } else {
-          __pyx_t_2 = __pyx_t_17(__pyx_t_6);
-          if (unlikely(!__pyx_t_2)) {
+          __pyx_t_6 = __pyx_t_16(__pyx_t_10);
+          if (unlikely(!__pyx_t_6)) {
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
-              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 329, __pyx_L47_error)
+              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 564, __pyx_L27_error)
               PyErr_Clear();
             }
             break;
           }
         }
-        __Pyx_GOTREF(__pyx_t_2);
-        if ((likely(PyTuple_CheckExact(__pyx_t_2))) || (PyList_CheckExact(__pyx_t_2))) {
-          PyObject* sequence = __pyx_t_2;
+        __Pyx_GOTREF(__pyx_t_6);
+        if ((likely(PyTuple_CheckExact(__pyx_t_6))) || (PyList_CheckExact(__pyx_t_6))) {
+          PyObject* sequence = __pyx_t_6;
           Py_ssize_t size = __Pyx_PySequence_SIZE(sequence);
           if (unlikely(size != 2)) {
             if (size > 2) __Pyx_RaiseTooManyValuesError(2);
             else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-            __PYX_ERR(0, 329, __pyx_L47_error)
+            __PYX_ERR(0, 564, __pyx_L27_error)
           }
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
           if (likely(PyTuple_CheckExact(sequence))) {
             __pyx_t_5 = PyTuple_GET_ITEM(sequence, 0);
             __Pyx_INCREF(__pyx_t_5);
-            __pyx_t_12 = PyTuple_GET_ITEM(sequence, 1);
-            __Pyx_INCREF(__pyx_t_12);
+            __pyx_t_11 = PyTuple_GET_ITEM(sequence, 1);
+            __Pyx_INCREF(__pyx_t_11);
           } else {
             __pyx_t_5 = __Pyx_PyList_GET_ITEM_REF(sequence, 0, __Pyx_ReferenceSharing_SharedReference);
-            if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 329, __pyx_L47_error)
+            if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 564, __pyx_L27_error)
             __Pyx_XGOTREF(__pyx_t_5);
-            __pyx_t_12 = __Pyx_PyList_GET_ITEM_REF(sequence, 1, __Pyx_ReferenceSharing_SharedReference);
-            if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 329, __pyx_L47_error)
-            __Pyx_XGOTREF(__pyx_t_12);
+            __pyx_t_11 = __Pyx_PyList_GET_ITEM_REF(sequence, 1, __Pyx_ReferenceSharing_SharedReference);
+            if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 564, __pyx_L27_error)
+            __Pyx_XGOTREF(__pyx_t_11);
           }
           #else
-          __pyx_t_5 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 329, __pyx_L47_error)
+          __pyx_t_5 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 564, __pyx_L27_error)
           __Pyx_GOTREF(__pyx_t_5);
-          __pyx_t_12 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 329, __pyx_L47_error)
-          __Pyx_GOTREF(__pyx_t_12);
+          __pyx_t_11 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 564, __pyx_L27_error)
+          __Pyx_GOTREF(__pyx_t_11);
           #endif
-          __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+          __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         } else {
           Py_ssize_t index = -1;
-          __pyx_t_18 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 329, __pyx_L47_error)
-          __Pyx_GOTREF(__pyx_t_18);
-          __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_19 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_18);
-          index = 0; __pyx_t_5 = __pyx_t_19(__pyx_t_18); if (unlikely(!__pyx_t_5)) goto __pyx_L50_unpacking_failed;
+          __pyx_t_17 = PyObject_GetIter(__pyx_t_6); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 564, __pyx_L27_error)
+          __Pyx_GOTREF(__pyx_t_17);
+          __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+          __pyx_t_18 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_17);
+          index = 0; __pyx_t_5 = __pyx_t_18(__pyx_t_17); if (unlikely(!__pyx_t_5)) goto __pyx_L30_unpacking_failed;
           __Pyx_GOTREF(__pyx_t_5);
-          index = 1; __pyx_t_12 = __pyx_t_19(__pyx_t_18); if (unlikely(!__pyx_t_12)) goto __pyx_L50_unpacking_failed;
-          __Pyx_GOTREF(__pyx_t_12);
-          if (__Pyx_IternextUnpackEndCheck(__pyx_t_19(__pyx_t_18), 2) < (0)) __PYX_ERR(0, 329, __pyx_L47_error)
-          __pyx_t_19 = NULL;
-          __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-          goto __pyx_L51_unpacking_done;
-          __pyx_L50_unpacking_failed:;
-          __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-          __pyx_t_19 = NULL;
+          index = 1; __pyx_t_11 = __pyx_t_18(__pyx_t_17); if (unlikely(!__pyx_t_11)) goto __pyx_L30_unpacking_failed;
+          __Pyx_GOTREF(__pyx_t_11);
+          if (__Pyx_IternextUnpackEndCheck(__pyx_t_18(__pyx_t_17), 2) < (0)) __PYX_ERR(0, 564, __pyx_L27_error)
+          __pyx_t_18 = NULL;
+          __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
+          goto __pyx_L31_unpacking_done;
+          __pyx_L30_unpacking_failed:;
+          __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
+          __pyx_t_18 = NULL;
           if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-          __PYX_ERR(0, 329, __pyx_L47_error)
-          __pyx_L51_unpacking_done:;
+          __PYX_ERR(0, 564, __pyx_L27_error)
+          __pyx_L31_unpacking_done:;
         }
         __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_key, __pyx_t_5);
         __pyx_t_5 = 0;
-        __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_value, __pyx_t_12);
-        __pyx_t_12 = 0;
+        __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_value, __pyx_t_11);
+        __pyx_t_11 = 0;
 
-        /* "scalecodec/_value_decode.pyx":328
+        /* "scalecodec/_value_decode.pyx":563
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         return {
  *             (tuple(key) if isinstance(key, list) else key): value             # <<<<<<<<<<<<<<
@@ -19771,18 +21997,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
         __pyx_t_4 = PyList_Check(__pyx_7genexpr__pyx_v_key); 
         if (__pyx_t_4) {
-          __pyx_t_12 = __Pyx_PySequence_Tuple(__pyx_7genexpr__pyx_v_key); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 328, __pyx_L47_error)
-          __Pyx_GOTREF(__pyx_t_12);
-          __pyx_t_2 = __pyx_t_12;
-          __pyx_t_12 = 0;
+          __pyx_t_11 = __Pyx_PySequence_Tuple(__pyx_7genexpr__pyx_v_key); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 563, __pyx_L27_error)
+          __Pyx_GOTREF(__pyx_t_11);
+          __pyx_t_6 = __pyx_t_11;
+          __pyx_t_11 = 0;
         } else {
           __Pyx_INCREF(__pyx_7genexpr__pyx_v_key);
-          __pyx_t_2 = __pyx_7genexpr__pyx_v_key;
+          __pyx_t_6 = __pyx_7genexpr__pyx_v_key;
         }
-        if (unlikely(PyDict_SetItem(__pyx_t_8, (PyObject*)__pyx_t_2, (PyObject*)__pyx_7genexpr__pyx_v_value))) __PYX_ERR(0, 328, __pyx_L47_error)
-        __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+        if (unlikely(PyDict_SetItem(__pyx_t_2, (PyObject*)__pyx_t_6, (PyObject*)__pyx_7genexpr__pyx_v_value))) __PYX_ERR(0, 563, __pyx_L27_error)
+        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-        /* "scalecodec/_value_decode.pyx":329
+        /* "scalecodec/_value_decode.pyx":564
  *         return {
  *             (tuple(key) if isinstance(key, list) else key): value
  *             for key, value in v             # <<<<<<<<<<<<<<
@@ -19790,21 +22016,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *     elif op == OP_F32:
 */
       }
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
       __Pyx_XDECREF(__pyx_7genexpr__pyx_v_key); __pyx_7genexpr__pyx_v_key = 0;
       __Pyx_XDECREF(__pyx_7genexpr__pyx_v_value); __pyx_7genexpr__pyx_v_value = 0;
-      goto __pyx_L53_exit_scope;
-      __pyx_L47_error:;
+      goto __pyx_L33_exit_scope;
+      __pyx_L27_error:;
       __Pyx_XDECREF(__pyx_7genexpr__pyx_v_key); __pyx_7genexpr__pyx_v_key = 0;
       __Pyx_XDECREF(__pyx_7genexpr__pyx_v_value); __pyx_7genexpr__pyx_v_value = 0;
       goto __pyx_L1_error;
-      __pyx_L53_exit_scope:;
+      __pyx_L33_exit_scope:;
     } /* exit inner scope */
-    __pyx_r = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_r = __pyx_t_2;
+    __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":325
+    /* "scalecodec/_value_decode.pyx":560
  *     elif op == OP_NULL:
  *         return None
  *     elif op == OP_BTREEMAP:             # <<<<<<<<<<<<<<
@@ -19814,16 +22040,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 32:
 
-    /* "scalecodec/_value_decode.pyx":332
+    /* "scalecodec/_value_decode.pyx":567
  *         }
  *     elif op == OP_F32:
  *         _need(p, 4, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 4
  *         memcpy(&f32val, buf + p, 4)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 4, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 332, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 4, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 567, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":333
+    /* "scalecodec/_value_decode.pyx":568
  *     elif op == OP_F32:
  *         _need(p, 4, buflen)
  *         pos[0] = p + 4             # <<<<<<<<<<<<<<
@@ -19832,7 +22058,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 4);
 
-    /* "scalecodec/_value_decode.pyx":334
+    /* "scalecodec/_value_decode.pyx":569
  *         _need(p, 4, buflen)
  *         pos[0] = p + 4
  *         memcpy(&f32val, buf + p, 4)             # <<<<<<<<<<<<<<
@@ -19841,7 +22067,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (void)(memcpy((&__pyx_v_f32val), (__pyx_v_buf + __pyx_v_p), 4));
 
-    /* "scalecodec/_value_decode.pyx":335
+    /* "scalecodec/_value_decode.pyx":570
  *         pos[0] = p + 4
  *         memcpy(&f32val, buf + p, 4)
  *         return f32val             # <<<<<<<<<<<<<<
@@ -19849,13 +22075,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         _need(p, 8, buflen)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_8 = PyFloat_FromDouble(__pyx_v_f32val); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 335, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_r = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_f32val); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 570, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_r = __pyx_t_2;
+    __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":331
+    /* "scalecodec/_value_decode.pyx":566
  *             for key, value in v
  *         }
  *     elif op == OP_F32:             # <<<<<<<<<<<<<<
@@ -19865,16 +22091,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 33:
 
-    /* "scalecodec/_value_decode.pyx":337
+    /* "scalecodec/_value_decode.pyx":572
  *         return f32val
  *     elif op == OP_F64:
  *         _need(p, 8, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 8
  *         memcpy(&f64val, buf + p, 8)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 8, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 337, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 8, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 572, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":338
+    /* "scalecodec/_value_decode.pyx":573
  *     elif op == OP_F64:
  *         _need(p, 8, buflen)
  *         pos[0] = p + 8             # <<<<<<<<<<<<<<
@@ -19883,7 +22109,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 8);
 
-    /* "scalecodec/_value_decode.pyx":339
+    /* "scalecodec/_value_decode.pyx":574
  *         _need(p, 8, buflen)
  *         pos[0] = p + 8
  *         memcpy(&f64val, buf + p, 8)             # <<<<<<<<<<<<<<
@@ -19892,21 +22118,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (void)(memcpy((&__pyx_v_f64val), (__pyx_v_buf + __pyx_v_p), 8));
 
-    /* "scalecodec/_value_decode.pyx":340
+    /* "scalecodec/_value_decode.pyx":575
  *         pos[0] = p + 8
  *         memcpy(&f64val, buf + p, 8)
  *         return f64val             # <<<<<<<<<<<<<<
  *     elif op == OP_HEXBYTES:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+ *         count = _read_compact_len(buf, buflen, pos)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_8 = PyFloat_FromDouble(__pyx_v_f64val); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 340, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_r = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_f64val); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 575, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_r = __pyx_t_2;
+    __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":336
+    /* "scalecodec/_value_decode.pyx":571
  *         memcpy(&f32val, buf + p, 4)
  *         return f32val
  *     elif op == OP_F64:             # <<<<<<<<<<<<<<
@@ -19916,86 +22142,69 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 34:
 
-    /* "scalecodec/_value_decode.pyx":342
+    /* "scalecodec/_value_decode.pyx":577
  *         return f64val
  *     elif op == OP_HEXBYTES:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)             # <<<<<<<<<<<<<<
+ *         count = _read_compact_len(buf, buflen, pos)             # <<<<<<<<<<<<<<
  *         p = pos[0]
  *         _need(p, count, buflen)
 */
-    __pyx_t_8 = __pyx_f_10scalecodec_13_value_decode__read_compact(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 342, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_3 = __Pyx_PyIndex_AsSsize_t(__pyx_t_8); if (unlikely((__pyx_t_3 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 342, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_v_count = ((Py_ssize_t)__pyx_t_3);
+    __pyx_t_3 = __pyx_f_10scalecodec_13_value_decode__read_compact_len(__pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1L))) __PYX_ERR(0, 577, __pyx_L1_error)
+    __pyx_v_count = __pyx_t_3;
 
-    /* "scalecodec/_value_decode.pyx":343
+    /* "scalecodec/_value_decode.pyx":578
  *     elif op == OP_HEXBYTES:
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+ *         count = _read_compact_len(buf, buflen, pos)
  *         p = pos[0]             # <<<<<<<<<<<<<<
  *         _need(p, count, buflen)
  *         pos[0] = p + count
 */
     __pyx_v_p = (__pyx_v_pos[0]);
 
-    /* "scalecodec/_value_decode.pyx":344
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+    /* "scalecodec/_value_decode.pyx":579
+ *         count = _read_compact_len(buf, buflen, pos)
  *         p = pos[0]
  *         _need(p, count, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + count
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()
+ *         return _hex0x(buf + p, count)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_count, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 344, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, __pyx_v_count, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 579, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":345
+    /* "scalecodec/_value_decode.pyx":580
  *         p = pos[0]
  *         _need(p, count, buflen)
  *         pos[0] = p + count             # <<<<<<<<<<<<<<
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()
+ *         return _hex0x(buf + p, count)
  *     elif op == OP_SET:
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + __pyx_v_count);
 
-    /* "scalecodec/_value_decode.pyx":346
+    /* "scalecodec/_value_decode.pyx":581
  *         _need(p, count, buflen)
  *         pos[0] = p + count
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()             # <<<<<<<<<<<<<<
+ *         return _hex0x(buf + p, count)             # <<<<<<<<<<<<<<
  *     elif op == OP_SET:
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), __pyx_v_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 346, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__hex0x((__pyx_v_buf + __pyx_v_p), __pyx_v_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 581, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __pyx_t_2;
-    __Pyx_INCREF(__pyx_t_6);
-    __pyx_t_7 = 0;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
-      __pyx_t_8 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_hex, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 346, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-    }
-    __pyx_t_2 = __Pyx_PyUnicode_ConcatSafe(__pyx_mstate_global->__pyx_kp_u_0x, __pyx_t_8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 346, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":341
+    /* "scalecodec/_value_decode.pyx":576
  *         memcpy(&f64val, buf + p, 8)
  *         return f64val
  *     elif op == OP_HEXBYTES:             # <<<<<<<<<<<<<<
- *         count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+ *         count = _read_compact_len(buf, buflen, pos)
  *         p = pos[0]
 */
     break;
     case 36:
 
-    /* "scalecodec/_value_decode.pyx":348
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()
+    /* "scalecodec/_value_decode.pyx":583
+ *         return _hex0x(buf + p, count)
  *     elif op == OP_SET:
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)             # <<<<<<<<<<<<<<
  *         out = []
@@ -20003,41 +22212,41 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_nd->children == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 348, __pyx_L1_error)
+      __PYX_ERR(0, 583, __pyx_L1_error)
     }
     __pyx_t_2 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
     __Pyx_INCREF(__pyx_t_2);
-    __pyx_t_8 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_2), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 348, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_10 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_2), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 583, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_v_v = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_v_v = __pyx_t_10;
+    __pyx_t_10 = 0;
 
-    /* "scalecodec/_value_decode.pyx":349
+    /* "scalecodec/_value_decode.pyx":584
  *     elif op == OP_SET:
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         out = []             # <<<<<<<<<<<<<<
  *         if v > 0:
  *             for name, mask in <list>nd.aux:
 */
-    __pyx_t_8 = PyList_New(0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 349, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_v_out = ((PyObject*)__pyx_t_8);
-    __pyx_t_8 = 0;
+    __pyx_t_10 = PyList_New(0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 584, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    __pyx_v_out = ((PyObject*)__pyx_t_10);
+    __pyx_t_10 = 0;
 
-    /* "scalecodec/_value_decode.pyx":350
+    /* "scalecodec/_value_decode.pyx":585
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         out = []
  *         if v > 0:             # <<<<<<<<<<<<<<
  *             for name, mask in <list>nd.aux:
  *                 if v & mask > 0:
 */
-    __pyx_t_8 = PyObject_RichCompare(__pyx_v_v, __pyx_mstate_global->__pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_8); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 350, __pyx_L1_error)
-    __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_8); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 350, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    __pyx_t_10 = PyObject_RichCompare(__pyx_v_v, __pyx_mstate_global->__pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_10); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 585, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_10); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 585, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     if (__pyx_t_4) {
 
-      /* "scalecodec/_value_decode.pyx":351
+      /* "scalecodec/_value_decode.pyx":586
  *         out = []
  *         if v > 0:
  *             for name, mask in <list>nd.aux:             # <<<<<<<<<<<<<<
@@ -20046,21 +22255,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
       if (unlikely(__pyx_v_nd->aux == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-        __PYX_ERR(0, 351, __pyx_L1_error)
+        __PYX_ERR(0, 586, __pyx_L1_error)
       }
-      __pyx_t_8 = ((PyObject*)__pyx_v_nd->aux); __Pyx_INCREF(__pyx_t_8);
+      __pyx_t_10 = ((PyObject*)__pyx_v_nd->aux); __Pyx_INCREF(__pyx_t_10);
       __pyx_t_3 = 0;
       for (;;) {
         {
-          Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_8);
+          Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_10);
           #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 351, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 586, __pyx_L1_error)
           #endif
           if (__pyx_t_3 >= __pyx_temp) break;
         }
-        __pyx_t_2 = __Pyx_PyList_GET_ITEM_REF(__pyx_t_8, __pyx_t_3, __Pyx_ReferenceSharing_OwnStrongReference);
+        __pyx_t_2 = __Pyx_PyList_GET_ITEM_REF(__pyx_t_10, __pyx_t_3, __Pyx_ReferenceSharing_OwnStrongReference);
         ++__pyx_t_3;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 351, __pyx_L1_error)
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 586, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         if ((likely(PyTuple_CheckExact(__pyx_t_2))) || (PyList_CheckExact(__pyx_t_2))) {
           PyObject* sequence = __pyx_t_2;
@@ -20068,80 +22277,80 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
           if (unlikely(size != 2)) {
             if (size > 2) __Pyx_RaiseTooManyValuesError(2);
             else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-            __PYX_ERR(0, 351, __pyx_L1_error)
+            __PYX_ERR(0, 586, __pyx_L1_error)
           }
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
           if (likely(PyTuple_CheckExact(sequence))) {
             __pyx_t_6 = PyTuple_GET_ITEM(sequence, 0);
             __Pyx_INCREF(__pyx_t_6);
-            __pyx_t_12 = PyTuple_GET_ITEM(sequence, 1);
-            __Pyx_INCREF(__pyx_t_12);
+            __pyx_t_11 = PyTuple_GET_ITEM(sequence, 1);
+            __Pyx_INCREF(__pyx_t_11);
           } else {
             __pyx_t_6 = __Pyx_PyList_GET_ITEM_REF(sequence, 0, __Pyx_ReferenceSharing_SharedReference);
-            if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 351, __pyx_L1_error)
+            if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 586, __pyx_L1_error)
             __Pyx_XGOTREF(__pyx_t_6);
-            __pyx_t_12 = __Pyx_PyList_GET_ITEM_REF(sequence, 1, __Pyx_ReferenceSharing_SharedReference);
-            if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 351, __pyx_L1_error)
-            __Pyx_XGOTREF(__pyx_t_12);
+            __pyx_t_11 = __Pyx_PyList_GET_ITEM_REF(sequence, 1, __Pyx_ReferenceSharing_SharedReference);
+            if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 586, __pyx_L1_error)
+            __Pyx_XGOTREF(__pyx_t_11);
           }
           #else
-          __pyx_t_6 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 351, __pyx_L1_error)
+          __pyx_t_6 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 586, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_6);
-          __pyx_t_12 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 351, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_12);
+          __pyx_t_11 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 586, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_11);
           #endif
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         } else {
           Py_ssize_t index = -1;
-          __pyx_t_5 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 351, __pyx_L1_error)
+          __pyx_t_5 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 586, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_19 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_5);
-          index = 0; __pyx_t_6 = __pyx_t_19(__pyx_t_5); if (unlikely(!__pyx_t_6)) goto __pyx_L57_unpacking_failed;
+          __pyx_t_18 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_5);
+          index = 0; __pyx_t_6 = __pyx_t_18(__pyx_t_5); if (unlikely(!__pyx_t_6)) goto __pyx_L37_unpacking_failed;
           __Pyx_GOTREF(__pyx_t_6);
-          index = 1; __pyx_t_12 = __pyx_t_19(__pyx_t_5); if (unlikely(!__pyx_t_12)) goto __pyx_L57_unpacking_failed;
-          __Pyx_GOTREF(__pyx_t_12);
-          if (__Pyx_IternextUnpackEndCheck(__pyx_t_19(__pyx_t_5), 2) < (0)) __PYX_ERR(0, 351, __pyx_L1_error)
-          __pyx_t_19 = NULL;
+          index = 1; __pyx_t_11 = __pyx_t_18(__pyx_t_5); if (unlikely(!__pyx_t_11)) goto __pyx_L37_unpacking_failed;
+          __Pyx_GOTREF(__pyx_t_11);
+          if (__Pyx_IternextUnpackEndCheck(__pyx_t_18(__pyx_t_5), 2) < (0)) __PYX_ERR(0, 586, __pyx_L1_error)
+          __pyx_t_18 = NULL;
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-          goto __pyx_L58_unpacking_done;
-          __pyx_L57_unpacking_failed:;
+          goto __pyx_L38_unpacking_done;
+          __pyx_L37_unpacking_failed:;
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-          __pyx_t_19 = NULL;
+          __pyx_t_18 = NULL;
           if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-          __PYX_ERR(0, 351, __pyx_L1_error)
-          __pyx_L58_unpacking_done:;
+          __PYX_ERR(0, 586, __pyx_L1_error)
+          __pyx_L38_unpacking_done:;
         }
         __Pyx_XDECREF_SET(__pyx_v_name, __pyx_t_6);
         __pyx_t_6 = 0;
-        __Pyx_XDECREF_SET(__pyx_v_mask, __pyx_t_12);
-        __pyx_t_12 = 0;
+        __Pyx_XDECREF_SET(__pyx_v_mask, __pyx_t_11);
+        __pyx_t_11 = 0;
 
-        /* "scalecodec/_value_decode.pyx":352
+        /* "scalecodec/_value_decode.pyx":587
  *         if v > 0:
  *             for name, mask in <list>nd.aux:
  *                 if v & mask > 0:             # <<<<<<<<<<<<<<
  *                     out.append(name)
  *         return out
 */
-        __pyx_t_2 = PyNumber_And(__pyx_v_v, __pyx_v_mask); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 352, __pyx_L1_error)
+        __pyx_t_2 = PyNumber_And(__pyx_v_v, __pyx_v_mask); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 587, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
-        __pyx_t_12 = PyObject_RichCompare(__pyx_t_2, __pyx_mstate_global->__pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_12); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 352, __pyx_L1_error)
+        __pyx_t_11 = PyObject_RichCompare(__pyx_t_2, __pyx_mstate_global->__pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_11); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 587, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_12); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 352, __pyx_L1_error)
-        __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+        __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_11); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 587, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
         if (__pyx_t_4) {
 
-          /* "scalecodec/_value_decode.pyx":353
+          /* "scalecodec/_value_decode.pyx":588
  *             for name, mask in <list>nd.aux:
  *                 if v & mask > 0:
  *                     out.append(name)             # <<<<<<<<<<<<<<
  *         return out
  *     elif op == OP_MULTIADDR:
 */
-          __pyx_t_15 = __Pyx_PyList_Append(__pyx_v_out, __pyx_v_name); if (unlikely(__pyx_t_15 == ((int)-1))) __PYX_ERR(0, 353, __pyx_L1_error)
+          __pyx_t_19 = __Pyx_PyList_Append(__pyx_v_out, __pyx_v_name); if (unlikely(__pyx_t_19 == ((int)-1))) __PYX_ERR(0, 588, __pyx_L1_error)
 
-          /* "scalecodec/_value_decode.pyx":352
+          /* "scalecodec/_value_decode.pyx":587
  *         if v > 0:
  *             for name, mask in <list>nd.aux:
  *                 if v & mask > 0:             # <<<<<<<<<<<<<<
@@ -20150,7 +22359,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
         }
 
-        /* "scalecodec/_value_decode.pyx":351
+        /* "scalecodec/_value_decode.pyx":586
  *         out = []
  *         if v > 0:
  *             for name, mask in <list>nd.aux:             # <<<<<<<<<<<<<<
@@ -20158,9 +22367,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *                     out.append(name)
 */
       }
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
 
-      /* "scalecodec/_value_decode.pyx":350
+      /* "scalecodec/_value_decode.pyx":585
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         out = []
  *         if v > 0:             # <<<<<<<<<<<<<<
@@ -20169,7 +22378,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":354
+    /* "scalecodec/_value_decode.pyx":589
  *                 if v & mask > 0:
  *                     out.append(name)
  *         return out             # <<<<<<<<<<<<<<
@@ -20181,9 +22390,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_r = __pyx_v_out;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":347
+    /* "scalecodec/_value_decode.pyx":582
  *         pos[0] = p + count
- *         return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()
+ *         return _hex0x(buf + p, count)
  *     elif op == OP_SET:             # <<<<<<<<<<<<<<
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         out = []
@@ -20191,16 +22400,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 37:
 
-    /* "scalecodec/_value_decode.pyx":356
+    /* "scalecodec/_value_decode.pyx":591
  *         return out
  *     elif op == OP_MULTIADDR:
  *         _need(p, 1, buflen)             # <<<<<<<<<<<<<<
  *         idx = buf[p]
  *         pos[0] = p + 1
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 356, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 591, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":357
+    /* "scalecodec/_value_decode.pyx":592
  *     elif op == OP_MULTIADDR:
  *         _need(p, 1, buflen)
  *         idx = buf[p]             # <<<<<<<<<<<<<<
@@ -20209,7 +22418,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __pyx_v_idx = (__pyx_v_buf[__pyx_v_p]);
 
-    /* "scalecodec/_value_decode.pyx":358
+    /* "scalecodec/_value_decode.pyx":593
  *         _need(p, 1, buflen)
  *         idx = buf[p]
  *         pos[0] = p + 1             # <<<<<<<<<<<<<<
@@ -20218,47 +22427,47 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 1);
 
-    /* "scalecodec/_value_decode.pyx":359
+    /* "scalecodec/_value_decode.pyx":594
  *         idx = buf[p]
  *         pos[0] = p + 1
  *         if idx >= len(nd.children) or nd.keys[idx] is None:             # <<<<<<<<<<<<<<
  *             raise ValueError("Index '{}' not present in Enum type mapping".format(idx))
  *         child = <_Node>nd.children[idx]
 */
-    __pyx_t_8 = __pyx_v_nd->children;
-    __Pyx_INCREF(__pyx_t_8);
-    if (unlikely(__pyx_t_8 == Py_None)) {
+    __pyx_t_10 = __pyx_v_nd->children;
+    __Pyx_INCREF(__pyx_t_10);
+    if (unlikely(__pyx_t_10 == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 359, __pyx_L1_error)
+      __PYX_ERR(0, 594, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_t_8); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 359, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_16 = (__pyx_v_idx >= __pyx_t_3);
-    if (!__pyx_t_16) {
+    __pyx_t_3 = __Pyx_PyList_GET_SIZE(__pyx_t_10); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 594, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+    __pyx_t_12 = (__pyx_v_idx >= __pyx_t_3);
+    if (!__pyx_t_12) {
     } else {
-      __pyx_t_4 = __pyx_t_16;
-      goto __pyx_L62_bool_binop_done;
+      __pyx_t_4 = __pyx_t_12;
+      goto __pyx_L42_bool_binop_done;
     }
     if (unlikely(__pyx_v_nd->keys == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 359, __pyx_L1_error)
+      __PYX_ERR(0, 594, __pyx_L1_error)
     }
-    __pyx_t_16 = (__Pyx_PyList_GET_ITEM(__pyx_v_nd->keys, __pyx_v_idx) == Py_None);
-    __pyx_t_4 = __pyx_t_16;
-    __pyx_L62_bool_binop_done:;
+    __pyx_t_12 = (__Pyx_PyList_GET_ITEM(__pyx_v_nd->keys, __pyx_v_idx) == Py_None);
+    __pyx_t_4 = __pyx_t_12;
+    __pyx_L42_bool_binop_done:;
     if (unlikely(__pyx_t_4)) {
 
-      /* "scalecodec/_value_decode.pyx":360
+      /* "scalecodec/_value_decode.pyx":595
  *         pos[0] = p + 1
  *         if idx >= len(nd.children) or nd.keys[idx] is None:
  *             raise ValueError("Index '{}' not present in Enum type mapping".format(idx))             # <<<<<<<<<<<<<<
  *         child = <_Node>nd.children[idx]
  *         v = _dec(child, buf, buflen, pos) if child is not None else None
 */
-      __pyx_t_12 = NULL;
+      __pyx_t_11 = NULL;
       __pyx_t_6 = __pyx_mstate_global->__pyx_kp_u_Index_not_present_in_Enum_type_m;
       __Pyx_INCREF(__pyx_t_6);
-      __pyx_t_5 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 360, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 595, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __pyx_t_7 = 0;
       {
@@ -20266,23 +22475,23 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
         __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_format, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 360, __pyx_L1_error)
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 595, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
       }
       __pyx_t_7 = 1;
       {
-        PyObject *__pyx_callargs[2] = {__pyx_t_12, __pyx_t_2};
-        __pyx_t_8 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
+        PyObject *__pyx_callargs[2] = {__pyx_t_11, __pyx_t_2};
+        __pyx_t_10 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 360, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_8);
+        if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 595, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_10);
       }
-      __Pyx_Raise(__pyx_t_8, 0, 0, 0);
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      __PYX_ERR(0, 360, __pyx_L1_error)
+      __Pyx_Raise(__pyx_t_10, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+      __PYX_ERR(0, 595, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":359
+      /* "scalecodec/_value_decode.pyx":594
  *         idx = buf[p]
  *         pos[0] = p + 1
  *         if idx >= len(nd.children) or nd.keys[idx] is None:             # <<<<<<<<<<<<<<
@@ -20291,7 +22500,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":361
+    /* "scalecodec/_value_decode.pyx":596
  *         if idx >= len(nd.children) or nd.keys[idx] is None:
  *             raise ValueError("Index '{}' not present in Enum type mapping".format(idx))
  *         child = <_Node>nd.children[idx]             # <<<<<<<<<<<<<<
@@ -20300,14 +22509,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_nd->children == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 361, __pyx_L1_error)
+      __PYX_ERR(0, 596, __pyx_L1_error)
     }
-    __pyx_t_8 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, __pyx_v_idx);
-    __Pyx_INCREF(__pyx_t_8);
-    __pyx_v_child = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_8);
-    __pyx_t_8 = 0;
+    __pyx_t_10 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, __pyx_v_idx);
+    __Pyx_INCREF(__pyx_t_10);
+    __pyx_v_child = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_10);
+    __pyx_t_10 = 0;
 
-    /* "scalecodec/_value_decode.pyx":362
+    /* "scalecodec/_value_decode.pyx":597
  *             raise ValueError("Index '{}' not present in Enum type mapping".format(idx))
  *         child = <_Node>nd.children[idx]
  *         v = _dec(child, buf, buflen, pos) if child is not None else None             # <<<<<<<<<<<<<<
@@ -20316,18 +22525,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __pyx_t_4 = (((PyObject *)__pyx_v_child) != Py_None);
     if (__pyx_t_4) {
-      __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__dec(__pyx_v_child, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 362, __pyx_L1_error)
+      __pyx_t_2 = __pyx_f_10scalecodec_13_value_decode__dec(__pyx_v_child, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 597, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_8 = __pyx_t_2;
+      __pyx_t_10 = __pyx_t_2;
       __pyx_t_2 = 0;
     } else {
       __Pyx_INCREF(Py_None);
-      __pyx_t_8 = Py_None;
+      __pyx_t_10 = Py_None;
     }
-    __pyx_v_v = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_v_v = __pyx_t_10;
+    __pyx_t_10 = 0;
 
-    /* "scalecodec/_value_decode.pyx":363
+    /* "scalecodec/_value_decode.pyx":598
  *         child = <_Node>nd.children[idx]
  *         v = _dec(child, buf, buflen, pos) if child is not None else None
  *         if idx == 0 or idx == 1:             # <<<<<<<<<<<<<<
@@ -20338,7 +22547,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
       case 0:
       case 1:
 
-      /* "scalecodec/_value_decode.pyx":365
+      /* "scalecodec/_value_decode.pyx":600
  *         if idx == 0 or idx == 1:
  *             # Id -> the ss58 address itself; Index -> the bare account index
  *             return v             # <<<<<<<<<<<<<<
@@ -20350,7 +22559,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
       __pyx_r = __pyx_v_v;
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":363
+      /* "scalecodec/_value_decode.pyx":598
  *         child = <_Node>nd.children[idx]
  *         v = _dec(child, buf, buflen, pos) if child is not None else None
  *         if idx == 0 or idx == 1:             # <<<<<<<<<<<<<<
@@ -20361,7 +22570,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
       default: break;
     }
 
-    /* "scalecodec/_value_decode.pyx":366
+    /* "scalecodec/_value_decode.pyx":601
  *             # Id -> the ss58 address itself; Index -> the bare account index
  *             return v
  *         return {nd.keys[idx]: v}             # <<<<<<<<<<<<<<
@@ -20369,18 +22578,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         # aux: {pallet_index: (pallet_name, {call_index: (call_name,
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_8 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 366, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_10 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 601, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
     if (unlikely(__pyx_v_nd->keys == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 366, __pyx_L1_error)
+      __PYX_ERR(0, 601, __pyx_L1_error)
     }
-    if (PyDict_SetItem(__pyx_t_8, __Pyx_PyList_GET_ITEM(__pyx_v_nd->keys, __pyx_v_idx), __pyx_v_v) < (0)) __PYX_ERR(0, 366, __pyx_L1_error)
-    __pyx_r = __pyx_t_8;
-    __pyx_t_8 = 0;
+    if (PyDict_SetItem(__pyx_t_10, __Pyx_PyList_GET_ITEM(__pyx_v_nd->keys, __pyx_v_idx), __pyx_v_v) < (0)) __PYX_ERR(0, 601, __pyx_L1_error)
+    __pyx_r = __pyx_t_10;
+    __pyx_t_10 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":355
+    /* "scalecodec/_value_decode.pyx":590
  *                     out.append(name)
  *         return out
  *     elif op == OP_MULTIADDR:             # <<<<<<<<<<<<<<
@@ -20390,16 +22599,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 38:
 
-    /* "scalecodec/_value_decode.pyx":370
+    /* "scalecodec/_value_decode.pyx":605
  *         # aux: {pallet_index: (pallet_name, {call_index: (call_name,
  *         #        [(arg_name, converted_type_string, _Node), ...])})}
  *         _need(p, 2, buflen)             # <<<<<<<<<<<<<<
  *         v = (<dict>nd.aux).get(buf[p])
  *         if v is None:
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 370, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 605, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":371
+    /* "scalecodec/_value_decode.pyx":606
  *         #        [(arg_name, converted_type_string, _Node), ...])})}
  *         _need(p, 2, buflen)
  *         v = (<dict>nd.aux).get(buf[p])             # <<<<<<<<<<<<<<
@@ -20408,17 +22617,17 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_nd->aux == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-      __PYX_ERR(0, 371, __pyx_L1_error)
+      __PYX_ERR(0, 606, __pyx_L1_error)
     }
-    __pyx_t_8 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 371, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_2 = __Pyx_PyDict_GetItemDefault(((PyObject*)__pyx_v_nd->aux), __pyx_t_8, Py_None); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 371, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 606, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    __pyx_t_2 = __Pyx_PyDict_GetItemDefault(((PyObject*)__pyx_v_nd->aux), __pyx_t_10, Py_None); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 606, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     __pyx_v_v = __pyx_t_2;
     __pyx_t_2 = 0;
 
-    /* "scalecodec/_value_decode.pyx":372
+    /* "scalecodec/_value_decode.pyx":607
  *         _need(p, 2, buflen)
  *         v = (<dict>nd.aux).get(buf[p])
  *         if v is None:             # <<<<<<<<<<<<<<
@@ -20428,40 +22637,40 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_t_4 = (__pyx_v_v == Py_None);
     if (unlikely(__pyx_t_4)) {
 
-      /* "scalecodec/_value_decode.pyx":373
+      /* "scalecodec/_value_decode.pyx":608
  *         v = (<dict>nd.aux).get(buf[p])
  *         if v is None:
  *             raise ValueError(f'Pallet with index {buf[p]} not found in Call table')             # <<<<<<<<<<<<<<
  *         idx = buf[p + 1]
  *         entry = (<dict>(<tuple>v)[1]).get(idx)
 */
-      __pyx_t_8 = NULL;
-      __pyx_t_12 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 373, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_12);
-      __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_t_12, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 373, __pyx_L1_error)
+      __pyx_t_10 = NULL;
+      __pyx_t_11 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 608, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_11);
+      __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_t_11, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 608, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
       __pyx_t_20[0] = __pyx_mstate_global->__pyx_kp_u_Pallet_with_index;
       __pyx_t_20[1] = __pyx_t_5;
       __pyx_t_20[2] = __pyx_mstate_global->__pyx_kp_u_not_found_in_Call_table;
-      __pyx_t_12 = __Pyx_PyUnicode_Join(__pyx_t_20, 3, 18 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_5) + 24, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5));
-      if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 373, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_12);
+      __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_20, 3, 18 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_5) + 24, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5));
+      if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 608, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_11);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __pyx_t_7 = 1;
       {
-        PyObject *__pyx_callargs[2] = {__pyx_t_8, __pyx_t_12};
+        PyObject *__pyx_callargs[2] = {__pyx_t_10, __pyx_t_11};
         __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-        __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 373, __pyx_L1_error)
+        __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+        __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+        if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 608, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
       }
       __Pyx_Raise(__pyx_t_2, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __PYX_ERR(0, 373, __pyx_L1_error)
+      __PYX_ERR(0, 608, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":372
+      /* "scalecodec/_value_decode.pyx":607
  *         _need(p, 2, buflen)
  *         v = (<dict>nd.aux).get(buf[p])
  *         if v is None:             # <<<<<<<<<<<<<<
@@ -20470,7 +22679,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":374
+    /* "scalecodec/_value_decode.pyx":609
  *         if v is None:
  *             raise ValueError(f'Pallet with index {buf[p]} not found in Call table')
  *         idx = buf[p + 1]             # <<<<<<<<<<<<<<
@@ -20479,7 +22688,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __pyx_v_idx = (__pyx_v_buf[(__pyx_v_p + 1)]);
 
-    /* "scalecodec/_value_decode.pyx":375
+    /* "scalecodec/_value_decode.pyx":610
  *             raise ValueError(f'Pallet with index {buf[p]} not found in Call table')
  *         idx = buf[p + 1]
  *         entry = (<dict>(<tuple>v)[1]).get(idx)             # <<<<<<<<<<<<<<
@@ -20488,21 +22697,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_v == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 375, __pyx_L1_error)
+      __PYX_ERR(0, 610, __pyx_L1_error)
     }
     if (unlikely(__Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_v), 1) == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-      __PYX_ERR(0, 375, __pyx_L1_error)
+      __PYX_ERR(0, 610, __pyx_L1_error)
     }
-    __pyx_t_2 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 375, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 610, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_12 = __Pyx_PyDict_GetItemDefault(((PyObject*)__Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_v), 1)), __pyx_t_2, Py_None); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 375, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_t_11 = __Pyx_PyDict_GetItemDefault(((PyObject*)__Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_v), 1)), __pyx_t_2, Py_None); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 610, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_v_entry = __pyx_t_12;
-    __pyx_t_12 = 0;
+    __pyx_v_entry = __pyx_t_11;
+    __pyx_t_11 = 0;
 
-    /* "scalecodec/_value_decode.pyx":376
+    /* "scalecodec/_value_decode.pyx":611
  *         idx = buf[p + 1]
  *         entry = (<dict>(<tuple>v)[1]).get(idx)
  *         if entry is None:             # <<<<<<<<<<<<<<
@@ -20512,7 +22721,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_t_4 = (__pyx_v_entry == Py_None);
     if (unlikely(__pyx_t_4)) {
 
-      /* "scalecodec/_value_decode.pyx":377
+      /* "scalecodec/_value_decode.pyx":612
  *         entry = (<dict>(<tuple>v)[1]).get(idx)
  *         if entry is None:
  *             raise ValueError(f"Index '{idx}' not present in Enum type mapping")             # <<<<<<<<<<<<<<
@@ -20520,29 +22729,29 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         out = []
 */
       __pyx_t_2 = NULL;
-      __pyx_t_8 = __Pyx_PyUnicode_From_int(__pyx_v_idx, 0, ' ', 'd'); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 377, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
+      __pyx_t_10 = __Pyx_PyUnicode_From_int(__pyx_v_idx, 0, ' ', 'd'); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 612, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_10);
       __pyx_t_20[0] = __pyx_mstate_global->__pyx_kp_u_Index;
-      __pyx_t_20[1] = __pyx_t_8;
+      __pyx_t_20[1] = __pyx_t_10;
       __pyx_t_20[2] = __pyx_mstate_global->__pyx_kp_u_not_present_in_Enum_type_mappin;
-      __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_20, 3, 7 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_8) + 34, 127);
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 377, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_20, 3, 7 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_10) + 34, 127);
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 612, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
       __pyx_t_7 = 1;
       {
         PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_t_5};
-        __pyx_t_12 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __pyx_t_11 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 377, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_12);
+        if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 612, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_11);
       }
-      __Pyx_Raise(__pyx_t_12, 0, 0, 0);
-      __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-      __PYX_ERR(0, 377, __pyx_L1_error)
+      __Pyx_Raise(__pyx_t_11, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+      __PYX_ERR(0, 612, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":376
+      /* "scalecodec/_value_decode.pyx":611
  *         idx = buf[p + 1]
  *         entry = (<dict>(<tuple>v)[1]).get(idx)
  *         if entry is None:             # <<<<<<<<<<<<<<
@@ -20551,7 +22760,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":378
+    /* "scalecodec/_value_decode.pyx":613
  *         if entry is None:
  *             raise ValueError(f"Index '{idx}' not present in Enum type mapping")
  *         pos[0] = p + 2             # <<<<<<<<<<<<<<
@@ -20560,19 +22769,19 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 2);
 
-    /* "scalecodec/_value_decode.pyx":379
+    /* "scalecodec/_value_decode.pyx":614
  *             raise ValueError(f"Index '{idx}' not present in Enum type mapping")
  *         pos[0] = p + 2
  *         out = []             # <<<<<<<<<<<<<<
  *         for arg_name, arg_type, child in <list>(<tuple>entry)[1]:
  *             out.append({
 */
-    __pyx_t_12 = PyList_New(0); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 379, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_12);
-    __pyx_v_out = ((PyObject*)__pyx_t_12);
-    __pyx_t_12 = 0;
+    __pyx_t_11 = PyList_New(0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 614, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
+    __pyx_v_out = ((PyObject*)__pyx_t_11);
+    __pyx_t_11 = 0;
 
-    /* "scalecodec/_value_decode.pyx":380
+    /* "scalecodec/_value_decode.pyx":615
  *         pos[0] = p + 2
  *         out = []
  *         for arg_name, arg_type, child in <list>(<tuple>entry)[1]:             # <<<<<<<<<<<<<<
@@ -20581,25 +22790,25 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_entry == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 380, __pyx_L1_error)
+      __PYX_ERR(0, 615, __pyx_L1_error)
     }
     if (unlikely(__Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_entry), 1) == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-      __PYX_ERR(0, 380, __pyx_L1_error)
+      __PYX_ERR(0, 615, __pyx_L1_error)
     }
-    __pyx_t_12 = ((PyObject*)__Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_entry), 1)); __Pyx_INCREF(__pyx_t_12);
+    __pyx_t_11 = ((PyObject*)__Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_entry), 1)); __Pyx_INCREF(__pyx_t_11);
     __pyx_t_3 = 0;
     for (;;) {
       {
-        Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_12);
+        Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_11);
         #if !CYTHON_ASSUME_SAFE_SIZE
-        if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 380, __pyx_L1_error)
+        if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 615, __pyx_L1_error)
         #endif
         if (__pyx_t_3 >= __pyx_temp) break;
       }
-      __pyx_t_5 = __Pyx_PyList_GET_ITEM_REF(__pyx_t_12, __pyx_t_3, __Pyx_ReferenceSharing_OwnStrongReference);
+      __pyx_t_5 = __Pyx_PyList_GET_ITEM_REF(__pyx_t_11, __pyx_t_3, __Pyx_ReferenceSharing_OwnStrongReference);
       ++__pyx_t_3;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 380, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 615, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       if ((likely(PyTuple_CheckExact(__pyx_t_5))) || (PyList_CheckExact(__pyx_t_5))) {
         PyObject* sequence = __pyx_t_5;
@@ -20607,110 +22816,110 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
         if (unlikely(size != 3)) {
           if (size > 3) __Pyx_RaiseTooManyValuesError(3);
           else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-          __PYX_ERR(0, 380, __pyx_L1_error)
+          __PYX_ERR(0, 615, __pyx_L1_error)
         }
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
         if (likely(PyTuple_CheckExact(sequence))) {
           __pyx_t_2 = PyTuple_GET_ITEM(sequence, 0);
           __Pyx_INCREF(__pyx_t_2);
-          __pyx_t_8 = PyTuple_GET_ITEM(sequence, 1);
-          __Pyx_INCREF(__pyx_t_8);
+          __pyx_t_10 = PyTuple_GET_ITEM(sequence, 1);
+          __Pyx_INCREF(__pyx_t_10);
           __pyx_t_6 = PyTuple_GET_ITEM(sequence, 2);
           __Pyx_INCREF(__pyx_t_6);
         } else {
           __pyx_t_2 = __Pyx_PyList_GET_ITEM_REF(sequence, 0, __Pyx_ReferenceSharing_SharedReference);
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 380, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 615, __pyx_L1_error)
           __Pyx_XGOTREF(__pyx_t_2);
-          __pyx_t_8 = __Pyx_PyList_GET_ITEM_REF(sequence, 1, __Pyx_ReferenceSharing_SharedReference);
-          if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 380, __pyx_L1_error)
-          __Pyx_XGOTREF(__pyx_t_8);
+          __pyx_t_10 = __Pyx_PyList_GET_ITEM_REF(sequence, 1, __Pyx_ReferenceSharing_SharedReference);
+          if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 615, __pyx_L1_error)
+          __Pyx_XGOTREF(__pyx_t_10);
           __pyx_t_6 = __Pyx_PyList_GET_ITEM_REF(sequence, 2, __Pyx_ReferenceSharing_SharedReference);
-          if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 380, __pyx_L1_error)
+          if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 615, __pyx_L1_error)
           __Pyx_XGOTREF(__pyx_t_6);
         }
         #else
-        __pyx_t_2 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 380, __pyx_L1_error)
+        __pyx_t_2 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 615, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
-        __pyx_t_8 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 380, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_8);
-        __pyx_t_6 = __Pyx_PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 380, __pyx_L1_error)
+        __pyx_t_10 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 615, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_10);
+        __pyx_t_6 = __Pyx_PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 615, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
         #endif
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       } else {
         Py_ssize_t index = -1;
-        __pyx_t_18 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 380, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_18);
+        __pyx_t_17 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 615, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_17);
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __pyx_t_19 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_18);
-        index = 0; __pyx_t_2 = __pyx_t_19(__pyx_t_18); if (unlikely(!__pyx_t_2)) goto __pyx_L68_unpacking_failed;
+        __pyx_t_18 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_17);
+        index = 0; __pyx_t_2 = __pyx_t_18(__pyx_t_17); if (unlikely(!__pyx_t_2)) goto __pyx_L48_unpacking_failed;
         __Pyx_GOTREF(__pyx_t_2);
-        index = 1; __pyx_t_8 = __pyx_t_19(__pyx_t_18); if (unlikely(!__pyx_t_8)) goto __pyx_L68_unpacking_failed;
-        __Pyx_GOTREF(__pyx_t_8);
-        index = 2; __pyx_t_6 = __pyx_t_19(__pyx_t_18); if (unlikely(!__pyx_t_6)) goto __pyx_L68_unpacking_failed;
+        index = 1; __pyx_t_10 = __pyx_t_18(__pyx_t_17); if (unlikely(!__pyx_t_10)) goto __pyx_L48_unpacking_failed;
+        __Pyx_GOTREF(__pyx_t_10);
+        index = 2; __pyx_t_6 = __pyx_t_18(__pyx_t_17); if (unlikely(!__pyx_t_6)) goto __pyx_L48_unpacking_failed;
         __Pyx_GOTREF(__pyx_t_6);
-        if (__Pyx_IternextUnpackEndCheck(__pyx_t_19(__pyx_t_18), 3) < (0)) __PYX_ERR(0, 380, __pyx_L1_error)
-        __pyx_t_19 = NULL;
-        __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-        goto __pyx_L69_unpacking_done;
-        __pyx_L68_unpacking_failed:;
-        __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-        __pyx_t_19 = NULL;
+        if (__Pyx_IternextUnpackEndCheck(__pyx_t_18(__pyx_t_17), 3) < (0)) __PYX_ERR(0, 615, __pyx_L1_error)
+        __pyx_t_18 = NULL;
+        __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
+        goto __pyx_L49_unpacking_done;
+        __pyx_L48_unpacking_failed:;
+        __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
+        __pyx_t_18 = NULL;
         if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-        __PYX_ERR(0, 380, __pyx_L1_error)
-        __pyx_L69_unpacking_done:;
+        __PYX_ERR(0, 615, __pyx_L1_error)
+        __pyx_L49_unpacking_done:;
       }
-      if (!(likely(((__pyx_t_6) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_6, __pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node))))) __PYX_ERR(0, 380, __pyx_L1_error)
+      if (!(likely(((__pyx_t_6) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_6, __pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node))))) __PYX_ERR(0, 615, __pyx_L1_error)
       __Pyx_XDECREF_SET(__pyx_v_arg_name, __pyx_t_2);
       __pyx_t_2 = 0;
-      __Pyx_XDECREF_SET(__pyx_v_arg_type, __pyx_t_8);
-      __pyx_t_8 = 0;
+      __Pyx_XDECREF_SET(__pyx_v_arg_type, __pyx_t_10);
+      __pyx_t_10 = 0;
       __Pyx_XDECREF_SET(__pyx_v_child, ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_6));
       __pyx_t_6 = 0;
 
-      /* "scalecodec/_value_decode.pyx":382
+      /* "scalecodec/_value_decode.pyx":617
  *         for arg_name, arg_type, child in <list>(<tuple>entry)[1]:
  *             out.append({
  *                 'name': arg_name,             # <<<<<<<<<<<<<<
  *                 'type': arg_type,
  *                 'value': _dec(<_Node>child, buf, buflen, pos),
 */
-      __pyx_t_5 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 382, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 617, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_name, __pyx_v_arg_name) < (0)) __PYX_ERR(0, 382, __pyx_L1_error)
+      if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_name, __pyx_v_arg_name) < (0)) __PYX_ERR(0, 617, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":383
+      /* "scalecodec/_value_decode.pyx":618
  *             out.append({
  *                 'name': arg_name,
  *                 'type': arg_type,             # <<<<<<<<<<<<<<
  *                 'value': _dec(<_Node>child, buf, buflen, pos),
  *             })
 */
-      if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_type, __pyx_v_arg_type) < (0)) __PYX_ERR(0, 382, __pyx_L1_error)
+      if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_type, __pyx_v_arg_type) < (0)) __PYX_ERR(0, 617, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":384
+      /* "scalecodec/_value_decode.pyx":619
  *                 'name': arg_name,
  *                 'type': arg_type,
  *                 'value': _dec(<_Node>child, buf, buflen, pos),             # <<<<<<<<<<<<<<
  *             })
  *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), pos[0] - p)
 */
-      __pyx_t_6 = __pyx_f_10scalecodec_13_value_decode__dec(__pyx_v_child, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 384, __pyx_L1_error)
+      __pyx_t_6 = __pyx_f_10scalecodec_13_value_decode__dec(__pyx_v_child, __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 619, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_value, __pyx_t_6) < (0)) __PYX_ERR(0, 382, __pyx_L1_error)
+      if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_value, __pyx_t_6) < (0)) __PYX_ERR(0, 617, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-      /* "scalecodec/_value_decode.pyx":381
+      /* "scalecodec/_value_decode.pyx":616
  *         out = []
  *         for arg_name, arg_type, child in <list>(<tuple>entry)[1]:
  *             out.append({             # <<<<<<<<<<<<<<
  *                 'name': arg_name,
  *                 'type': arg_type,
 */
-      __pyx_t_15 = __Pyx_PyList_Append(__pyx_v_out, __pyx_t_5); if (unlikely(__pyx_t_15 == ((int)-1))) __PYX_ERR(0, 381, __pyx_L1_error)
+      __pyx_t_19 = __Pyx_PyList_Append(__pyx_v_out, __pyx_t_5); if (unlikely(__pyx_t_19 == ((int)-1))) __PYX_ERR(0, 616, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "scalecodec/_value_decode.pyx":380
+      /* "scalecodec/_value_decode.pyx":615
  *         pos[0] = p + 2
  *         out = []
  *         for arg_name, arg_type, child in <list>(<tuple>entry)[1]:             # <<<<<<<<<<<<<<
@@ -20718,21 +22927,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *                 'name': arg_name,
 */
     }
-    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-    /* "scalecodec/_value_decode.pyx":386
+    /* "scalecodec/_value_decode.pyx":621
  *                 'value': _dec(<_Node>child, buf, buflen, pos),
  *             })
  *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), pos[0] - p)             # <<<<<<<<<<<<<<
  *         return {
  *             'call_index': '0x{:02x}{:02x}'.format(buf[p], idx),
 */
-    __pyx_t_12 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), ((__pyx_v_pos[0]) - __pyx_v_p)); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 386, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_12);
-    __pyx_v_raw = ((PyObject*)__pyx_t_12);
-    __pyx_t_12 = 0;
+    __pyx_t_11 = PyBytes_FromStringAndSize(((char const *)(__pyx_v_buf + __pyx_v_p)), ((__pyx_v_pos[0]) - __pyx_v_p)); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 621, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
+    __pyx_v_raw = ((PyObject*)__pyx_t_11);
+    __pyx_t_11 = 0;
 
-    /* "scalecodec/_value_decode.pyx":387
+    /* "scalecodec/_value_decode.pyx":622
  *             })
  *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), pos[0] - p)
  *         return {             # <<<<<<<<<<<<<<
@@ -20741,35 +22950,35 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __Pyx_XDECREF(__pyx_r);
 
-    /* "scalecodec/_value_decode.pyx":388
+    /* "scalecodec/_value_decode.pyx":623
  *         raw = PyBytes_FromStringAndSize(<const char*>(buf + p), pos[0] - p)
  *         return {
  *             'call_index': '0x{:02x}{:02x}'.format(buf[p], idx),             # <<<<<<<<<<<<<<
  *             'call_function': (<tuple>entry)[0],
  *             'call_module': (<tuple>v)[0],
 */
-    __pyx_t_12 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 388, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_t_11 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 623, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
     __pyx_t_6 = __pyx_mstate_global->__pyx_kp_u_0x_02x_02x;
     __Pyx_INCREF(__pyx_t_6);
-    __pyx_t_8 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 388, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_2 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 388, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 623, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    __pyx_t_2 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 623, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_7 = 0;
     {
-      PyObject *__pyx_callargs[3] = {__pyx_t_6, __pyx_t_8, __pyx_t_2};
+      PyObject *__pyx_callargs[3] = {__pyx_t_6, __pyx_t_10, __pyx_t_2};
       __pyx_t_5 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_format, __pyx_callargs+__pyx_t_7, (3-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 388, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 623, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
     }
-    if (PyDict_SetItem(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_call_index, __pyx_t_5) < (0)) __PYX_ERR(0, 388, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_call_index, __pyx_t_5) < (0)) __PYX_ERR(0, 623, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "scalecodec/_value_decode.pyx":389
+    /* "scalecodec/_value_decode.pyx":624
  *         return {
  *             'call_index': '0x{:02x}{:02x}'.format(buf[p], idx),
  *             'call_function': (<tuple>entry)[0],             # <<<<<<<<<<<<<<
@@ -20778,11 +22987,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_entry == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 389, __pyx_L1_error)
+      __PYX_ERR(0, 624, __pyx_L1_error)
     }
-    if (PyDict_SetItem(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_call_function, __Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_entry), 0)) < (0)) __PYX_ERR(0, 388, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_call_function, __Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_entry), 0)) < (0)) __PYX_ERR(0, 623, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":390
+    /* "scalecodec/_value_decode.pyx":625
  *             'call_index': '0x{:02x}{:02x}'.format(buf[p], idx),
  *             'call_function': (<tuple>entry)[0],
  *             'call_module': (<tuple>v)[0],             # <<<<<<<<<<<<<<
@@ -20791,20 +23000,20 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_v == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 390, __pyx_L1_error)
+      __PYX_ERR(0, 625, __pyx_L1_error)
     }
-    if (PyDict_SetItem(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_call_module, __Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_v), 0)) < (0)) __PYX_ERR(0, 388, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_call_module, __Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_v), 0)) < (0)) __PYX_ERR(0, 623, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":391
+    /* "scalecodec/_value_decode.pyx":626
  *             'call_function': (<tuple>entry)[0],
  *             'call_module': (<tuple>v)[0],
  *             'call_args': out,             # <<<<<<<<<<<<<<
  *             'call_hash': '0x' + blake2b(raw, digest_size=32).digest().hex(),
  *         }
 */
-    if (PyDict_SetItem(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_call_args, __pyx_v_out) < (0)) __PYX_ERR(0, 388, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_call_args, __pyx_v_out) < (0)) __PYX_ERR(0, 623, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":392
+    /* "scalecodec/_value_decode.pyx":627
  *             'call_module': (<tuple>v)[0],
  *             'call_args': out,
  *             'call_hash': '0x' + blake2b(raw, digest_size=32).digest().hex(),             # <<<<<<<<<<<<<<
@@ -20812,7 +23021,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *     elif op == OP_EVENT:
 */
     __pyx_t_21 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_22, __pyx_mstate_global->__pyx_n_u_blake2b); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 392, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_22, __pyx_mstate_global->__pyx_n_u_blake2b); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 627, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_22);
     __pyx_t_7 = 1;
     #if CYTHON_UNPACK_METHODS
@@ -20828,48 +23037,48 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     #endif
     {
       PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_21, __pyx_v_raw};
-      __pyx_t_23 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 392, __pyx_L1_error)
+      __pyx_t_23 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 627, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_23);
-      if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_digest_size, __pyx_mstate_global->__pyx_int_32, __pyx_t_23, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 392, __pyx_L1_error)
-      __pyx_t_18 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_22, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_23);
+      if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_digest_size, __pyx_mstate_global->__pyx_int_32, __pyx_t_23, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 627, __pyx_L1_error)
+      __pyx_t_17 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_22, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_23);
       __Pyx_XDECREF(__pyx_t_21); __pyx_t_21 = 0;
       __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
       __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
-      if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 392, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_18);
+      if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 627, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_17);
     }
-    __pyx_t_6 = __pyx_t_18;
+    __pyx_t_6 = __pyx_t_17;
     __Pyx_INCREF(__pyx_t_6);
     __pyx_t_7 = 0;
     {
       PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
-      __pyx_t_8 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_digest, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __pyx_t_10 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_digest, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 392, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
+      __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
+      if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 627, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_10);
     }
-    __pyx_t_2 = __pyx_t_8;
+    __pyx_t_2 = __pyx_t_10;
     __Pyx_INCREF(__pyx_t_2);
     __pyx_t_7 = 0;
     {
       PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
       __pyx_t_5 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_hex, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 392, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 627, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
     }
-    __pyx_t_8 = PyNumber_Add(__pyx_mstate_global->__pyx_kp_u_0x, __pyx_t_5); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 392, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_10 = PyNumber_Add(__pyx_mstate_global->__pyx_kp_u_0x, __pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 627, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (PyDict_SetItem(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_call_hash, __pyx_t_8) < (0)) __PYX_ERR(0, 388, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_r = __pyx_t_12;
-    __pyx_t_12 = 0;
+    if (PyDict_SetItem(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_call_hash, __pyx_t_10) < (0)) __PYX_ERR(0, 623, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+    __pyx_r = __pyx_t_11;
+    __pyx_t_11 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":367
+    /* "scalecodec/_value_decode.pyx":602
  *             return v
  *         return {nd.keys[idx]: v}
  *     elif op == OP_CALL:             # <<<<<<<<<<<<<<
@@ -20879,7 +23088,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 40:
 
-    /* "scalecodec/_value_decode.pyx":395
+    /* "scalecodec/_value_decode.pyx":630
  *         }
  *     elif op == OP_EVENT:
  *         return _dec_event(<dict>nd.aux, buf, buflen, pos)             # <<<<<<<<<<<<<<
@@ -20887,16 +23096,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  *         # phase: a plain enum value  a variant name, or {name: payload}
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_12 = __pyx_v_nd->aux;
-    __Pyx_INCREF(__pyx_t_12);
-    __pyx_t_8 = __pyx_f_10scalecodec_13_value_decode__dec_event(((PyObject*)__pyx_t_12), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 395, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-    __pyx_r = __pyx_t_8;
-    __pyx_t_8 = 0;
+    __pyx_t_11 = __pyx_v_nd->aux;
+    __Pyx_INCREF(__pyx_t_11);
+    __pyx_t_10 = __pyx_f_10scalecodec_13_value_decode__dec_event(((PyObject*)__pyx_t_11), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 630, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+    __pyx_r = __pyx_t_10;
+    __pyx_t_10 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":394
+    /* "scalecodec/_value_decode.pyx":629
  *             'call_hash': '0x' + blake2b(raw, digest_size=32).digest().hex(),
  *         }
  *     elif op == OP_EVENT:             # <<<<<<<<<<<<<<
@@ -20906,7 +23115,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 41:
 
-    /* "scalecodec/_value_decode.pyx":398
+    /* "scalecodec/_value_decode.pyx":633
  *     elif op == OP_EVENT_RECORD:
  *         # phase: a plain enum value  a variant name, or {name: payload}
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)             # <<<<<<<<<<<<<<
@@ -20915,17 +23124,17 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_nd->children == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 398, __pyx_L1_error)
+      __PYX_ERR(0, 633, __pyx_L1_error)
     }
-    __pyx_t_8 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
-    __Pyx_INCREF(__pyx_t_8);
-    __pyx_t_12 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_8), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 398, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_12);
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_v_v = __pyx_t_12;
-    __pyx_t_12 = 0;
+    __pyx_t_10 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 0);
+    __Pyx_INCREF(__pyx_t_10);
+    __pyx_t_11 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_10), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 633, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
+    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+    __pyx_v_v = __pyx_t_11;
+    __pyx_t_11 = 0;
 
-    /* "scalecodec/_value_decode.pyx":399
+    /* "scalecodec/_value_decode.pyx":634
  *         # phase: a plain enum value  a variant name, or {name: payload}
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         if isinstance(v, dict):             # <<<<<<<<<<<<<<
@@ -20935,52 +23144,52 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_t_4 = PyDict_Check(__pyx_v_v); 
     if (__pyx_t_4) {
 
-      /* "scalecodec/_value_decode.pyx":400
+      /* "scalecodec/_value_decode.pyx":635
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         if isinstance(v, dict):
  *             phase_name = next(iter(v))             # <<<<<<<<<<<<<<
  *             extrinsic_idx = v[phase_name] if phase_name == 'ApplyExtrinsic' else None
  *         else:
 */
-      __pyx_t_12 = PyObject_GetIter(__pyx_v_v); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 400, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_12);
-      __pyx_t_8 = __Pyx_PyIter_Next(__pyx_t_12); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 400, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-      __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-      __pyx_v_phase_name = __pyx_t_8;
-      __pyx_t_8 = 0;
+      __pyx_t_11 = PyObject_GetIter(__pyx_v_v); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 635, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_11);
+      __pyx_t_10 = __Pyx_PyIter_Next(__pyx_t_11); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 635, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_10);
+      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+      __pyx_v_phase_name = __pyx_t_10;
+      __pyx_t_10 = 0;
 
-      /* "scalecodec/_value_decode.pyx":401
+      /* "scalecodec/_value_decode.pyx":636
  *         if isinstance(v, dict):
  *             phase_name = next(iter(v))
  *             extrinsic_idx = v[phase_name] if phase_name == 'ApplyExtrinsic' else None             # <<<<<<<<<<<<<<
  *         else:
  *             phase_name = v
 */
-      __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_phase_name, __pyx_mstate_global->__pyx_n_u_ApplyExtrinsic, Py_EQ)); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 401, __pyx_L1_error)
+      __pyx_t_4 = (__Pyx_PyUnicode_Equals(__pyx_v_phase_name, __pyx_mstate_global->__pyx_n_u_ApplyExtrinsic, Py_EQ)); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 636, __pyx_L1_error)
       if (__pyx_t_4) {
-        __pyx_t_12 = __Pyx_PyObject_GetItem(__pyx_v_v, __pyx_v_phase_name); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 401, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_12);
-        __pyx_t_8 = __pyx_t_12;
-        __pyx_t_12 = 0;
+        __pyx_t_11 = __Pyx_PyObject_GetItem(__pyx_v_v, __pyx_v_phase_name); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 636, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_11);
+        __pyx_t_10 = __pyx_t_11;
+        __pyx_t_11 = 0;
       } else {
         __Pyx_INCREF(Py_None);
-        __pyx_t_8 = Py_None;
+        __pyx_t_10 = Py_None;
       }
-      __pyx_v_extrinsic_idx = __pyx_t_8;
-      __pyx_t_8 = 0;
+      __pyx_v_extrinsic_idx = __pyx_t_10;
+      __pyx_t_10 = 0;
 
-      /* "scalecodec/_value_decode.pyx":399
+      /* "scalecodec/_value_decode.pyx":634
  *         # phase: a plain enum value  a variant name, or {name: payload}
  *         v = _dec(<_Node>nd.children[0], buf, buflen, pos)
  *         if isinstance(v, dict):             # <<<<<<<<<<<<<<
  *             phase_name = next(iter(v))
  *             extrinsic_idx = v[phase_name] if phase_name == 'ApplyExtrinsic' else None
 */
-      goto __pyx_L71;
+      goto __pyx_L51;
     }
 
-    /* "scalecodec/_value_decode.pyx":403
+    /* "scalecodec/_value_decode.pyx":638
  *             extrinsic_idx = v[phase_name] if phase_name == 'ApplyExtrinsic' else None
  *         else:
  *             phase_name = v             # <<<<<<<<<<<<<<
@@ -20991,7 +23200,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
       __Pyx_INCREF(__pyx_v_v);
       __pyx_v_phase_name = __pyx_v_v;
 
-      /* "scalecodec/_value_decode.pyx":404
+      /* "scalecodec/_value_decode.pyx":639
  *         else:
  *             phase_name = v
  *             extrinsic_idx = None             # <<<<<<<<<<<<<<
@@ -21001,9 +23210,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
       __Pyx_INCREF(Py_None);
       __pyx_v_extrinsic_idx = Py_None;
     }
-    __pyx_L71:;
+    __pyx_L51:;
 
-    /* "scalecodec/_value_decode.pyx":405
+    /* "scalecodec/_value_decode.pyx":640
  *             phase_name = v
  *             extrinsic_idx = None
  *         p = pos[0]             # <<<<<<<<<<<<<<
@@ -21012,16 +23221,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __pyx_v_p = (__pyx_v_pos[0]);
 
-    /* "scalecodec/_value_decode.pyx":406
+    /* "scalecodec/_value_decode.pyx":641
  *             extrinsic_idx = None
  *         p = pos[0]
  *         _need(p, 1, buflen)             # <<<<<<<<<<<<<<
  *         idx = buf[p]                      # outer event enum index
  *         d = _dec_event(<dict>nd.aux, buf, buflen, pos)
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 406, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 641, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":407
+    /* "scalecodec/_value_decode.pyx":642
  *         p = pos[0]
  *         _need(p, 1, buflen)
  *         idx = buf[p]                      # outer event enum index             # <<<<<<<<<<<<<<
@@ -21030,22 +23239,22 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __pyx_v_idx = (__pyx_v_buf[__pyx_v_p]);
 
-    /* "scalecodec/_value_decode.pyx":408
+    /* "scalecodec/_value_decode.pyx":643
  *         _need(p, 1, buflen)
  *         idx = buf[p]                      # outer event enum index
  *         d = _dec_event(<dict>nd.aux, buf, buflen, pos)             # <<<<<<<<<<<<<<
  *         v = _dec(<_Node>nd.children[1], buf, buflen, pos)   # topics
  *         return {
 */
-    __pyx_t_8 = __pyx_v_nd->aux;
-    __Pyx_INCREF(__pyx_t_8);
-    __pyx_t_12 = __pyx_f_10scalecodec_13_value_decode__dec_event(((PyObject*)__pyx_t_8), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 408, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_12);
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_v_d = ((PyObject*)__pyx_t_12);
-    __pyx_t_12 = 0;
+    __pyx_t_10 = __pyx_v_nd->aux;
+    __Pyx_INCREF(__pyx_t_10);
+    __pyx_t_11 = __pyx_f_10scalecodec_13_value_decode__dec_event(((PyObject*)__pyx_t_10), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 643, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
+    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+    __pyx_v_d = ((PyObject*)__pyx_t_11);
+    __pyx_t_11 = 0;
 
-    /* "scalecodec/_value_decode.pyx":409
+    /* "scalecodec/_value_decode.pyx":644
  *         idx = buf[p]                      # outer event enum index
  *         d = _dec_event(<dict>nd.aux, buf, buflen, pos)
  *         v = _dec(<_Node>nd.children[1], buf, buflen, pos)   # topics             # <<<<<<<<<<<<<<
@@ -21054,17 +23263,17 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_nd->children == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 409, __pyx_L1_error)
+      __PYX_ERR(0, 644, __pyx_L1_error)
     }
-    __pyx_t_12 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 1);
-    __Pyx_INCREF(__pyx_t_12);
-    __pyx_t_8 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_12), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 409, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-    __Pyx_DECREF_SET(__pyx_v_v, __pyx_t_8);
-    __pyx_t_8 = 0;
+    __pyx_t_11 = __Pyx_PyList_GET_ITEM(__pyx_v_nd->children, 1);
+    __Pyx_INCREF(__pyx_t_11);
+    __pyx_t_10 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_11), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 644, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+    __Pyx_DECREF_SET(__pyx_v_v, __pyx_t_10);
+    __pyx_t_10 = 0;
 
-    /* "scalecodec/_value_decode.pyx":410
+    /* "scalecodec/_value_decode.pyx":645
  *         d = _dec_event(<dict>nd.aux, buf, buflen, pos)
  *         v = _dec(<_Node>nd.children[1], buf, buflen, pos)   # topics
  *         return {             # <<<<<<<<<<<<<<
@@ -21073,48 +23282,48 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __Pyx_XDECREF(__pyx_r);
 
-    /* "scalecodec/_value_decode.pyx":411
+    /* "scalecodec/_value_decode.pyx":646
  *         v = _dec(<_Node>nd.children[1], buf, buflen, pos)   # topics
  *         return {
  *             'phase': phase_name,             # <<<<<<<<<<<<<<
  *             'extrinsic_idx': extrinsic_idx,
  *             'event': d,
 */
-    __pyx_t_8 = __Pyx_PyDict_NewPresized(8); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 411, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_8);
-    if (PyDict_SetItem(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_phase, __pyx_v_phase_name) < (0)) __PYX_ERR(0, 411, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyDict_NewPresized(8); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 646, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    if (PyDict_SetItem(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_phase, __pyx_v_phase_name) < (0)) __PYX_ERR(0, 646, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":412
+    /* "scalecodec/_value_decode.pyx":647
  *         return {
  *             'phase': phase_name,
  *             'extrinsic_idx': extrinsic_idx,             # <<<<<<<<<<<<<<
  *             'event': d,
  *             'event_index': idx,
 */
-    if (PyDict_SetItem(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_extrinsic_idx, __pyx_v_extrinsic_idx) < (0)) __PYX_ERR(0, 411, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_extrinsic_idx, __pyx_v_extrinsic_idx) < (0)) __PYX_ERR(0, 646, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":413
+    /* "scalecodec/_value_decode.pyx":648
  *             'phase': phase_name,
  *             'extrinsic_idx': extrinsic_idx,
  *             'event': d,             # <<<<<<<<<<<<<<
  *             'event_index': idx,
  *             'module_id': d['module_id'],
 */
-    if (PyDict_SetItem(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_event, __pyx_v_d) < (0)) __PYX_ERR(0, 411, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_event, __pyx_v_d) < (0)) __PYX_ERR(0, 646, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":414
+    /* "scalecodec/_value_decode.pyx":649
  *             'extrinsic_idx': extrinsic_idx,
  *             'event': d,
  *             'event_index': idx,             # <<<<<<<<<<<<<<
  *             'module_id': d['module_id'],
  *             'event_id': d['event_id'],
 */
-    __pyx_t_12 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 414, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_12);
-    if (PyDict_SetItem(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_event_index, __pyx_t_12) < (0)) __PYX_ERR(0, 411, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+    __pyx_t_11 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 649, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
+    if (PyDict_SetItem(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_event_index, __pyx_t_11) < (0)) __PYX_ERR(0, 646, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-    /* "scalecodec/_value_decode.pyx":415
+    /* "scalecodec/_value_decode.pyx":650
  *             'event': d,
  *             'event_index': idx,
  *             'module_id': d['module_id'],             # <<<<<<<<<<<<<<
@@ -21123,14 +23332,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_d == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 415, __pyx_L1_error)
+      __PYX_ERR(0, 650, __pyx_L1_error)
     }
-    __pyx_t_12 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_mstate_global->__pyx_n_u_module_id); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 415, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_12);
-    if (PyDict_SetItem(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_module_id, __pyx_t_12) < (0)) __PYX_ERR(0, 411, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+    __pyx_t_11 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_mstate_global->__pyx_n_u_module_id); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 650, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
+    if (PyDict_SetItem(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_module_id, __pyx_t_11) < (0)) __PYX_ERR(0, 646, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-    /* "scalecodec/_value_decode.pyx":416
+    /* "scalecodec/_value_decode.pyx":651
  *             'event_index': idx,
  *             'module_id': d['module_id'],
  *             'event_id': d['event_id'],             # <<<<<<<<<<<<<<
@@ -21139,14 +23348,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_d == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 416, __pyx_L1_error)
+      __PYX_ERR(0, 651, __pyx_L1_error)
     }
-    __pyx_t_12 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_mstate_global->__pyx_n_u_event_id); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 416, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_12);
-    if (PyDict_SetItem(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_event_id, __pyx_t_12) < (0)) __PYX_ERR(0, 411, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+    __pyx_t_11 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_mstate_global->__pyx_n_u_event_id); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 651, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
+    if (PyDict_SetItem(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_event_id, __pyx_t_11) < (0)) __PYX_ERR(0, 646, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-    /* "scalecodec/_value_decode.pyx":417
+    /* "scalecodec/_value_decode.pyx":652
  *             'module_id': d['module_id'],
  *             'event_id': d['event_id'],
  *             'attributes': d['attributes'],             # <<<<<<<<<<<<<<
@@ -21155,26 +23364,26 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     if (unlikely(__pyx_v_d == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 417, __pyx_L1_error)
+      __PYX_ERR(0, 652, __pyx_L1_error)
     }
-    __pyx_t_12 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_mstate_global->__pyx_n_u_attributes); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 417, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_12);
-    if (PyDict_SetItem(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_attributes, __pyx_t_12) < (0)) __PYX_ERR(0, 411, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+    __pyx_t_11 = __Pyx_PyDict_GetItem(__pyx_v_d, __pyx_mstate_global->__pyx_n_u_attributes); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 652, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
+    if (PyDict_SetItem(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_attributes, __pyx_t_11) < (0)) __PYX_ERR(0, 646, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-    /* "scalecodec/_value_decode.pyx":418
+    /* "scalecodec/_value_decode.pyx":653
  *             'event_id': d['event_id'],
  *             'attributes': d['attributes'],
  *             'topics': v,             # <<<<<<<<<<<<<<
  *         }
  *     elif op == OP_ERA:
 */
-    if (PyDict_SetItem(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_topics, __pyx_v_v) < (0)) __PYX_ERR(0, 411, __pyx_L1_error)
-    __pyx_r = __pyx_t_8;
-    __pyx_t_8 = 0;
+    if (PyDict_SetItem(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_topics, __pyx_v_v) < (0)) __PYX_ERR(0, 646, __pyx_L1_error)
+    __pyx_r = __pyx_t_10;
+    __pyx_t_10 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":396
+    /* "scalecodec/_value_decode.pyx":631
  *     elif op == OP_EVENT:
  *         return _dec_event(<dict>nd.aux, buf, buflen, pos)
  *     elif op == OP_EVENT_RECORD:             # <<<<<<<<<<<<<<
@@ -21184,16 +23393,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     break;
     case 39:
 
-    /* "scalecodec/_value_decode.pyx":421
+    /* "scalecodec/_value_decode.pyx":656
  *         }
  *     elif op == OP_ERA:
  *         _need(p, 1, buflen)             # <<<<<<<<<<<<<<
  *         if buf[p] == 0:
  *             pos[0] = p + 1
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 421, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 1, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 656, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":422
+    /* "scalecodec/_value_decode.pyx":657
  *     elif op == OP_ERA:
  *         _need(p, 1, buflen)
  *         if buf[p] == 0:             # <<<<<<<<<<<<<<
@@ -21203,7 +23412,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     __pyx_t_4 = ((__pyx_v_buf[__pyx_v_p]) == 0);
     if (__pyx_t_4) {
 
-      /* "scalecodec/_value_decode.pyx":423
+      /* "scalecodec/_value_decode.pyx":658
  *         _need(p, 1, buflen)
  *         if buf[p] == 0:
  *             pos[0] = p + 1             # <<<<<<<<<<<<<<
@@ -21212,7 +23421,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
       (__pyx_v_pos[0]) = (__pyx_v_p + 1);
 
-      /* "scalecodec/_value_decode.pyx":424
+      /* "scalecodec/_value_decode.pyx":659
  *         if buf[p] == 0:
  *             pos[0] = p + 1
  *             return '00'             # <<<<<<<<<<<<<<
@@ -21224,7 +23433,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
       __pyx_r = __pyx_mstate_global->__pyx_kp_u_00;
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":422
+      /* "scalecodec/_value_decode.pyx":657
  *     elif op == OP_ERA:
  *         _need(p, 1, buflen)
  *         if buf[p] == 0:             # <<<<<<<<<<<<<<
@@ -21233,16 +23442,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":425
+    /* "scalecodec/_value_decode.pyx":660
  *             pos[0] = p + 1
  *             return '00'
  *         _need(p, 2, buflen)             # <<<<<<<<<<<<<<
  *         pos[0] = p + 2
  *         i = buf[p] + (buf[p + 1] << 8)   # encoded era, little-endian
 */
-    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 425, __pyx_L1_error)
+    __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 660, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":426
+    /* "scalecodec/_value_decode.pyx":661
  *             return '00'
  *         _need(p, 2, buflen)
  *         pos[0] = p + 2             # <<<<<<<<<<<<<<
@@ -21251,7 +23460,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     (__pyx_v_pos[0]) = (__pyx_v_p + 2);
 
-    /* "scalecodec/_value_decode.pyx":427
+    /* "scalecodec/_value_decode.pyx":662
  *         _need(p, 2, buflen)
  *         pos[0] = p + 2
  *         i = buf[p] + (buf[p + 1] << 8)   # encoded era, little-endian             # <<<<<<<<<<<<<<
@@ -21260,7 +23469,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __pyx_v_i = ((__pyx_v_buf[__pyx_v_p]) + ((__pyx_v_buf[(__pyx_v_p + 1)]) << 8));
 
-    /* "scalecodec/_value_decode.pyx":428
+    /* "scalecodec/_value_decode.pyx":663
  *         pos[0] = p + 2
  *         i = buf[p] + (buf[p + 1] << 8)   # encoded era, little-endian
  *         count = 2 << (i % (1 << 4))      # period             # <<<<<<<<<<<<<<
@@ -21269,7 +23478,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __pyx_v_count = (2 << (__pyx_v_i % 0x10));
 
-    /* "scalecodec/_value_decode.pyx":429
+    /* "scalecodec/_value_decode.pyx":664
  *         i = buf[p] + (buf[p + 1] << 8)   # encoded era, little-endian
  *         count = 2 << (i % (1 << 4))      # period
  *         total = (count >> 12) if (count >> 12) > 1 else 1  # quantize factor             # <<<<<<<<<<<<<<
@@ -21284,7 +23493,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     }
     __pyx_v_total = __pyx_t_3;
 
-    /* "scalecodec/_value_decode.pyx":430
+    /* "scalecodec/_value_decode.pyx":665
  *         count = 2 << (i % (1 << 4))      # period
  *         total = (count >> 12) if (count >> 12) > 1 else 1  # quantize factor
  *         i = (i >> 4) * total             # phase             # <<<<<<<<<<<<<<
@@ -21293,25 +23502,25 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     __pyx_v_i = ((__pyx_v_i >> 4) * __pyx_v_total);
 
-    /* "scalecodec/_value_decode.pyx":431
+    /* "scalecodec/_value_decode.pyx":666
  *         total = (count >> 12) if (count >> 12) > 1 else 1  # quantize factor
  *         i = (i >> 4) * total             # phase
  *         if count >= 4 and i < count:             # <<<<<<<<<<<<<<
  *             return (<object>count, <object>i)
  *         raise ValueError('Invalid phase and period: {}, {}'.format(i, count))
 */
-    __pyx_t_16 = (__pyx_v_count >= 4);
-    if (__pyx_t_16) {
+    __pyx_t_12 = (__pyx_v_count >= 4);
+    if (__pyx_t_12) {
     } else {
-      __pyx_t_4 = __pyx_t_16;
-      goto __pyx_L74_bool_binop_done;
+      __pyx_t_4 = __pyx_t_12;
+      goto __pyx_L54_bool_binop_done;
     }
-    __pyx_t_16 = (__pyx_v_i < __pyx_v_count);
-    __pyx_t_4 = __pyx_t_16;
-    __pyx_L74_bool_binop_done:;
+    __pyx_t_12 = (__pyx_v_i < __pyx_v_count);
+    __pyx_t_4 = __pyx_t_12;
+    __pyx_L54_bool_binop_done:;
     if (__pyx_t_4) {
 
-      /* "scalecodec/_value_decode.pyx":432
+      /* "scalecodec/_value_decode.pyx":667
  *         i = (i >> 4) * total             # phase
  *         if count >= 4 and i < count:
  *             return (<object>count, <object>i)             # <<<<<<<<<<<<<<
@@ -21319,25 +23528,25 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
  * 
 */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_8 = PyLong_FromSsize_t(__pyx_v_count); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 432, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
-      __pyx_t_12 = PyLong_FromSsize_t(__pyx_v_i); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 432, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_12);
-      __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 432, __pyx_L1_error)
+      __pyx_t_10 = PyLong_FromSsize_t(__pyx_v_count); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 667, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_10);
+      __pyx_t_11 = PyLong_FromSsize_t(__pyx_v_i); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 667, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_11);
+      __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 667, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __Pyx_INCREF(((PyObject *)__pyx_t_8));
-      __Pyx_GIVEREF(((PyObject *)__pyx_t_8));
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_8) != (0)) __PYX_ERR(0, 432, __pyx_L1_error);
-      __Pyx_INCREF(((PyObject *)__pyx_t_12));
-      __Pyx_GIVEREF(((PyObject *)__pyx_t_12));
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_12) != (0)) __PYX_ERR(0, 432, __pyx_L1_error);
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
+      __Pyx_INCREF(((PyObject *)__pyx_t_10));
+      __Pyx_GIVEREF(((PyObject *)__pyx_t_10));
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_10) != (0)) __PYX_ERR(0, 667, __pyx_L1_error);
+      __Pyx_INCREF(((PyObject *)__pyx_t_11));
+      __Pyx_GIVEREF(((PyObject *)__pyx_t_11));
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_11) != (0)) __PYX_ERR(0, 667, __pyx_L1_error);
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
       __pyx_r = __pyx_t_5;
       __pyx_t_5 = 0;
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":431
+      /* "scalecodec/_value_decode.pyx":666
  *         total = (count >> 12) if (count >> 12) > 1 else 1  # quantize factor
  *         i = (i >> 4) * total             # phase
  *         if count >= 4 and i < count:             # <<<<<<<<<<<<<<
@@ -21346,44 +23555,44 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":433
+    /* "scalecodec/_value_decode.pyx":668
  *         if count >= 4 and i < count:
  *             return (<object>count, <object>i)
  *         raise ValueError('Invalid phase and period: {}, {}'.format(i, count))             # <<<<<<<<<<<<<<
  * 
  *     raise UnsupportedType(f'Unknown value-decode op {op}')
 */
-    __pyx_t_12 = NULL;
+    __pyx_t_11 = NULL;
     __pyx_t_2 = __pyx_mstate_global->__pyx_kp_u_Invalid_phase_and_period;
     __Pyx_INCREF(__pyx_t_2);
-    __pyx_t_18 = PyLong_FromSsize_t(__pyx_v_i); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 433, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_18);
-    __pyx_t_6 = PyLong_FromSsize_t(__pyx_v_count); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 433, __pyx_L1_error)
+    __pyx_t_17 = PyLong_FromSsize_t(__pyx_v_i); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 668, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_17);
+    __pyx_t_6 = PyLong_FromSsize_t(__pyx_v_count); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 668, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_7 = 0;
     {
-      PyObject *__pyx_callargs[3] = {__pyx_t_2, __pyx_t_18, __pyx_t_6};
-      __pyx_t_8 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_format, __pyx_callargs+__pyx_t_7, (3-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      PyObject *__pyx_callargs[3] = {__pyx_t_2, __pyx_t_17, __pyx_t_6};
+      __pyx_t_10 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_format, __pyx_callargs+__pyx_t_7, (3-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
+      __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 433, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_8);
+      if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 668, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_10);
     }
     __pyx_t_7 = 1;
     {
-      PyObject *__pyx_callargs[2] = {__pyx_t_12, __pyx_t_8};
+      PyObject *__pyx_callargs[2] = {__pyx_t_11, __pyx_t_10};
       __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 433, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 668, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
     }
     __Pyx_Raise(__pyx_t_5, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __PYX_ERR(0, 433, __pyx_L1_error)
+    __PYX_ERR(0, 668, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":420
+    /* "scalecodec/_value_decode.pyx":655
  *             'topics': v,
  *         }
  *     elif op == OP_ERA:             # <<<<<<<<<<<<<<
@@ -21394,47 +23603,47 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
     default: break;
   }
 
-  /* "scalecodec/_value_decode.pyx":435
+  /* "scalecodec/_value_decode.pyx":670
  *         raise ValueError('Invalid phase and period: {}, {}'.format(i, count))
  * 
  *     raise UnsupportedType(f'Unknown value-decode op {op}')             # <<<<<<<<<<<<<<
  * 
  * 
 */
-  __pyx_t_8 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 435, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_12);
-  __pyx_t_6 = __Pyx_PyUnicode_From_int(__pyx_v_op, 0, ' ', 'd'); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 435, __pyx_L1_error)
+  __pyx_t_10 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 670, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_11);
+  __pyx_t_6 = __Pyx_PyUnicode_From_int(__pyx_v_op, 0, ' ', 'd'); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 670, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_18 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Unknown_value_decode_op, __pyx_t_6); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 435, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_18);
+  __pyx_t_17 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Unknown_value_decode_op, __pyx_t_6); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 670, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_17);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __pyx_t_7 = 1;
   #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_12))) {
-    __pyx_t_8 = PyMethod_GET_SELF(__pyx_t_12);
-    assert(__pyx_t_8);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_12);
-    __Pyx_INCREF(__pyx_t_8);
+  if (unlikely(PyMethod_Check(__pyx_t_11))) {
+    __pyx_t_10 = PyMethod_GET_SELF(__pyx_t_11);
+    assert(__pyx_t_10);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_11);
+    __Pyx_INCREF(__pyx_t_10);
     __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_12, __pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_11, __pyx__function);
     __pyx_t_7 = 0;
   }
   #endif
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_8, __pyx_t_18};
-    __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_12, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-    __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-    __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 435, __pyx_L1_error)
+    PyObject *__pyx_callargs[2] = {__pyx_t_10, __pyx_t_17};
+    __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_11, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+    __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
+    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 670, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
   }
   __Pyx_Raise(__pyx_t_5, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __PYX_ERR(0, 435, __pyx_L1_error)
+  __PYX_ERR(0, 670, __pyx_L1_error)
 
-  /* "scalecodec/_value_decode.pyx":150
+  /* "scalecodec/_value_decode.pyx":400
  * 
  * 
  * cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):             # <<<<<<<<<<<<<<
@@ -21447,9 +23656,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_XDECREF(__pyx_t_8);
-  __Pyx_XDECREF(__pyx_t_12);
-  __Pyx_XDECREF(__pyx_t_18);
+  __Pyx_XDECREF(__pyx_t_10);
+  __Pyx_XDECREF(__pyx_t_11);
+  __Pyx_XDECREF(__pyx_t_17);
   __Pyx_XDECREF(__pyx_t_21);
   __Pyx_XDECREF(__pyx_t_22);
   __Pyx_XDECREF(__pyx_t_23);
@@ -21457,6 +23666,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
   __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_v);
+  __Pyx_XDECREF(__pyx_v_item);
   __Pyx_XDECREF(__pyx_v_out);
   __Pyx_XDECREF(__pyx_v_d);
   __Pyx_XDECREF((PyObject *)__pyx_v_child);
@@ -21475,7 +23685,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec(struct __pyx_obj_10sc
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":438
+/* "scalecodec/_value_decode.pyx":673
  * 
  * 
  * cdef dict _dec_event(dict table, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):             # <<<<<<<<<<<<<<
@@ -21504,7 +23714,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_dec_event", 0);
 
-  /* "scalecodec/_value_decode.pyx":440
+  /* "scalecodec/_value_decode.pyx":675
  * cdef dict _dec_event(dict table, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):
  *     """Decode a runtime event enum into GenericScaleInfoEvent's dict shape."""
  *     cdef Py_ssize_t p = pos[0]             # <<<<<<<<<<<<<<
@@ -21513,16 +23723,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
 */
   __pyx_v_p = (__pyx_v_pos[0]);
 
-  /* "scalecodec/_value_decode.pyx":441
+  /* "scalecodec/_value_decode.pyx":676
  *     """Decode a runtime event enum into GenericScaleInfoEvent's dict shape."""
  *     cdef Py_ssize_t p = pos[0]
  *     _need(p, 2, buflen)             # <<<<<<<<<<<<<<
  *     v = table.get(buf[p])
  *     if v is None:
 */
-  __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 441, __pyx_L1_error)
+  __pyx_f_10scalecodec_13_value_decode__need(__pyx_v_p, 2, __pyx_v_buflen); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 676, __pyx_L1_error)
 
-  /* "scalecodec/_value_decode.pyx":442
+  /* "scalecodec/_value_decode.pyx":677
  *     cdef Py_ssize_t p = pos[0]
  *     _need(p, 2, buflen)
  *     v = table.get(buf[p])             # <<<<<<<<<<<<<<
@@ -21531,17 +23741,17 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
 */
   if (unlikely(__pyx_v_table == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-    __PYX_ERR(0, 442, __pyx_L1_error)
+    __PYX_ERR(0, 677, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 442, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 677, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyDict_GetItemDefault(__pyx_v_table, __pyx_t_1, Py_None); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 442, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_GetItemDefault(__pyx_v_table, __pyx_t_1, Py_None); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 677, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_v = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "scalecodec/_value_decode.pyx":443
+  /* "scalecodec/_value_decode.pyx":678
  *     _need(p, 2, buflen)
  *     v = table.get(buf[p])
  *     if v is None:             # <<<<<<<<<<<<<<
@@ -21551,7 +23761,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
   __pyx_t_3 = (__pyx_v_v == Py_None);
   if (unlikely(__pyx_t_3)) {
 
-    /* "scalecodec/_value_decode.pyx":444
+    /* "scalecodec/_value_decode.pyx":679
  *     v = table.get(buf[p])
  *     if v is None:
  *         raise ValueError("Index '{}' not present in Enum type mapping".format(buf[p]))             # <<<<<<<<<<<<<<
@@ -21561,7 +23771,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
     __pyx_t_1 = NULL;
     __pyx_t_5 = __pyx_mstate_global->__pyx_kp_u_Index_not_present_in_Enum_type_m;
     __Pyx_INCREF(__pyx_t_5);
-    __pyx_t_6 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 444, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 679, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_7 = 0;
     {
@@ -21569,7 +23779,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
       __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_format, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 444, __pyx_L1_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 679, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
     }
     __pyx_t_7 = 1;
@@ -21578,14 +23788,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
       __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 444, __pyx_L1_error)
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 679, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
     }
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 444, __pyx_L1_error)
+    __PYX_ERR(0, 679, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":443
+    /* "scalecodec/_value_decode.pyx":678
  *     _need(p, 2, buflen)
  *     v = table.get(buf[p])
  *     if v is None:             # <<<<<<<<<<<<<<
@@ -21594,7 +23804,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":445
+  /* "scalecodec/_value_decode.pyx":680
  *     if v is None:
  *         raise ValueError("Index '{}' not present in Enum type mapping".format(buf[p]))
  *     cdef int idx = buf[p + 1]             # <<<<<<<<<<<<<<
@@ -21603,7 +23813,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
 */
   __pyx_v_idx = (__pyx_v_buf[(__pyx_v_p + 1)]);
 
-  /* "scalecodec/_value_decode.pyx":446
+  /* "scalecodec/_value_decode.pyx":681
  *         raise ValueError("Index '{}' not present in Enum type mapping".format(buf[p]))
  *     cdef int idx = buf[p + 1]
  *     entry = (<dict>(<tuple>v)[1]).get(idx)             # <<<<<<<<<<<<<<
@@ -21612,21 +23822,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
 */
   if (unlikely(__pyx_v_v == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 446, __pyx_L1_error)
+    __PYX_ERR(0, 681, __pyx_L1_error)
   }
   if (unlikely(__Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_v), 1) == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-    __PYX_ERR(0, 446, __pyx_L1_error)
+    __PYX_ERR(0, 681, __pyx_L1_error)
   }
-  __pyx_t_2 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 446, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 681, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyDict_GetItemDefault(((PyObject*)__Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_v), 1)), __pyx_t_2, Py_None); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 446, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_GetItemDefault(((PyObject*)__Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_v), 1)), __pyx_t_2, Py_None); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 681, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_entry = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":447
+  /* "scalecodec/_value_decode.pyx":682
  *     cdef int idx = buf[p + 1]
  *     entry = (<dict>(<tuple>v)[1]).get(idx)
  *     if entry is None:             # <<<<<<<<<<<<<<
@@ -21636,7 +23846,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
   __pyx_t_3 = (__pyx_v_entry == Py_None);
   if (unlikely(__pyx_t_3)) {
 
-    /* "scalecodec/_value_decode.pyx":448
+    /* "scalecodec/_value_decode.pyx":683
  *     entry = (<dict>(<tuple>v)[1]).get(idx)
  *     if entry is None:
  *         raise ValueError("Index '{}' not present in Enum type mapping".format(idx))             # <<<<<<<<<<<<<<
@@ -21646,7 +23856,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
     __pyx_t_2 = NULL;
     __pyx_t_6 = __pyx_mstate_global->__pyx_kp_u_Index_not_present_in_Enum_type_m;
     __Pyx_INCREF(__pyx_t_6);
-    __pyx_t_5 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 448, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 683, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_t_7 = 0;
     {
@@ -21654,7 +23864,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
       __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_format, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 448, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 683, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __pyx_t_7 = 1;
@@ -21663,14 +23873,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
       __pyx_t_4 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 448, __pyx_L1_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 683, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
     }
     __Pyx_Raise(__pyx_t_4, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __PYX_ERR(0, 448, __pyx_L1_error)
+    __PYX_ERR(0, 683, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":447
+    /* "scalecodec/_value_decode.pyx":682
  *     cdef int idx = buf[p + 1]
  *     entry = (<dict>(<tuple>v)[1]).get(idx)
  *     if entry is None:             # <<<<<<<<<<<<<<
@@ -21679,7 +23889,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":449
+  /* "scalecodec/_value_decode.pyx":684
  *     if entry is None:
  *         raise ValueError("Index '{}' not present in Enum type mapping".format(idx))
  *     pos[0] = p + 2             # <<<<<<<<<<<<<<
@@ -21688,7 +23898,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
 */
   (__pyx_v_pos[0]) = (__pyx_v_p + 2);
 
-  /* "scalecodec/_value_decode.pyx":450
+  /* "scalecodec/_value_decode.pyx":685
  *         raise ValueError("Index '{}' not present in Enum type mapping".format(idx))
  *     pos[0] = p + 2
  *     payload_node = (<tuple>entry)[1]             # <<<<<<<<<<<<<<
@@ -21697,14 +23907,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
 */
   if (unlikely(__pyx_v_entry == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 450, __pyx_L1_error)
+    __PYX_ERR(0, 685, __pyx_L1_error)
   }
   __pyx_t_4 = __Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_entry), 1);
   __Pyx_INCREF(__pyx_t_4);
   __pyx_v_payload_node = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":451
+  /* "scalecodec/_value_decode.pyx":686
  *     pos[0] = p + 2
  *     payload_node = (<tuple>entry)[1]
  *     if payload_node is not None:             # <<<<<<<<<<<<<<
@@ -21714,19 +23924,19 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
   __pyx_t_3 = (__pyx_v_payload_node != Py_None);
   if (__pyx_t_3) {
 
-    /* "scalecodec/_value_decode.pyx":452
+    /* "scalecodec/_value_decode.pyx":687
  *     payload_node = (<tuple>entry)[1]
  *     if payload_node is not None:
  *         attributes = _dec(<_Node>payload_node, buf, buflen, pos)             # <<<<<<<<<<<<<<
  *     else:
  *         attributes = None
 */
-    __pyx_t_4 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_v_payload_node), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 452, __pyx_L1_error)
+    __pyx_t_4 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_v_payload_node), __pyx_v_buf, __pyx_v_buflen, __pyx_v_pos); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 687, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_v_attributes = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":451
+    /* "scalecodec/_value_decode.pyx":686
  *     pos[0] = p + 2
  *     payload_node = (<tuple>entry)[1]
  *     if payload_node is not None:             # <<<<<<<<<<<<<<
@@ -21736,7 +23946,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
     goto __pyx_L5;
   }
 
-  /* "scalecodec/_value_decode.pyx":454
+  /* "scalecodec/_value_decode.pyx":689
  *         attributes = _dec(<_Node>payload_node, buf, buflen, pos)
  *     else:
  *         attributes = None             # <<<<<<<<<<<<<<
@@ -21749,7 +23959,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
   }
   __pyx_L5:;
 
-  /* "scalecodec/_value_decode.pyx":455
+  /* "scalecodec/_value_decode.pyx":690
  *     else:
  *         attributes = None
  *     return {             # <<<<<<<<<<<<<<
@@ -21758,20 +23968,20 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
 */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "scalecodec/_value_decode.pyx":456
+  /* "scalecodec/_value_decode.pyx":691
  *         attributes = None
  *     return {
  *         'event_index': '{:02x}{:02x}'.format(buf[p], idx),             # <<<<<<<<<<<<<<
  *         'module_id': (<tuple>v)[0],
  *         'event_id': (<tuple>entry)[0],
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 456, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 691, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_2 = __pyx_mstate_global->__pyx_kp_u_02x_02x;
   __Pyx_INCREF(__pyx_t_2);
-  __pyx_t_5 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 456, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyLong_From_unsigned_char((__pyx_v_buf[__pyx_v_p])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 691, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 456, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyLong_From_int(__pyx_v_idx); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 691, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_t_7 = 0;
   {
@@ -21780,13 +23990,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 456, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 691, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_event_index, __pyx_t_1) < (0)) __PYX_ERR(0, 456, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_event_index, __pyx_t_1) < (0)) __PYX_ERR(0, 691, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":457
+  /* "scalecodec/_value_decode.pyx":692
  *     return {
  *         'event_index': '{:02x}{:02x}'.format(buf[p], idx),
  *         'module_id': (<tuple>v)[0],             # <<<<<<<<<<<<<<
@@ -21795,11 +24005,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
 */
   if (unlikely(__pyx_v_v == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 457, __pyx_L1_error)
+    __PYX_ERR(0, 692, __pyx_L1_error)
   }
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_module_id, __Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_v), 0)) < (0)) __PYX_ERR(0, 456, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_module_id, __Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_v), 0)) < (0)) __PYX_ERR(0, 691, __pyx_L1_error)
 
-  /* "scalecodec/_value_decode.pyx":458
+  /* "scalecodec/_value_decode.pyx":693
  *         'event_index': '{:02x}{:02x}'.format(buf[p], idx),
  *         'module_id': (<tuple>v)[0],
  *         'event_id': (<tuple>entry)[0],             # <<<<<<<<<<<<<<
@@ -21808,23 +24018,23 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
 */
   if (unlikely(__pyx_v_entry == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 458, __pyx_L1_error)
+    __PYX_ERR(0, 693, __pyx_L1_error)
   }
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_event_id, __Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_entry), 0)) < (0)) __PYX_ERR(0, 456, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_event_id, __Pyx_PyTuple_GET_ITEM(((PyObject*)__pyx_v_entry), 0)) < (0)) __PYX_ERR(0, 691, __pyx_L1_error)
 
-  /* "scalecodec/_value_decode.pyx":459
+  /* "scalecodec/_value_decode.pyx":694
  *         'module_id': (<tuple>v)[0],
  *         'event_id': (<tuple>entry)[0],
  *         'attributes': attributes,             # <<<<<<<<<<<<<<
  *     }
  * 
 */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_attributes, __pyx_v_attributes) < (0)) __PYX_ERR(0, 456, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_attributes, __pyx_v_attributes) < (0)) __PYX_ERR(0, 691, __pyx_L1_error)
   __pyx_r = ((PyObject*)__pyx_t_4);
   __pyx_t_4 = 0;
   goto __pyx_L0;
 
-  /* "scalecodec/_value_decode.pyx":438
+  /* "scalecodec/_value_decode.pyx":673
  * 
  * 
  * cdef dict _dec_event(dict table, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):             # <<<<<<<<<<<<<<
@@ -21851,12 +24061,12 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__dec_event(PyObject *__pyx
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":467
+/* "scalecodec/_value_decode.pyx":702
  *     cdef _Node _node
  * 
  *     def __call__(self, data):             # <<<<<<<<<<<<<<
- *         cdef const unsigned char[:] mv = data
- *         cdef Py_ssize_t buflen = mv.shape[0]
+ *         # `data` is a live argument reference for the whole call, so borrowing
+ *         # the internal buffer of bytes/bytearray directly is safe and skips
 */
 
 /* Python wrapper */
@@ -21881,32 +24091,32 @@ static PyObject *__pyx_pw_10scalecodec_13_value_decode_12ValueDecoder_1__call__(
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_data,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_VARARGS(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len < 0)) __PYX_ERR(0, 467, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len < 0)) __PYX_ERR(0, 702, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 467, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 702, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__call__", 0) < (0)) __PYX_ERR(0, 467, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__call__", 0) < (0)) __PYX_ERR(0, 702, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__call__", 1, 1, 1, i); __PYX_ERR(0, 467, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__call__", 1, 1, 1, i); __PYX_ERR(0, 702, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_VARARGS(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 467, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 702, __pyx_L3_error)
     }
     __pyx_v_data = values[0];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__call__", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 467, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__call__", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 702, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -21929,183 +24139,237 @@ static PyObject *__pyx_pw_10scalecodec_13_value_decode_12ValueDecoder_1__call__(
 
 static PyObject *__pyx_pf_10scalecodec_13_value_decode_12ValueDecoder___call__(struct __pyx_obj_10scalecodec_13_value_decode_ValueDecoder *__pyx_v_self, PyObject *__pyx_v_data) {
   __Pyx_memviewslice __pyx_v_mv = { 0, 0, { 0 }, { 0 }, { 0 } };
-  Py_ssize_t __pyx_v_buflen;
   unsigned char const *__pyx_v_buf;
+  Py_ssize_t __pyx_v_buflen;
   Py_ssize_t __pyx_v_pos;
   PyObject *__pyx_v_result = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  __Pyx_memviewslice __pyx_t_1 = { 0, 0, { 0 }, { 0 }, { 0 } };
-  int __pyx_t_2;
-  Py_ssize_t __pyx_t_3;
-  PyObject *__pyx_t_4 = NULL;
+  int __pyx_t_1;
+  __Pyx_memviewslice __pyx_t_2 = { 0, 0, { 0 }, { 0 }, { 0 } };
+  unsigned char const *__pyx_t_3;
+  Py_ssize_t __pyx_t_4;
   PyObject *__pyx_t_5 = NULL;
   PyObject *__pyx_t_6 = NULL;
   PyObject *__pyx_t_7 = NULL;
   PyObject *__pyx_t_8 = NULL;
-  PyObject *__pyx_t_9[4];
-  PyObject *__pyx_t_10 = NULL;
-  size_t __pyx_t_11;
+  PyObject *__pyx_t_9 = NULL;
+  PyObject *__pyx_t_10[4];
+  PyObject *__pyx_t_11 = NULL;
+  size_t __pyx_t_12;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__call__", 0);
 
-  /* "scalecodec/_value_decode.pyx":468
- * 
- *     def __call__(self, data):
- *         cdef const unsigned char[:] mv = data             # <<<<<<<<<<<<<<
- *         cdef Py_ssize_t buflen = mv.shape[0]
+  /* "scalecodec/_value_decode.pyx":709
  *         cdef const unsigned char* buf
-*/
-  __pyx_t_1 = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char__const__(__pyx_v_data, 0); if (unlikely(!__pyx_t_1.memview)) __PYX_ERR(0, 468, __pyx_L1_error)
-  __pyx_v_mv = __pyx_t_1;
-  __pyx_t_1.memview = NULL;
-  __pyx_t_1.data = NULL;
-
-  /* "scalecodec/_value_decode.pyx":469
- *     def __call__(self, data):
- *         cdef const unsigned char[:] mv = data
- *         cdef Py_ssize_t buflen = mv.shape[0]             # <<<<<<<<<<<<<<
- *         cdef const unsigned char* buf
- *         cdef Py_ssize_t pos = 0
-*/
-  __pyx_v_buflen = (__pyx_v_mv.shape[0]);
-
-  /* "scalecodec/_value_decode.pyx":471
- *         cdef Py_ssize_t buflen = mv.shape[0]
- *         cdef const unsigned char* buf
+ *         cdef Py_ssize_t buflen
  *         cdef Py_ssize_t pos = 0             # <<<<<<<<<<<<<<
- *         if buflen == 0:
- *             buf = NULL
+ *         if PyBytes_Check(data):
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
 */
   __pyx_v_pos = 0;
 
-  /* "scalecodec/_value_decode.pyx":472
- *         cdef const unsigned char* buf
+  /* "scalecodec/_value_decode.pyx":710
+ *         cdef Py_ssize_t buflen
  *         cdef Py_ssize_t pos = 0
- *         if buflen == 0:             # <<<<<<<<<<<<<<
- *             buf = NULL
- *         else:
+ *         if PyBytes_Check(data):             # <<<<<<<<<<<<<<
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
+ *             buflen = PyBytes_GET_SIZE(data)
 */
-  __pyx_t_2 = (__pyx_v_buflen == 0);
-  if (__pyx_t_2) {
+  __pyx_t_1 = PyBytes_Check(__pyx_v_data);
+  if (__pyx_t_1) {
 
-    /* "scalecodec/_value_decode.pyx":473
+    /* "scalecodec/_value_decode.pyx":711
  *         cdef Py_ssize_t pos = 0
- *         if buflen == 0:
- *             buf = NULL             # <<<<<<<<<<<<<<
- *         else:
- *             buf = &mv[0]
+ *         if PyBytes_Check(data):
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)             # <<<<<<<<<<<<<<
+ *             buflen = PyBytes_GET_SIZE(data)
+ *         elif PyByteArray_Check(data):
 */
-    __pyx_v_buf = NULL;
+    __pyx_v_buf = ((unsigned char const *)PyBytes_AS_STRING(__pyx_v_data));
 
-    /* "scalecodec/_value_decode.pyx":472
- *         cdef const unsigned char* buf
+    /* "scalecodec/_value_decode.pyx":712
+ *         if PyBytes_Check(data):
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
+ *             buflen = PyBytes_GET_SIZE(data)             # <<<<<<<<<<<<<<
+ *         elif PyByteArray_Check(data):
+ *             buf = <const unsigned char*>PyByteArray_AS_STRING(data)
+*/
+    __pyx_v_buflen = PyBytes_GET_SIZE(__pyx_v_data);
+
+    /* "scalecodec/_value_decode.pyx":710
+ *         cdef Py_ssize_t buflen
  *         cdef Py_ssize_t pos = 0
- *         if buflen == 0:             # <<<<<<<<<<<<<<
- *             buf = NULL
- *         else:
+ *         if PyBytes_Check(data):             # <<<<<<<<<<<<<<
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
+ *             buflen = PyBytes_GET_SIZE(data)
 */
     goto __pyx_L3;
   }
 
-  /* "scalecodec/_value_decode.pyx":475
- *             buf = NULL
+  /* "scalecodec/_value_decode.pyx":713
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
+ *             buflen = PyBytes_GET_SIZE(data)
+ *         elif PyByteArray_Check(data):             # <<<<<<<<<<<<<<
+ *             buf = <const unsigned char*>PyByteArray_AS_STRING(data)
+ *             buflen = PyByteArray_GET_SIZE(data)
+*/
+  __pyx_t_1 = PyByteArray_Check(__pyx_v_data);
+  if (__pyx_t_1) {
+
+    /* "scalecodec/_value_decode.pyx":714
+ *             buflen = PyBytes_GET_SIZE(data)
+ *         elif PyByteArray_Check(data):
+ *             buf = <const unsigned char*>PyByteArray_AS_STRING(data)             # <<<<<<<<<<<<<<
+ *             buflen = PyByteArray_GET_SIZE(data)
  *         else:
- *             buf = &mv[0]             # <<<<<<<<<<<<<<
+*/
+    __pyx_v_buf = ((unsigned char const *)PyByteArray_AS_STRING(__pyx_v_data));
+
+    /* "scalecodec/_value_decode.pyx":715
+ *         elif PyByteArray_Check(data):
+ *             buf = <const unsigned char*>PyByteArray_AS_STRING(data)
+ *             buflen = PyByteArray_GET_SIZE(data)             # <<<<<<<<<<<<<<
+ *         else:
+ *             mv = data
+*/
+    __pyx_v_buflen = PyByteArray_GET_SIZE(__pyx_v_data);
+
+    /* "scalecodec/_value_decode.pyx":713
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
+ *             buflen = PyBytes_GET_SIZE(data)
+ *         elif PyByteArray_Check(data):             # <<<<<<<<<<<<<<
+ *             buf = <const unsigned char*>PyByteArray_AS_STRING(data)
+ *             buflen = PyByteArray_GET_SIZE(data)
+*/
+    goto __pyx_L3;
+  }
+
+  /* "scalecodec/_value_decode.pyx":717
+ *             buflen = PyByteArray_GET_SIZE(data)
+ *         else:
+ *             mv = data             # <<<<<<<<<<<<<<
+ *             buflen = mv.shape[0]
+ *             buf = &mv[0] if buflen else NULL
+*/
+  /*else*/ {
+    __pyx_t_2 = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char__const__(__pyx_v_data, 0); if (unlikely(!__pyx_t_2.memview)) __PYX_ERR(0, 717, __pyx_L1_error)
+    __pyx_v_mv = __pyx_t_2;
+    __pyx_t_2.memview = NULL;
+    __pyx_t_2.data = NULL;
+
+    /* "scalecodec/_value_decode.pyx":718
+ *         else:
+ *             mv = data
+ *             buflen = mv.shape[0]             # <<<<<<<<<<<<<<
+ *             buf = &mv[0] if buflen else NULL
+ *         result = _dec(self._node, buf, buflen, &pos)
+*/
+    __pyx_v_buflen = (__pyx_v_mv.shape[0]);
+
+    /* "scalecodec/_value_decode.pyx":719
+ *             mv = data
+ *             buflen = mv.shape[0]
+ *             buf = &mv[0] if buflen else NULL             # <<<<<<<<<<<<<<
  *         result = _dec(self._node, buf, buflen, &pos)
  *         if pos != buflen:
 */
-  /*else*/ {
-    __pyx_t_3 = 0;
-    __pyx_v_buf = (&(*((unsigned char const  *) ( /* dim=0 */ (__pyx_v_mv.data + __pyx_t_3 * __pyx_v_mv.strides[0]) ))));
+    __pyx_t_1 = (__pyx_v_buflen != 0);
+    if (__pyx_t_1) {
+      __pyx_t_4 = 0;
+      __pyx_t_3 = (&(*((unsigned char const  *) ( /* dim=0 */ (__pyx_v_mv.data + __pyx_t_4 * __pyx_v_mv.strides[0]) ))));
+    } else {
+      __pyx_t_3 = NULL;
+    }
+    __pyx_v_buf = __pyx_t_3;
   }
   __pyx_L3:;
 
-  /* "scalecodec/_value_decode.pyx":476
- *         else:
- *             buf = &mv[0]
+  /* "scalecodec/_value_decode.pyx":720
+ *             buflen = mv.shape[0]
+ *             buf = &mv[0] if buflen else NULL
  *         result = _dec(self._node, buf, buflen, &pos)             # <<<<<<<<<<<<<<
  *         if pos != buflen:
  *             raise RemainingScaleBytesNotEmptyException(
 */
-  __pyx_t_4 = ((PyObject *)__pyx_v_self->_node);
-  __Pyx_INCREF(__pyx_t_4);
-  __pyx_t_5 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_4), __pyx_v_buf, __pyx_v_buflen, (&__pyx_v_pos)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 476, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_v_result = __pyx_t_5;
-  __pyx_t_5 = 0;
+  __pyx_t_5 = ((PyObject *)__pyx_v_self->_node);
+  __Pyx_INCREF(__pyx_t_5);
+  __pyx_t_6 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_5), __pyx_v_buf, __pyx_v_buflen, (&__pyx_v_pos)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 720, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_v_result = __pyx_t_6;
+  __pyx_t_6 = 0;
 
-  /* "scalecodec/_value_decode.pyx":477
- *             buf = &mv[0]
+  /* "scalecodec/_value_decode.pyx":721
+ *             buf = &mv[0] if buflen else NULL
  *         result = _dec(self._node, buf, buflen, &pos)
  *         if pos != buflen:             # <<<<<<<<<<<<<<
  *             raise RemainingScaleBytesNotEmptyException(
  *                 f'Decoding value-decoder - Current offset: {pos} / length: {buflen}'
 */
-  __pyx_t_2 = (__pyx_v_pos != __pyx_v_buflen);
-  if (unlikely(__pyx_t_2)) {
+  __pyx_t_1 = (__pyx_v_pos != __pyx_v_buflen);
+  if (unlikely(__pyx_t_1)) {
 
-    /* "scalecodec/_value_decode.pyx":478
+    /* "scalecodec/_value_decode.pyx":722
  *         result = _dec(self._node, buf, buflen, &pos)
  *         if pos != buflen:
  *             raise RemainingScaleBytesNotEmptyException(             # <<<<<<<<<<<<<<
  *                 f'Decoding value-decoder - Current offset: {pos} / length: {buflen}'
  *             )
 */
-    __pyx_t_4 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_RemainingScaleBytesNotEmptyExcep); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 478, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_t_5 = NULL;
+    __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_RemainingScaleBytesNotEmptyExcep); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 722, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_7);
 
-    /* "scalecodec/_value_decode.pyx":479
+    /* "scalecodec/_value_decode.pyx":723
  *         if pos != buflen:
  *             raise RemainingScaleBytesNotEmptyException(
  *                 f'Decoding value-decoder - Current offset: {pos} / length: {buflen}'             # <<<<<<<<<<<<<<
  *             )
  *         return result
 */
-    __pyx_t_7 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_pos, 0, ' ', 'd'); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 479, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_8 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_buflen, 0, ' ', 'd'); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 479, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_pos, 0, ' ', 'd'); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 723, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_9[0] = __pyx_mstate_global->__pyx_kp_u_Decoding_value_decoder_Current_o;
-    __pyx_t_9[1] = __pyx_t_7;
-    __pyx_t_9[2] = __pyx_mstate_global->__pyx_kp_u_length_2;
-    __pyx_t_9[3] = __pyx_t_8;
-    __pyx_t_10 = __Pyx_PyUnicode_Join(__pyx_t_9, 4, 41 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_7) + 11 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_8), 127);
-    if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 479, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_10);
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __pyx_t_9 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_buflen, 0, ' ', 'd'); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 723, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_9);
+    __pyx_t_10[0] = __pyx_mstate_global->__pyx_kp_u_Decoding_value_decoder_Current_o;
+    __pyx_t_10[1] = __pyx_t_8;
+    __pyx_t_10[2] = __pyx_mstate_global->__pyx_kp_u_length_2;
+    __pyx_t_10[3] = __pyx_t_9;
+    __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_10, 4, 41 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_8) + 11 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_9), 127);
+    if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 723, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_11 = 1;
+    __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+    __pyx_t_12 = 1;
     #if CYTHON_UNPACK_METHODS
-    if (unlikely(PyMethod_Check(__pyx_t_6))) {
-      __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_6);
-      assert(__pyx_t_4);
-      PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_6);
-      __Pyx_INCREF(__pyx_t_4);
+    if (unlikely(PyMethod_Check(__pyx_t_7))) {
+      __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_7);
+      assert(__pyx_t_5);
+      PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_7);
+      __Pyx_INCREF(__pyx_t_5);
       __Pyx_INCREF(__pyx__function);
-      __Pyx_DECREF_SET(__pyx_t_6, __pyx__function);
-      __pyx_t_11 = 0;
+      __Pyx_DECREF_SET(__pyx_t_7, __pyx__function);
+      __pyx_t_12 = 0;
     }
     #endif
     {
-      PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_t_10};
-      __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_6, __pyx_callargs+__pyx_t_11, (2-__pyx_t_11) | (__pyx_t_11*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 478, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_5);
+      PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_11};
+      __pyx_t_6 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_7, __pyx_callargs+__pyx_t_12, (2-__pyx_t_12) | (__pyx_t_12*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 722, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
     }
-    __Pyx_Raise(__pyx_t_5, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __PYX_ERR(0, 478, __pyx_L1_error)
+    __Pyx_Raise(__pyx_t_6, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __PYX_ERR(0, 722, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":477
- *             buf = &mv[0]
+    /* "scalecodec/_value_decode.pyx":721
+ *             buf = &mv[0] if buflen else NULL
  *         result = _dec(self._node, buf, buflen, &pos)
  *         if pos != buflen:             # <<<<<<<<<<<<<<
  *             raise RemainingScaleBytesNotEmptyException(
@@ -22113,7 +24377,7 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_12ValueDecoder___call__(s
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":481
+  /* "scalecodec/_value_decode.pyx":725
  *                 f'Decoding value-decoder - Current offset: {pos} / length: {buflen}'
  *             )
  *         return result             # <<<<<<<<<<<<<<
@@ -22125,23 +24389,23 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_12ValueDecoder___call__(s
   __pyx_r = __pyx_v_result;
   goto __pyx_L0;
 
-  /* "scalecodec/_value_decode.pyx":467
+  /* "scalecodec/_value_decode.pyx":702
  *     cdef _Node _node
  * 
  *     def __call__(self, data):             # <<<<<<<<<<<<<<
- *         cdef const unsigned char[:] mv = data
- *         cdef Py_ssize_t buflen = mv.shape[0]
+ *         # `data` is a live argument reference for the whole call, so borrowing
+ *         # the internal buffer of bytes/bytearray directly is safe and skips
 */
 
   /* function exit code */
   __pyx_L1_error:;
-  __PYX_XCLEAR_MEMVIEW(&__pyx_t_1, 1);
-  __Pyx_XDECREF(__pyx_t_4);
+  __PYX_XCLEAR_MEMVIEW(&__pyx_t_2, 1);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_7);
   __Pyx_XDECREF(__pyx_t_8);
-  __Pyx_XDECREF(__pyx_t_10);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_11);
   __Pyx_AddTraceback("scalecodec._value_decode.ValueDecoder.__call__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -22152,7 +24416,7 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_12ValueDecoder___call__(s
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":483
+/* "scalecodec/_value_decode.pyx":727
  *         return result
  * 
  *     def decode_at(self, data, Py_ssize_t offset):             # <<<<<<<<<<<<<<
@@ -22201,39 +24465,39 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_data,&__pyx_mstate_global->__pyx_n_u_offset,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len < 0)) __PYX_ERR(0, 483, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len < 0)) __PYX_ERR(0, 727, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 483, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 727, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 483, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 727, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "decode_at", 0) < (0)) __PYX_ERR(0, 483, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "decode_at", 0) < (0)) __PYX_ERR(0, 727, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("decode_at", 1, 2, 2, i); __PYX_ERR(0, 483, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("decode_at", 1, 2, 2, i); __PYX_ERR(0, 727, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 483, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 727, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 483, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 727, __pyx_L3_error)
     }
     __pyx_v_data = values[0];
-    __pyx_v_offset = __Pyx_PyIndex_AsSsize_t(values[1]); if (unlikely((__pyx_v_offset == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 483, __pyx_L3_error)
+    __pyx_v_offset = __Pyx_PyIndex_AsSsize_t(values[1]); if (unlikely((__pyx_v_offset == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 727, __pyx_L3_error)
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("decode_at", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 483, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("decode_at", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 727, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -22256,132 +24520,186 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_10scalecodec_13_value_decode_12ValueDecoder_2decode_at(struct __pyx_obj_10scalecodec_13_value_decode_ValueDecoder *__pyx_v_self, PyObject *__pyx_v_data, Py_ssize_t __pyx_v_offset) {
   __Pyx_memviewslice __pyx_v_mv = { 0, 0, { 0 }, { 0 }, { 0 } };
-  Py_ssize_t __pyx_v_buflen;
   unsigned char const *__pyx_v_buf;
+  Py_ssize_t __pyx_v_buflen;
   Py_ssize_t __pyx_v_pos;
   PyObject *__pyx_v_result = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  __Pyx_memviewslice __pyx_t_1 = { 0, 0, { 0 }, { 0 }, { 0 } };
-  int __pyx_t_2;
-  Py_ssize_t __pyx_t_3;
-  PyObject *__pyx_t_4 = NULL;
+  int __pyx_t_1;
+  __Pyx_memviewslice __pyx_t_2 = { 0, 0, { 0 }, { 0 }, { 0 } };
+  unsigned char const *__pyx_t_3;
+  Py_ssize_t __pyx_t_4;
   PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("decode_at", 0);
 
-  /* "scalecodec/_value_decode.pyx":491
- *         an extrinsic).
- *         """
- *         cdef const unsigned char[:] mv = data             # <<<<<<<<<<<<<<
- *         cdef Py_ssize_t buflen = mv.shape[0]
+  /* "scalecodec/_value_decode.pyx":738
  *         cdef const unsigned char* buf
-*/
-  __pyx_t_1 = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char__const__(__pyx_v_data, 0); if (unlikely(!__pyx_t_1.memview)) __PYX_ERR(0, 491, __pyx_L1_error)
-  __pyx_v_mv = __pyx_t_1;
-  __pyx_t_1.memview = NULL;
-  __pyx_t_1.data = NULL;
-
-  /* "scalecodec/_value_decode.pyx":492
- *         """
- *         cdef const unsigned char[:] mv = data
- *         cdef Py_ssize_t buflen = mv.shape[0]             # <<<<<<<<<<<<<<
- *         cdef const unsigned char* buf
- *         cdef Py_ssize_t pos = offset
-*/
-  __pyx_v_buflen = (__pyx_v_mv.shape[0]);
-
-  /* "scalecodec/_value_decode.pyx":494
- *         cdef Py_ssize_t buflen = mv.shape[0]
- *         cdef const unsigned char* buf
+ *         cdef Py_ssize_t buflen
  *         cdef Py_ssize_t pos = offset             # <<<<<<<<<<<<<<
- *         if buflen == 0:
- *             buf = NULL
+ *         if PyBytes_Check(data):
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
 */
   __pyx_v_pos = __pyx_v_offset;
 
-  /* "scalecodec/_value_decode.pyx":495
- *         cdef const unsigned char* buf
+  /* "scalecodec/_value_decode.pyx":739
+ *         cdef Py_ssize_t buflen
  *         cdef Py_ssize_t pos = offset
- *         if buflen == 0:             # <<<<<<<<<<<<<<
- *             buf = NULL
- *         else:
+ *         if PyBytes_Check(data):             # <<<<<<<<<<<<<<
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
+ *             buflen = PyBytes_GET_SIZE(data)
 */
-  __pyx_t_2 = (__pyx_v_buflen == 0);
-  if (__pyx_t_2) {
+  __pyx_t_1 = PyBytes_Check(__pyx_v_data);
+  if (__pyx_t_1) {
 
-    /* "scalecodec/_value_decode.pyx":496
+    /* "scalecodec/_value_decode.pyx":740
  *         cdef Py_ssize_t pos = offset
- *         if buflen == 0:
- *             buf = NULL             # <<<<<<<<<<<<<<
- *         else:
- *             buf = &mv[0]
+ *         if PyBytes_Check(data):
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)             # <<<<<<<<<<<<<<
+ *             buflen = PyBytes_GET_SIZE(data)
+ *         elif PyByteArray_Check(data):
 */
-    __pyx_v_buf = NULL;
+    __pyx_v_buf = ((unsigned char const *)PyBytes_AS_STRING(__pyx_v_data));
 
-    /* "scalecodec/_value_decode.pyx":495
- *         cdef const unsigned char* buf
+    /* "scalecodec/_value_decode.pyx":741
+ *         if PyBytes_Check(data):
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
+ *             buflen = PyBytes_GET_SIZE(data)             # <<<<<<<<<<<<<<
+ *         elif PyByteArray_Check(data):
+ *             buf = <const unsigned char*>PyByteArray_AS_STRING(data)
+*/
+    __pyx_v_buflen = PyBytes_GET_SIZE(__pyx_v_data);
+
+    /* "scalecodec/_value_decode.pyx":739
+ *         cdef Py_ssize_t buflen
  *         cdef Py_ssize_t pos = offset
- *         if buflen == 0:             # <<<<<<<<<<<<<<
- *             buf = NULL
- *         else:
+ *         if PyBytes_Check(data):             # <<<<<<<<<<<<<<
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
+ *             buflen = PyBytes_GET_SIZE(data)
 */
     goto __pyx_L3;
   }
 
-  /* "scalecodec/_value_decode.pyx":498
- *             buf = NULL
+  /* "scalecodec/_value_decode.pyx":742
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
+ *             buflen = PyBytes_GET_SIZE(data)
+ *         elif PyByteArray_Check(data):             # <<<<<<<<<<<<<<
+ *             buf = <const unsigned char*>PyByteArray_AS_STRING(data)
+ *             buflen = PyByteArray_GET_SIZE(data)
+*/
+  __pyx_t_1 = PyByteArray_Check(__pyx_v_data);
+  if (__pyx_t_1) {
+
+    /* "scalecodec/_value_decode.pyx":743
+ *             buflen = PyBytes_GET_SIZE(data)
+ *         elif PyByteArray_Check(data):
+ *             buf = <const unsigned char*>PyByteArray_AS_STRING(data)             # <<<<<<<<<<<<<<
+ *             buflen = PyByteArray_GET_SIZE(data)
  *         else:
- *             buf = &mv[0]             # <<<<<<<<<<<<<<
+*/
+    __pyx_v_buf = ((unsigned char const *)PyByteArray_AS_STRING(__pyx_v_data));
+
+    /* "scalecodec/_value_decode.pyx":744
+ *         elif PyByteArray_Check(data):
+ *             buf = <const unsigned char*>PyByteArray_AS_STRING(data)
+ *             buflen = PyByteArray_GET_SIZE(data)             # <<<<<<<<<<<<<<
+ *         else:
+ *             mv = data
+*/
+    __pyx_v_buflen = PyByteArray_GET_SIZE(__pyx_v_data);
+
+    /* "scalecodec/_value_decode.pyx":742
+ *             buf = <const unsigned char*>PyBytes_AS_STRING(data)
+ *             buflen = PyBytes_GET_SIZE(data)
+ *         elif PyByteArray_Check(data):             # <<<<<<<<<<<<<<
+ *             buf = <const unsigned char*>PyByteArray_AS_STRING(data)
+ *             buflen = PyByteArray_GET_SIZE(data)
+*/
+    goto __pyx_L3;
+  }
+
+  /* "scalecodec/_value_decode.pyx":746
+ *             buflen = PyByteArray_GET_SIZE(data)
+ *         else:
+ *             mv = data             # <<<<<<<<<<<<<<
+ *             buflen = mv.shape[0]
+ *             buf = &mv[0] if buflen else NULL
+*/
+  /*else*/ {
+    __pyx_t_2 = __Pyx_PyObject_to_MemoryviewSlice_ds_unsigned_char__const__(__pyx_v_data, 0); if (unlikely(!__pyx_t_2.memview)) __PYX_ERR(0, 746, __pyx_L1_error)
+    __pyx_v_mv = __pyx_t_2;
+    __pyx_t_2.memview = NULL;
+    __pyx_t_2.data = NULL;
+
+    /* "scalecodec/_value_decode.pyx":747
+ *         else:
+ *             mv = data
+ *             buflen = mv.shape[0]             # <<<<<<<<<<<<<<
+ *             buf = &mv[0] if buflen else NULL
+ *         result = _dec(self._node, buf, buflen, &pos)
+*/
+    __pyx_v_buflen = (__pyx_v_mv.shape[0]);
+
+    /* "scalecodec/_value_decode.pyx":748
+ *             mv = data
+ *             buflen = mv.shape[0]
+ *             buf = &mv[0] if buflen else NULL             # <<<<<<<<<<<<<<
  *         result = _dec(self._node, buf, buflen, &pos)
  *         return result, pos
 */
-  /*else*/ {
-    __pyx_t_3 = 0;
-    __pyx_v_buf = (&(*((unsigned char const  *) ( /* dim=0 */ (__pyx_v_mv.data + __pyx_t_3 * __pyx_v_mv.strides[0]) ))));
+    __pyx_t_1 = (__pyx_v_buflen != 0);
+    if (__pyx_t_1) {
+      __pyx_t_4 = 0;
+      __pyx_t_3 = (&(*((unsigned char const  *) ( /* dim=0 */ (__pyx_v_mv.data + __pyx_t_4 * __pyx_v_mv.strides[0]) ))));
+    } else {
+      __pyx_t_3 = NULL;
+    }
+    __pyx_v_buf = __pyx_t_3;
   }
   __pyx_L3:;
 
-  /* "scalecodec/_value_decode.pyx":499
- *         else:
- *             buf = &mv[0]
+  /* "scalecodec/_value_decode.pyx":749
+ *             buflen = mv.shape[0]
+ *             buf = &mv[0] if buflen else NULL
  *         result = _dec(self._node, buf, buflen, &pos)             # <<<<<<<<<<<<<<
  *         return result, pos
  * 
 */
-  __pyx_t_4 = ((PyObject *)__pyx_v_self->_node);
-  __Pyx_INCREF(__pyx_t_4);
-  __pyx_t_5 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_4), __pyx_v_buf, __pyx_v_buflen, (&__pyx_v_pos)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 499, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_v_result = __pyx_t_5;
-  __pyx_t_5 = 0;
+  __pyx_t_5 = ((PyObject *)__pyx_v_self->_node);
+  __Pyx_INCREF(__pyx_t_5);
+  __pyx_t_6 = __pyx_f_10scalecodec_13_value_decode__dec(((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_5), __pyx_v_buf, __pyx_v_buflen, (&__pyx_v_pos)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 749, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_v_result = __pyx_t_6;
+  __pyx_t_6 = 0;
 
-  /* "scalecodec/_value_decode.pyx":500
- *             buf = &mv[0]
+  /* "scalecodec/_value_decode.pyx":750
+ *             buf = &mv[0] if buflen else NULL
  *         result = _dec(self._node, buf, buflen, &pos)
  *         return result, pos             # <<<<<<<<<<<<<<
  * 
  * 
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_5 = PyLong_FromSsize_t(__pyx_v_pos); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 500, __pyx_L1_error)
+  __pyx_t_6 = PyLong_FromSsize_t(__pyx_v_pos); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 750, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 750, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 500, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
   __Pyx_INCREF(__pyx_v_result);
   __Pyx_GIVEREF(__pyx_v_result);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_v_result) != (0)) __PYX_ERR(0, 500, __pyx_L1_error);
-  __Pyx_GIVEREF(__pyx_t_5);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_t_5) != (0)) __PYX_ERR(0, 500, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_v_result) != (0)) __PYX_ERR(0, 750, __pyx_L1_error);
+  __Pyx_GIVEREF(__pyx_t_6);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_6) != (0)) __PYX_ERR(0, 750, __pyx_L1_error);
+  __pyx_t_6 = 0;
+  __pyx_r = __pyx_t_5;
   __pyx_t_5 = 0;
-  __pyx_r = __pyx_t_4;
-  __pyx_t_4 = 0;
   goto __pyx_L0;
 
-  /* "scalecodec/_value_decode.pyx":483
+  /* "scalecodec/_value_decode.pyx":727
  *         return result
  * 
  *     def decode_at(self, data, Py_ssize_t offset):             # <<<<<<<<<<<<<<
@@ -22391,9 +24709,9 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_12ValueDecoder_2decode_at
 
   /* function exit code */
   __pyx_L1_error:;
-  __PYX_XCLEAR_MEMVIEW(&__pyx_t_1, 1);
-  __Pyx_XDECREF(__pyx_t_4);
+  __PYX_XCLEAR_MEMVIEW(&__pyx_t_2, 1);
   __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
   __Pyx_AddTraceback("scalecodec._value_decode.ValueDecoder.decode_at", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -22813,7 +25131,7 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_12ValueDecoder_6__setstat
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":506
+/* "scalecodec/_value_decode.pyx":756
  * 
  * 
  * def build_decoder(runtime_config, type_string):             # <<<<<<<<<<<<<<
@@ -22862,39 +25180,39 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_runtime_config,&__pyx_mstate_global->__pyx_n_u_type_string,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len < 0)) __PYX_ERR(0, 506, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len < 0)) __PYX_ERR(0, 756, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 506, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 756, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 506, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 756, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "build_decoder", 0) < (0)) __PYX_ERR(0, 506, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "build_decoder", 0) < (0)) __PYX_ERR(0, 756, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("build_decoder", 1, 2, 2, i); __PYX_ERR(0, 506, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("build_decoder", 1, 2, 2, i); __PYX_ERR(0, 756, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 506, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 756, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 506, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 756, __pyx_L3_error)
     }
     __pyx_v_runtime_config = values[0];
     __pyx_v_type_string = values[1];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("build_decoder", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 506, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("build_decoder", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 756, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -22930,30 +25248,30 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_build_decoder(CYTHON_UNUS
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("build_decoder", 0);
 
-  /* "scalecodec/_value_decode.pyx":512
+  /* "scalecodec/_value_decode.pyx":762
  *     fully covered; callers fall back to the classic object-based path.
  *     """
  *     cdef ValueDecoder dec = ValueDecoder.__new__(ValueDecoder)             # <<<<<<<<<<<<<<
  *     node_cache = runtime_config.__dict__.setdefault('_value_node_cache', {})
  *     dec._node = _build_node(runtime_config, type_string, node_cache)
 */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode_ValueDecoder(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 512, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode_ValueDecoder(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 762, __pyx_L1_error)
   __Pyx_GOTREF((PyObject *)__pyx_t_1);
   __pyx_v_dec = ((struct __pyx_obj_10scalecodec_13_value_decode_ValueDecoder *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":513
+  /* "scalecodec/_value_decode.pyx":763
  *     """
  *     cdef ValueDecoder dec = ValueDecoder.__new__(ValueDecoder)
  *     node_cache = runtime_config.__dict__.setdefault('_value_node_cache', {})             # <<<<<<<<<<<<<<
  *     dec._node = _build_node(runtime_config, type_string, node_cache)
  *     return dec
 */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_runtime_config, __pyx_mstate_global->__pyx_n_u_dict); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 513, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_runtime_config, __pyx_mstate_global->__pyx_n_u_dict); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 763, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_2 = __pyx_t_3;
   __Pyx_INCREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 513, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 763, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_5 = 0;
   {
@@ -22962,13 +25280,13 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_build_decoder(CYTHON_UNUS
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 513, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 763, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __pyx_v_node_cache = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":514
+  /* "scalecodec/_value_decode.pyx":764
  *     cdef ValueDecoder dec = ValueDecoder.__new__(ValueDecoder)
  *     node_cache = runtime_config.__dict__.setdefault('_value_node_cache', {})
  *     dec._node = _build_node(runtime_config, type_string, node_cache)             # <<<<<<<<<<<<<<
@@ -22977,8 +25295,8 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_build_decoder(CYTHON_UNUS
 */
   __pyx_t_1 = __pyx_v_node_cache;
   __Pyx_INCREF(__pyx_t_1);
-  if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("dict", __pyx_t_1))) __PYX_ERR(0, 514, __pyx_L1_error)
-  __pyx_t_3 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_runtime_config, __pyx_v_type_string, ((PyObject*)__pyx_t_1))); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 514, __pyx_L1_error)
+  if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("dict", __pyx_t_1))) __PYX_ERR(0, 764, __pyx_L1_error)
+  __pyx_t_3 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_runtime_config, __pyx_v_type_string, ((PyObject*)__pyx_t_1))); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 764, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_GIVEREF(__pyx_t_3);
@@ -22987,7 +25305,7 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_build_decoder(CYTHON_UNUS
   __pyx_v_dec->_node = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "scalecodec/_value_decode.pyx":515
+  /* "scalecodec/_value_decode.pyx":765
  *     node_cache = runtime_config.__dict__.setdefault('_value_node_cache', {})
  *     dec._node = _build_node(runtime_config, type_string, node_cache)
  *     return dec             # <<<<<<<<<<<<<<
@@ -22999,7 +25317,7 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_build_decoder(CYTHON_UNUS
   __pyx_r = ((PyObject *)__pyx_v_dec);
   goto __pyx_L0;
 
-  /* "scalecodec/_value_decode.pyx":506
+  /* "scalecodec/_value_decode.pyx":756
  * 
  * 
  * def build_decoder(runtime_config, type_string):             # <<<<<<<<<<<<<<
@@ -23023,7 +25341,7 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_build_decoder(CYTHON_UNUS
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":522
+/* "scalecodec/_value_decode.pyx":772
  * 
  * 
  * cdef _init_dispatch_tables():             # <<<<<<<<<<<<<<
@@ -23047,7 +25365,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__init_dispatch_tables(void
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_init_dispatch_tables", 0);
 
-  /* "scalecodec/_value_decode.pyx":524
+  /* "scalecodec/_value_decode.pyx":774
  * cdef _init_dispatch_tables():
  *     """Late import of the type modules (they import base, which imports us)."""
  *     from scalecodec import _primitives as P             # <<<<<<<<<<<<<<
@@ -23056,14 +25374,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__init_dispatch_tables(void
 */
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_primitives};
-    __pyx_t_2 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 524, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 774, __pyx_L1_error)
   }
   __pyx_t_1 = __pyx_t_2;
   __Pyx_GOTREF(__pyx_t_1);
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_primitives};
     __pyx_t_3 = 0; {
-      __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_1, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 524, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_1, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 774, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       switch (__pyx_t_3) {
         case 0:
@@ -23077,7 +25395,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__init_dispatch_tables(void
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":525
+  /* "scalecodec/_value_decode.pyx":775
  *     """Late import of the type modules (they import base, which imports us)."""
  *     from scalecodec import _primitives as P
  *     from scalecodec._compact import Compact             # <<<<<<<<<<<<<<
@@ -23086,14 +25404,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__init_dispatch_tables(void
 */
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Compact};
-    __pyx_t_2 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec__compact, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 525, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec__compact, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 775, __pyx_L1_error)
   }
   __pyx_t_1 = __pyx_t_2;
   __Pyx_GOTREF(__pyx_t_1);
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Compact};
     __pyx_t_3 = 0; {
-      __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_1, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 525, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_1, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 775, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       switch (__pyx_t_3) {
         case 0:
@@ -23107,7 +25425,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__init_dispatch_tables(void
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":526
+  /* "scalecodec/_value_decode.pyx":776
  *     from scalecodec import _primitives as P
  *     from scalecodec._compact import Compact
  *     from scalecodec import types as T             # <<<<<<<<<<<<<<
@@ -23116,14 +25434,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__init_dispatch_tables(void
 */
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_types};
-    __pyx_t_2 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 526, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 776, __pyx_L1_error)
   }
   __pyx_t_1 = __pyx_t_2;
   __Pyx_GOTREF(__pyx_t_1);
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_types};
     __pyx_t_3 = 0; {
-      __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_1, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 526, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_1, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 776, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       switch (__pyx_t_3) {
         case 0:
@@ -23137,556 +25455,556 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__init_dispatch_tables(void
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":529
+  /* "scalecodec/_value_decode.pyx":779
  * 
  *     _PRIM_OPS.update({
  *         P.U8.process: OP_U8, P.U16.process: OP_U16, P.U32.process: OP_U32,             # <<<<<<<<<<<<<<
  *         P.U64.process: OP_U64, P.U128.process: OP_U128, P.U256.process: OP_U256,
  *         P.I8.process: OP_I8, P.I16.process: OP_I16, P.I32.process: OP_I32,
 */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(18); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 529, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(18); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 529, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 529, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_0) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_0) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U16); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 529, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U16); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 529, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_1) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_1) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U32); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 529, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U32); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 529, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_2) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_2) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "scalecodec/_value_decode.pyx":530
+  /* "scalecodec/_value_decode.pyx":780
  *     _PRIM_OPS.update({
  *         P.U8.process: OP_U8, P.U16.process: OP_U16, P.U32.process: OP_U32,
  *         P.U64.process: OP_U64, P.U128.process: OP_U128, P.U256.process: OP_U256,             # <<<<<<<<<<<<<<
  *         P.I8.process: OP_I8, P.I16.process: OP_I16, P.I32.process: OP_I32,
  *         P.I64.process: OP_I64, P.I128.process: OP_I128, P.I256.process: OP_I256,
 */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 780, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 780, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_3) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_3) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U128); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U128); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 780, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 780, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_4) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_4) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U256); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U256); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 780, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 780, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_5) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_5) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":531
+  /* "scalecodec/_value_decode.pyx":781
  *         P.U8.process: OP_U8, P.U16.process: OP_U16, P.U32.process: OP_U32,
  *         P.U64.process: OP_U64, P.U128.process: OP_U128, P.U256.process: OP_U256,
  *         P.I8.process: OP_I8, P.I16.process: OP_I16, P.I32.process: OP_I32,             # <<<<<<<<<<<<<<
  *         P.I64.process: OP_I64, P.I128.process: OP_I128, P.I256.process: OP_I256,
  *         P.Bool.process: OP_BOOL, P.F32.process: OP_F32, P.F64.process: OP_F64,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 531, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 781, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 531, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 781, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_6) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_6) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I16); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 531, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I16); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 781, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 531, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 781, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_7) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_7) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I32); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 531, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I32); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 781, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 531, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 781, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_8) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_8) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "scalecodec/_value_decode.pyx":532
+  /* "scalecodec/_value_decode.pyx":782
  *         P.U64.process: OP_U64, P.U128.process: OP_U128, P.U256.process: OP_U256,
  *         P.I8.process: OP_I8, P.I16.process: OP_I16, P.I32.process: OP_I32,
  *         P.I64.process: OP_I64, P.I128.process: OP_I128, P.I256.process: OP_I256,             # <<<<<<<<<<<<<<
  *         P.Bool.process: OP_BOOL, P.F32.process: OP_F32, P.F64.process: OP_F64,
  *         P.H160.process: OP_H160, P.H512.process: OP_H512,
 */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 532, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 782, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 532, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 782, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_9) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_9) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I128); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 532, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I128); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 782, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 532, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 782, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_10) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_10) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I256); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 532, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_I256); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 782, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 532, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 782, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_11) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_11) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":533
+  /* "scalecodec/_value_decode.pyx":783
  *         P.I8.process: OP_I8, P.I16.process: OP_I16, P.I32.process: OP_I32,
  *         P.I64.process: OP_I64, P.I128.process: OP_I128, P.I256.process: OP_I256,
  *         P.Bool.process: OP_BOOL, P.F32.process: OP_F32, P.F64.process: OP_F64,             # <<<<<<<<<<<<<<
  *         P.H160.process: OP_H160, P.H512.process: OP_H512,
  *         Compact.process: OP_COMPACT,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_Bool); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 533, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_Bool); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 783, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 533, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 783, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_12) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_12) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_F32); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 533, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_F32); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 783, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 533, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 783, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_32) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_32) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_F64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 533, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_F64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 783, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 533, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 783, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_33) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_33) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "scalecodec/_value_decode.pyx":534
+  /* "scalecodec/_value_decode.pyx":784
  *         P.I64.process: OP_I64, P.I128.process: OP_I128, P.I256.process: OP_I256,
  *         P.Bool.process: OP_BOOL, P.F32.process: OP_F32, P.F64.process: OP_F64,
  *         P.H160.process: OP_H160, P.H512.process: OP_H512,             # <<<<<<<<<<<<<<
  *         Compact.process: OP_COMPACT,
  *     })
 */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_H160); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 534, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_H160); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 784, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 534, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 784, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_25) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_4, __pyx_mstate_global->__pyx_int_25) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_H512); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 534, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_H512); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 784, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 534, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 784, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_27) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_27) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "scalecodec/_value_decode.pyx":535
+  /* "scalecodec/_value_decode.pyx":785
  *         P.Bool.process: OP_BOOL, P.F32.process: OP_F32, P.F64.process: OP_F64,
  *         P.H160.process: OP_H160, P.H512.process: OP_H512,
  *         Compact.process: OP_COMPACT,             # <<<<<<<<<<<<<<
  *     })
  *     _KNOWN.update({
 */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_Compact, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 535, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_Compact, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 785, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_13) < (0)) __PYX_ERR(0, 529, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_t_5, __pyx_mstate_global->__pyx_int_13) < (0)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "scalecodec/_value_decode.pyx":528
+  /* "scalecodec/_value_decode.pyx":778
  *     from scalecodec import types as T
  * 
  *     _PRIM_OPS.update({             # <<<<<<<<<<<<<<
  *         P.U8.process: OP_U8, P.U16.process: OP_U16, P.U32.process: OP_U32,
  *         P.U64.process: OP_U64, P.U128.process: OP_U128, P.U256.process: OP_U256,
 */
-  __pyx_t_5 = __Pyx_CallUnboundCMethod1(&__pyx_mstate_global->__pyx_umethod_PyDict_Type__update, __pyx_v_10scalecodec_13_value_decode__PRIM_OPS, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 528, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CallUnboundCMethod1(&__pyx_mstate_global->__pyx_umethod_PyDict_Type__update, __pyx_v_10scalecodec_13_value_decode__PRIM_OPS, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 778, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "scalecodec/_value_decode.pyx":538
+  /* "scalecodec/_value_decode.pyx":788
  *     })
  *     _KNOWN.update({
  *         'account_id': T.GenericAccountId.process,             # <<<<<<<<<<<<<<
  *         'h256': P.H256.process,
  *         'bytes': T.Bytes.process,
 */
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(23); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 538, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(23); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_GenericAccountId); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 538, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_GenericAccountId); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 538, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_account_id, __pyx_t_4) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_account_id, __pyx_t_4) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":539
+  /* "scalecodec/_value_decode.pyx":789
  *     _KNOWN.update({
  *         'account_id': T.GenericAccountId.process,
  *         'h256': P.H256.process,             # <<<<<<<<<<<<<<
  *         'bytes': T.Bytes.process,
  *         'hexbytes': T.HexBytes.process,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_H256); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 539, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_H256); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 789, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 539, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 789, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_h256, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_h256, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":540
+  /* "scalecodec/_value_decode.pyx":790
  *         'account_id': T.GenericAccountId.process,
  *         'h256': P.H256.process,
  *         'bytes': T.Bytes.process,             # <<<<<<<<<<<<<<
  *         'hexbytes': T.HexBytes.process,
  *         'option_bytes': T.OptionBytes.process,
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Bytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 540, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Bytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 790, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 540, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 790, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_bytes, __pyx_t_4) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_bytes, __pyx_t_4) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":541
+  /* "scalecodec/_value_decode.pyx":791
  *         'h256': P.H256.process,
  *         'bytes': T.Bytes.process,
  *         'hexbytes': T.HexBytes.process,             # <<<<<<<<<<<<<<
  *         'option_bytes': T.OptionBytes.process,
  *         'option': T.Option.process,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_HexBytes); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 541, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_HexBytes); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 791, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 541, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 791, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_hexbytes, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_hexbytes, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":542
+  /* "scalecodec/_value_decode.pyx":792
  *         'bytes': T.Bytes.process,
  *         'hexbytes': T.HexBytes.process,
  *         'option_bytes': T.OptionBytes.process,             # <<<<<<<<<<<<<<
  *         'option': T.Option.process,
  *         'vec': T.Vec.process,
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_OptionBytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 542, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_OptionBytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 792, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 542, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 792, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_option_bytes, __pyx_t_4) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_option_bytes, __pyx_t_4) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":543
+  /* "scalecodec/_value_decode.pyx":793
  *         'hexbytes': T.HexBytes.process,
  *         'option_bytes': T.OptionBytes.process,
  *         'option': T.Option.process,             # <<<<<<<<<<<<<<
  *         'vec': T.Vec.process,
  *         'array': T.FixedLengthArray.process,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Option); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 543, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Option); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 793, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 543, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 793, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_option, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_option, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":544
+  /* "scalecodec/_value_decode.pyx":794
  *         'option_bytes': T.OptionBytes.process,
  *         'option': T.Option.process,
  *         'vec': T.Vec.process,             # <<<<<<<<<<<<<<
  *         'array': T.FixedLengthArray.process,
  *         'struct': T.Struct.process,
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Vec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 544, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Vec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 794, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 544, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 794, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_vec, __pyx_t_4) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_vec, __pyx_t_4) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":545
+  /* "scalecodec/_value_decode.pyx":795
  *         'option': T.Option.process,
  *         'vec': T.Vec.process,
  *         'array': T.FixedLengthArray.process,             # <<<<<<<<<<<<<<
  *         'struct': T.Struct.process,
  *         'tuple': T.Tuple.process,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_FixedLengthArray); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 545, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_FixedLengthArray); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 795, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 545, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 795, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_array, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_array, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":546
+  /* "scalecodec/_value_decode.pyx":796
  *         'vec': T.Vec.process,
  *         'array': T.FixedLengthArray.process,
  *         'struct': T.Struct.process,             # <<<<<<<<<<<<<<
  *         'tuple': T.Tuple.process,
  *         'enum': T.Enum.process,
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Struct); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 546, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Struct); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 796, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 546, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 796, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_struct, __pyx_t_4) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_struct, __pyx_t_4) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":547
+  /* "scalecodec/_value_decode.pyx":797
  *         'array': T.FixedLengthArray.process,
  *         'struct': T.Struct.process,
  *         'tuple': T.Tuple.process,             # <<<<<<<<<<<<<<
  *         'enum': T.Enum.process,
  *         'null': T.Null.process,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Tuple); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 547, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Tuple); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 797, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 547, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 797, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_tuple, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_tuple, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":548
+  /* "scalecodec/_value_decode.pyx":798
  *         'struct': T.Struct.process,
  *         'tuple': T.Tuple.process,
  *         'enum': T.Enum.process,             # <<<<<<<<<<<<<<
  *         'null': T.Null.process,
  *         'bitvec': T.BitVec.process,
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Enum); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 548, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Enum); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 798, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 548, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 798, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_enum, __pyx_t_4) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_enum, __pyx_t_4) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":549
+  /* "scalecodec/_value_decode.pyx":799
  *         'tuple': T.Tuple.process,
  *         'enum': T.Enum.process,
  *         'null': T.Null.process,             # <<<<<<<<<<<<<<
  *         'bitvec': T.BitVec.process,
  *         'btreemap': T.BTreeMap.process,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Null); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 549, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Null); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 799, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 549, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 799, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_null, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_null, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":550
+  /* "scalecodec/_value_decode.pyx":800
  *         'enum': T.Enum.process,
  *         'null': T.Null.process,
  *         'bitvec': T.BitVec.process,             # <<<<<<<<<<<<<<
  *         'btreemap': T.BTreeMap.process,
  *         'map': T.Map.process,
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_BitVec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 550, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_BitVec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 800, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 550, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 800, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_bitvec, __pyx_t_4) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_bitvec, __pyx_t_4) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":551
+  /* "scalecodec/_value_decode.pyx":801
  *         'null': T.Null.process,
  *         'bitvec': T.BitVec.process,
  *         'btreemap': T.BTreeMap.process,             # <<<<<<<<<<<<<<
  *         'map': T.Map.process,
  *         'btreeset': T.BTreeSet.process,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_BTreeMap); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 551, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_BTreeMap); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 801, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 551, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 801, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_btreemap, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_btreemap, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":552
+  /* "scalecodec/_value_decode.pyx":802
  *         'bitvec': T.BitVec.process,
  *         'btreemap': T.BTreeMap.process,
  *         'map': T.Map.process,             # <<<<<<<<<<<<<<
  *         'btreeset': T.BTreeSet.process,
  *         'set': T.Set.process,
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Map); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 552, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Map); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 802, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 552, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 802, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_map, __pyx_t_4) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_map, __pyx_t_4) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":553
+  /* "scalecodec/_value_decode.pyx":803
  *         'btreemap': T.BTreeMap.process,
  *         'map': T.Map.process,
  *         'btreeset': T.BTreeSet.process,             # <<<<<<<<<<<<<<
  *         'set': T.Set.process,
  *         'multiaddress': T.GenericMultiAddress.process,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_BTreeSet); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 553, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_BTreeSet); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 803, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 553, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 803, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_btreeset, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_btreeset, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":554
+  /* "scalecodec/_value_decode.pyx":804
  *         'map': T.Map.process,
  *         'btreeset': T.BTreeSet.process,
  *         'set': T.Set.process,             # <<<<<<<<<<<<<<
  *         'multiaddress': T.GenericMultiAddress.process,
  *         'generic_call': T.GenericCall.process,
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Set); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 554, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Set); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 804, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 554, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 804, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_set, __pyx_t_4) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_set, __pyx_t_4) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":555
+  /* "scalecodec/_value_decode.pyx":805
  *         'btreeset': T.BTreeSet.process,
  *         'set': T.Set.process,
  *         'multiaddress': T.GenericMultiAddress.process,             # <<<<<<<<<<<<<<
  *         'generic_call': T.GenericCall.process,
  *         'era': T.Era.process,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_GenericMultiAddress); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 555, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_GenericMultiAddress); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 805, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 555, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 805, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_multiaddress, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_multiaddress, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":556
+  /* "scalecodec/_value_decode.pyx":806
  *         'set': T.Set.process,
  *         'multiaddress': T.GenericMultiAddress.process,
  *         'generic_call': T.GenericCall.process,             # <<<<<<<<<<<<<<
  *         'era': T.Era.process,
  *         'scale_info_event': T.GenericScaleInfoEvent.process,
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_GenericCall); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 556, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_GenericCall); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 806, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 556, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 806, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_generic_call, __pyx_t_4) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_generic_call, __pyx_t_4) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":557
+  /* "scalecodec/_value_decode.pyx":807
  *         'multiaddress': T.GenericMultiAddress.process,
  *         'generic_call': T.GenericCall.process,
  *         'era': T.Era.process,             # <<<<<<<<<<<<<<
  *         'scale_info_event': T.GenericScaleInfoEvent.process,
  *         'event_record': T.GenericEventRecord.process,
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Era); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 557, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_Era); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 807, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 557, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 807, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_era, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_era, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":558
+  /* "scalecodec/_value_decode.pyx":808
  *         'generic_call': T.GenericCall.process,
  *         'era': T.Era.process,
  *         'scale_info_event': T.GenericScaleInfoEvent.process,             # <<<<<<<<<<<<<<
  *         'event_record': T.GenericEventRecord.process,
  *         'u8_class': P.U8,
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_GenericScaleInfoEvent); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 558, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_GenericScaleInfoEvent); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 808, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 558, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 808, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_scale_info_event, __pyx_t_4) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_scale_info_event, __pyx_t_4) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":559
+  /* "scalecodec/_value_decode.pyx":809
  *         'era': T.Era.process,
  *         'scale_info_event': T.GenericScaleInfoEvent.process,
  *         'event_record': T.GenericEventRecord.process,             # <<<<<<<<<<<<<<
  *         'u8_class': P.U8,
  *     })
 */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_GenericEventRecord); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 559, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_T, __pyx_mstate_global->__pyx_n_u_GenericEventRecord); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 809, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 559, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_process); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 809, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_event_record, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_event_record, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":560
+  /* "scalecodec/_value_decode.pyx":810
  *         'scale_info_event': T.GenericScaleInfoEvent.process,
  *         'event_record': T.GenericEventRecord.process,
  *         'u8_class': P.U8,             # <<<<<<<<<<<<<<
  *     })
  * 
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 560, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_P, __pyx_mstate_global->__pyx_n_u_U8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 810, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_u8_class, __pyx_t_1) < (0)) __PYX_ERR(0, 538, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_u8_class, __pyx_t_1) < (0)) __PYX_ERR(0, 788, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":537
+  /* "scalecodec/_value_decode.pyx":787
  *         Compact.process: OP_COMPACT,
  *     })
  *     _KNOWN.update({             # <<<<<<<<<<<<<<
  *         'account_id': T.GenericAccountId.process,
  *         'h256': P.H256.process,
 */
-  __pyx_t_1 = __Pyx_CallUnboundCMethod1(&__pyx_mstate_global->__pyx_umethod_PyDict_Type__update, __pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 537, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CallUnboundCMethod1(&__pyx_mstate_global->__pyx_umethod_PyDict_Type__update, __pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 787, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":522
+  /* "scalecodec/_value_decode.pyx":772
  * 
  * 
  * cdef _init_dispatch_tables():             # <<<<<<<<<<<<<<
@@ -23712,7 +26030,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__init_dispatch_tables(void
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":564
+/* "scalecodec/_value_decode.pyx":814
  * 
  * 
  * cdef _Node _build_node(rc, type_string, dict node_cache):             # <<<<<<<<<<<<<<
@@ -23745,29 +26063,29 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_build_node", 0);
 
-  /* "scalecodec/_value_decode.pyx":568
+  /* "scalecodec/_value_decode.pyx":818
  *     cdef object cached
  * 
  *     if not _KNOWN:             # <<<<<<<<<<<<<<
  *         _init_dispatch_tables()
  * 
 */
-  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_10scalecodec_13_value_decode__KNOWN); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 568, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_10scalecodec_13_value_decode__KNOWN); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 818, __pyx_L1_error)
   __pyx_t_2 = (!__pyx_t_1);
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":569
+    /* "scalecodec/_value_decode.pyx":819
  * 
  *     if not _KNOWN:
  *         _init_dispatch_tables()             # <<<<<<<<<<<<<<
  * 
  *     is_str = isinstance(type_string, str)
 */
-    __pyx_t_3 = __pyx_f_10scalecodec_13_value_decode__init_dispatch_tables(); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 569, __pyx_L1_error)
+    __pyx_t_3 = __pyx_f_10scalecodec_13_value_decode__init_dispatch_tables(); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 819, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-    /* "scalecodec/_value_decode.pyx":568
+    /* "scalecodec/_value_decode.pyx":818
  *     cdef object cached
  * 
  *     if not _KNOWN:             # <<<<<<<<<<<<<<
@@ -23776,7 +26094,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":571
+  /* "scalecodec/_value_decode.pyx":821
  *         _init_dispatch_tables()
  * 
  *     is_str = isinstance(type_string, str)             # <<<<<<<<<<<<<<
@@ -23786,7 +26104,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
   __pyx_t_2 = PyUnicode_Check(__pyx_v_type_string); 
   __pyx_v_is_str = __pyx_t_2;
 
-  /* "scalecodec/_value_decode.pyx":572
+  /* "scalecodec/_value_decode.pyx":822
  * 
  *     is_str = isinstance(type_string, str)
  *     if is_str:             # <<<<<<<<<<<<<<
@@ -23795,7 +26113,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   if (__pyx_v_is_str) {
 
-    /* "scalecodec/_value_decode.pyx":573
+    /* "scalecodec/_value_decode.pyx":823
  *     is_str = isinstance(type_string, str)
  *     if is_str:
  *         cached = node_cache.get(type_string)             # <<<<<<<<<<<<<<
@@ -23804,14 +26122,14 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
     if (unlikely(__pyx_v_node_cache == Py_None)) {
       PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-      __PYX_ERR(0, 573, __pyx_L1_error)
+      __PYX_ERR(0, 823, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyDict_GetItemDefault(__pyx_v_node_cache, __pyx_v_type_string, Py_None); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 573, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyDict_GetItemDefault(__pyx_v_node_cache, __pyx_v_type_string, Py_None); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 823, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_v_cached = __pyx_t_3;
     __pyx_t_3 = 0;
 
-    /* "scalecodec/_value_decode.pyx":574
+    /* "scalecodec/_value_decode.pyx":824
  *     if is_str:
  *         cached = node_cache.get(type_string)
  *         if cached is not None:             # <<<<<<<<<<<<<<
@@ -23821,7 +26139,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
     __pyx_t_2 = (__pyx_v_cached != Py_None);
     if (__pyx_t_2) {
 
-      /* "scalecodec/_value_decode.pyx":575
+      /* "scalecodec/_value_decode.pyx":825
  *         cached = node_cache.get(type_string)
  *         if cached is not None:
  *             return <_Node>cached             # <<<<<<<<<<<<<<
@@ -23833,7 +26151,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
       __pyx_r = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_v_cached);
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":574
+      /* "scalecodec/_value_decode.pyx":824
  *     if is_str:
  *         cached = node_cache.get(type_string)
  *         if cached is not None:             # <<<<<<<<<<<<<<
@@ -23842,7 +26160,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":572
+    /* "scalecodec/_value_decode.pyx":822
  * 
  *     is_str = isinstance(type_string, str)
  *     if is_str:             # <<<<<<<<<<<<<<
@@ -23851,7 +26169,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":577
+  /* "scalecodec/_value_decode.pyx":827
  *             return <_Node>cached
  * 
  *     cls = rc.get_decoder_class(type_string)             # <<<<<<<<<<<<<<
@@ -23865,13 +26183,13 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
     PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_v_type_string};
     __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get_decoder_class, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 577, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 827, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
   }
   __pyx_v_cls = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "scalecodec/_value_decode.pyx":578
+  /* "scalecodec/_value_decode.pyx":828
  * 
  *     cls = rc.get_decoder_class(type_string)
  *     if cls is None:             # <<<<<<<<<<<<<<
@@ -23881,7 +26199,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
   __pyx_t_2 = (__pyx_v_cls == Py_None);
   if (unlikely(__pyx_t_2)) {
 
-    /* "scalecodec/_value_decode.pyx":579
+    /* "scalecodec/_value_decode.pyx":829
  *     cls = rc.get_decoder_class(type_string)
  *     if cls is None:
  *         raise UnsupportedType(f'Decoder class for "{type_string}" not found')             # <<<<<<<<<<<<<<
@@ -23889,15 +26207,15 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
  *     node = _Node.__new__(_Node)
 */
     __pyx_t_4 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 579, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 829, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_v_type_string, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 579, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_v_type_string, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 829, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_8[0] = __pyx_mstate_global->__pyx_kp_u_Decoder_class_for;
     __pyx_t_8[1] = __pyx_t_7;
     __pyx_t_8[2] = __pyx_mstate_global->__pyx_kp_u_not_found;
     __pyx_t_9 = __Pyx_PyUnicode_Join(__pyx_t_8, 3, 19 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_7) + 11, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7));
-    if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 579, __pyx_L1_error)
+    if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 829, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __pyx_t_5 = 1;
@@ -23918,14 +26236,14 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 579, __pyx_L1_error)
+      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 829, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
     }
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 579, __pyx_L1_error)
+    __PYX_ERR(0, 829, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":578
+    /* "scalecodec/_value_decode.pyx":828
  * 
  *     cls = rc.get_decoder_class(type_string)
  *     if cls is None:             # <<<<<<<<<<<<<<
@@ -23934,19 +26252,19 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":581
+  /* "scalecodec/_value_decode.pyx":831
  *         raise UnsupportedType(f'Decoder class for "{type_string}" not found')
  * 
  *     node = _Node.__new__(_Node)             # <<<<<<<<<<<<<<
  *     if is_str:
  *         # Memoize before compiling children so recursive type graphs terminate;
 */
-  __pyx_t_3 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode__Node(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 581, __pyx_L1_error)
+  __pyx_t_3 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode__Node(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 831, __pyx_L1_error)
   __Pyx_GOTREF((PyObject *)__pyx_t_3);
   __pyx_v_node = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "scalecodec/_value_decode.pyx":582
+  /* "scalecodec/_value_decode.pyx":832
  * 
  *     node = _Node.__new__(_Node)
  *     if is_str:             # <<<<<<<<<<<<<<
@@ -23955,7 +26273,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   if (__pyx_v_is_str) {
 
-    /* "scalecodec/_value_decode.pyx":585
+    /* "scalecodec/_value_decode.pyx":835
  *         # Memoize before compiling children so recursive type graphs terminate;
  *         # a failed compile removes the placeholder again below.
  *         node_cache[type_string] = node             # <<<<<<<<<<<<<<
@@ -23964,11 +26282,11 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
     if (unlikely(__pyx_v_node_cache == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 585, __pyx_L1_error)
+      __PYX_ERR(0, 835, __pyx_L1_error)
     }
-    if (unlikely((PyDict_SetItem(__pyx_v_node_cache, __pyx_v_type_string, ((PyObject *)__pyx_v_node)) < 0))) __PYX_ERR(0, 585, __pyx_L1_error)
+    if (unlikely((PyDict_SetItem(__pyx_v_node_cache, __pyx_v_type_string, ((PyObject *)__pyx_v_node)) < 0))) __PYX_ERR(0, 835, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":582
+    /* "scalecodec/_value_decode.pyx":832
  * 
  *     node = _Node.__new__(_Node)
  *     if is_str:             # <<<<<<<<<<<<<<
@@ -23977,7 +26295,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":587
+  /* "scalecodec/_value_decode.pyx":837
  *         node_cache[type_string] = node
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -23993,18 +26311,18 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
     __Pyx_XGOTREF(__pyx_t_12);
     /*try:*/ {
 
-      /* "scalecodec/_value_decode.pyx":588
+      /* "scalecodec/_value_decode.pyx":838
  * 
  *     try:
  *         _fill_node(node, rc, cls, node_cache)             # <<<<<<<<<<<<<<
  *     except BaseException:
  *         if is_str:
 */
-      __pyx_t_3 = __pyx_f_10scalecodec_13_value_decode__fill_node(__pyx_v_node, __pyx_v_rc, __pyx_v_cls, __pyx_v_node_cache); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 588, __pyx_L8_error)
+      __pyx_t_3 = __pyx_f_10scalecodec_13_value_decode__fill_node(__pyx_v_node, __pyx_v_rc, __pyx_v_cls, __pyx_v_node_cache); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 838, __pyx_L8_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "scalecodec/_value_decode.pyx":587
+      /* "scalecodec/_value_decode.pyx":837
  *         node_cache[type_string] = node
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -24023,7 +26341,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-    /* "scalecodec/_value_decode.pyx":589
+    /* "scalecodec/_value_decode.pyx":839
  *     try:
  *         _fill_node(node, rc, cls, node_cache)
  *     except BaseException:             # <<<<<<<<<<<<<<
@@ -24033,12 +26351,12 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
     __pyx_t_13 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(((PyTypeObject*)PyExc_BaseException))));
     if (__pyx_t_13) {
       __Pyx_AddTraceback("scalecodec._value_decode._build_node", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_3, &__pyx_t_6, &__pyx_t_9) < 0) __PYX_ERR(0, 589, __pyx_L10_except_error)
+      if (__Pyx_GetException(&__pyx_t_3, &__pyx_t_6, &__pyx_t_9) < 0) __PYX_ERR(0, 839, __pyx_L10_except_error)
       __Pyx_XGOTREF(__pyx_t_3);
       __Pyx_XGOTREF(__pyx_t_6);
       __Pyx_XGOTREF(__pyx_t_9);
 
-      /* "scalecodec/_value_decode.pyx":590
+      /* "scalecodec/_value_decode.pyx":840
  *         _fill_node(node, rc, cls, node_cache)
  *     except BaseException:
  *         if is_str:             # <<<<<<<<<<<<<<
@@ -24047,7 +26365,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
       if (__pyx_v_is_str) {
 
-        /* "scalecodec/_value_decode.pyx":591
+        /* "scalecodec/_value_decode.pyx":841
  *     except BaseException:
  *         if is_str:
  *             node_cache.pop(type_string, None)             # <<<<<<<<<<<<<<
@@ -24056,11 +26374,11 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
         if (unlikely(__pyx_v_node_cache == Py_None)) {
           PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "pop");
-          __PYX_ERR(0, 591, __pyx_L10_except_error)
+          __PYX_ERR(0, 841, __pyx_L10_except_error)
         }
-        __pyx_t_13 = __Pyx_PyDict_Pop_ignore(__pyx_v_node_cache, __pyx_v_type_string, Py_None); if (unlikely(__pyx_t_13 == ((int)-1))) __PYX_ERR(0, 591, __pyx_L10_except_error)
+        __pyx_t_13 = __Pyx_PyDict_Pop_ignore(__pyx_v_node_cache, __pyx_v_type_string, Py_None); if (unlikely(__pyx_t_13 == ((int)-1))) __PYX_ERR(0, 841, __pyx_L10_except_error)
 
-        /* "scalecodec/_value_decode.pyx":590
+        /* "scalecodec/_value_decode.pyx":840
  *         _fill_node(node, rc, cls, node_cache)
  *     except BaseException:
  *         if is_str:             # <<<<<<<<<<<<<<
@@ -24069,7 +26387,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
       }
 
-      /* "scalecodec/_value_decode.pyx":592
+      /* "scalecodec/_value_decode.pyx":842
  *         if is_str:
  *             node_cache.pop(type_string, None)
  *         raise             # <<<<<<<<<<<<<<
@@ -24081,11 +26399,11 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
       __Pyx_XGIVEREF(__pyx_t_9);
       __Pyx_ErrRestoreWithState(__pyx_t_3, __pyx_t_6, __pyx_t_9);
       __pyx_t_3 = 0;  __pyx_t_6 = 0;  __pyx_t_9 = 0; 
-      __PYX_ERR(0, 592, __pyx_L10_except_error)
+      __PYX_ERR(0, 842, __pyx_L10_except_error)
     }
     goto __pyx_L10_except_error;
 
-    /* "scalecodec/_value_decode.pyx":587
+    /* "scalecodec/_value_decode.pyx":837
  *         node_cache[type_string] = node
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -24101,7 +26419,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
     __pyx_L13_try_end:;
   }
 
-  /* "scalecodec/_value_decode.pyx":593
+  /* "scalecodec/_value_decode.pyx":843
  *             node_cache.pop(type_string, None)
  *         raise
  *     return node             # <<<<<<<<<<<<<<
@@ -24113,7 +26431,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
   __pyx_r = __pyx_v_node;
   goto __pyx_L0;
 
-  /* "scalecodec/_value_decode.pyx":564
+  /* "scalecodec/_value_decode.pyx":814
  * 
  * 
  * cdef _Node _build_node(rc, type_string, dict node_cache):             # <<<<<<<<<<<<<<
@@ -24139,7 +26457,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":596
+/* "scalecodec/_value_decode.pyx":846
  * 
  * 
  * cdef _fill_node(_Node node, rc, cls, dict node_cache):             # <<<<<<<<<<<<<<
@@ -24189,19 +26507,19 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_fill_node", 0);
 
-  /* "scalecodec/_value_decode.pyx":600
+  /* "scalecodec/_value_decode.pyx":850
  *     implementation provides its `process` (an overridden `process` means the
  *     type has custom semantics and is not supported)."""
  *     process = getattr(cls, 'process', None)             # <<<<<<<<<<<<<<
  *     if process is None:
  *         raise UnsupportedType(f'{cls!r} has no process method')
 */
-  __pyx_t_1 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_process, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 600, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_process, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 850, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_process = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":601
+  /* "scalecodec/_value_decode.pyx":851
  *     type has custom semantics and is not supported)."""
  *     process = getattr(cls, 'process', None)
  *     if process is None:             # <<<<<<<<<<<<<<
@@ -24211,7 +26529,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
   __pyx_t_2 = (__pyx_v_process == Py_None);
   if (unlikely(__pyx_t_2)) {
 
-    /* "scalecodec/_value_decode.pyx":602
+    /* "scalecodec/_value_decode.pyx":852
  *     process = getattr(cls, 'process', None)
  *     if process is None:
  *         raise UnsupportedType(f'{cls!r} has no process method')             # <<<<<<<<<<<<<<
@@ -24219,11 +26537,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *     op = _PRIM_OPS.get(process)
 */
     __pyx_t_3 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 602, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 852, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_cls), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 602, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_cls), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 852, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = __Pyx_PyUnicode_Concat__Pyx_ReferenceSharing_OwnStrongReferenceInPlace(__pyx_t_5, __pyx_mstate_global->__pyx_kp_u_has_no_process_method); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 602, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyUnicode_Concat__Pyx_ReferenceSharing_OwnStrongReferenceInPlace(__pyx_t_5, __pyx_mstate_global->__pyx_kp_u_has_no_process_method); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 852, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_7 = 1;
@@ -24244,14 +26562,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 602, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 852, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 602, __pyx_L1_error)
+    __PYX_ERR(0, 852, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":601
+    /* "scalecodec/_value_decode.pyx":851
  *     type has custom semantics and is not supported)."""
  *     process = getattr(cls, 'process', None)
  *     if process is None:             # <<<<<<<<<<<<<<
@@ -24260,7 +26578,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":604
+  /* "scalecodec/_value_decode.pyx":854
  *         raise UnsupportedType(f'{cls!r} has no process method')
  * 
  *     op = _PRIM_OPS.get(process)             # <<<<<<<<<<<<<<
@@ -24269,14 +26587,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__PRIM_OPS == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-    __PYX_ERR(0, 604, __pyx_L1_error)
+    __PYX_ERR(0, 854, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_10scalecodec_13_value_decode__PRIM_OPS, __pyx_v_process, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 604, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_10scalecodec_13_value_decode__PRIM_OPS, __pyx_v_process, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 854, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_op = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":605
+  /* "scalecodec/_value_decode.pyx":855
  * 
  *     op = _PRIM_OPS.get(process)
  *     if op is not None:             # <<<<<<<<<<<<<<
@@ -24286,17 +26604,17 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
   __pyx_t_2 = (__pyx_v_op != Py_None);
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":606
+    /* "scalecodec/_value_decode.pyx":856
  *     op = _PRIM_OPS.get(process)
  *     if op is not None:
  *         node.op = op             # <<<<<<<<<<<<<<
  *         return
  * 
 */
-    __pyx_t_8 = __Pyx_PyLong_As_int(__pyx_v_op); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 606, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyLong_As_int(__pyx_v_op); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 856, __pyx_L1_error)
     __pyx_v_node->op = __pyx_t_8;
 
-    /* "scalecodec/_value_decode.pyx":607
+    /* "scalecodec/_value_decode.pyx":857
  *     if op is not None:
  *         node.op = op
  *         return             # <<<<<<<<<<<<<<
@@ -24307,7 +26625,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":605
+    /* "scalecodec/_value_decode.pyx":855
  * 
  *     op = _PRIM_OPS.get(process)
  *     if op is not None:             # <<<<<<<<<<<<<<
@@ -24316,7 +26634,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":609
+  /* "scalecodec/_value_decode.pyx":859
  *         return
  * 
  *     if process is _KNOWN['account_id']:             # <<<<<<<<<<<<<<
@@ -24325,15 +26643,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 609, __pyx_L1_error)
+    __PYX_ERR(0, 859, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_account_id); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 609, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_account_id); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 859, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":610
+    /* "scalecodec/_value_decode.pyx":860
  * 
  *     if process is _KNOWN['account_id']:
  *         node.op = OP_ACCOUNT_ID             # <<<<<<<<<<<<<<
@@ -24342,7 +26660,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 24;
 
-    /* "scalecodec/_value_decode.pyx":611
+    /* "scalecodec/_value_decode.pyx":861
  *     if process is _KNOWN['account_id']:
  *         node.op = OP_ACCOUNT_ID
  *         node.aux = rc             # <<<<<<<<<<<<<<
@@ -24355,7 +26673,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __Pyx_DECREF(__pyx_v_node->aux);
     __pyx_v_node->aux = __pyx_v_rc;
 
-    /* "scalecodec/_value_decode.pyx":612
+    /* "scalecodec/_value_decode.pyx":862
  *         node.op = OP_ACCOUNT_ID
  *         node.aux = rc
  *         return             # <<<<<<<<<<<<<<
@@ -24366,7 +26684,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":609
+    /* "scalecodec/_value_decode.pyx":859
  *         return
  * 
  *     if process is _KNOWN['account_id']:             # <<<<<<<<<<<<<<
@@ -24375,7 +26693,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":613
+  /* "scalecodec/_value_decode.pyx":863
  *         node.aux = rc
  *         return
  *     if process is _KNOWN['h256']:             # <<<<<<<<<<<<<<
@@ -24384,15 +26702,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 613, __pyx_L1_error)
+    __PYX_ERR(0, 863, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_h256); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 613, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_h256); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 863, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":614
+    /* "scalecodec/_value_decode.pyx":864
  *         return
  *     if process is _KNOWN['h256']:
  *         node.op = OP_H256             # <<<<<<<<<<<<<<
@@ -24401,7 +26719,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 26;
 
-    /* "scalecodec/_value_decode.pyx":615
+    /* "scalecodec/_value_decode.pyx":865
  *     if process is _KNOWN['h256']:
  *         node.op = OP_H256
  *         return             # <<<<<<<<<<<<<<
@@ -24412,7 +26730,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":613
+    /* "scalecodec/_value_decode.pyx":863
  *         node.aux = rc
  *         return
  *     if process is _KNOWN['h256']:             # <<<<<<<<<<<<<<
@@ -24421,7 +26739,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":616
+  /* "scalecodec/_value_decode.pyx":866
  *         node.op = OP_H256
  *         return
  *     if process is _KNOWN['bytes']:             # <<<<<<<<<<<<<<
@@ -24430,15 +26748,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 616, __pyx_L1_error)
+    __PYX_ERR(0, 866, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_bytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 616, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_bytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 866, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":617
+    /* "scalecodec/_value_decode.pyx":867
  *         return
  *     if process is _KNOWN['bytes']:
  *         node.op = OP_BYTES             # <<<<<<<<<<<<<<
@@ -24447,7 +26765,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 14;
 
-    /* "scalecodec/_value_decode.pyx":618
+    /* "scalecodec/_value_decode.pyx":868
  *     if process is _KNOWN['bytes']:
  *         node.op = OP_BYTES
  *         return             # <<<<<<<<<<<<<<
@@ -24458,7 +26776,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":616
+    /* "scalecodec/_value_decode.pyx":866
  *         node.op = OP_H256
  *         return
  *     if process is _KNOWN['bytes']:             # <<<<<<<<<<<<<<
@@ -24467,7 +26785,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":619
+  /* "scalecodec/_value_decode.pyx":869
  *         node.op = OP_BYTES
  *         return
  *     if process is _KNOWN['hexbytes']:             # <<<<<<<<<<<<<<
@@ -24476,15 +26794,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 619, __pyx_L1_error)
+    __PYX_ERR(0, 869, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_hexbytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 619, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_hexbytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 869, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":620
+    /* "scalecodec/_value_decode.pyx":870
  *         return
  *     if process is _KNOWN['hexbytes']:
  *         node.op = OP_HEXBYTES             # <<<<<<<<<<<<<<
@@ -24493,7 +26811,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 34;
 
-    /* "scalecodec/_value_decode.pyx":621
+    /* "scalecodec/_value_decode.pyx":871
  *     if process is _KNOWN['hexbytes']:
  *         node.op = OP_HEXBYTES
  *         return             # <<<<<<<<<<<<<<
@@ -24504,7 +26822,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":619
+    /* "scalecodec/_value_decode.pyx":869
  *         node.op = OP_BYTES
  *         return
  *     if process is _KNOWN['hexbytes']:             # <<<<<<<<<<<<<<
@@ -24513,7 +26831,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":622
+  /* "scalecodec/_value_decode.pyx":872
  *         node.op = OP_HEXBYTES
  *         return
  *     if process is _KNOWN['option_bytes']:             # <<<<<<<<<<<<<<
@@ -24522,15 +26840,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 622, __pyx_L1_error)
+    __PYX_ERR(0, 872, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_option_bytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 622, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_option_bytes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 872, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":623
+    /* "scalecodec/_value_decode.pyx":873
  *         return
  *     if process is _KNOWN['option_bytes']:
  *         node.op = OP_OPTION_BYTES             # <<<<<<<<<<<<<<
@@ -24539,7 +26857,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 35;
 
-    /* "scalecodec/_value_decode.pyx":624
+    /* "scalecodec/_value_decode.pyx":874
  *     if process is _KNOWN['option_bytes']:
  *         node.op = OP_OPTION_BYTES
  *         return             # <<<<<<<<<<<<<<
@@ -24550,7 +26868,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":622
+    /* "scalecodec/_value_decode.pyx":872
  *         node.op = OP_HEXBYTES
  *         return
  *     if process is _KNOWN['option_bytes']:             # <<<<<<<<<<<<<<
@@ -24559,7 +26877,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":626
+  /* "scalecodec/_value_decode.pyx":876
  *         return
  * 
  *     if process is _KNOWN['option']:             # <<<<<<<<<<<<<<
@@ -24568,15 +26886,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 626, __pyx_L1_error)
+    __PYX_ERR(0, 876, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_option); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 626, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_option); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 876, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":627
+    /* "scalecodec/_value_decode.pyx":877
  * 
  *     if process is _KNOWN['option']:
  *         node.op = OP_OPTION             # <<<<<<<<<<<<<<
@@ -24585,41 +26903,41 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 23;
 
-    /* "scalecodec/_value_decode.pyx":628
+    /* "scalecodec/_value_decode.pyx":878
  *     if process is _KNOWN['option']:
  *         node.op = OP_OPTION
  *         sub_type = cls.sub_type             # <<<<<<<<<<<<<<
  *         if sub_type:
  *             node.children = [_build_node(rc, sub_type, node_cache)]
 */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_sub_type); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 628, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_sub_type); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 878, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_v_sub_type = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":629
+    /* "scalecodec/_value_decode.pyx":879
  *         node.op = OP_OPTION
  *         sub_type = cls.sub_type
  *         if sub_type:             # <<<<<<<<<<<<<<
  *             node.children = [_build_node(rc, sub_type, node_cache)]
  *         return
 */
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_sub_type); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 629, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_sub_type); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 879, __pyx_L1_error)
     if (__pyx_t_2) {
 
-      /* "scalecodec/_value_decode.pyx":630
+      /* "scalecodec/_value_decode.pyx":880
  *         sub_type = cls.sub_type
  *         if sub_type:
  *             node.children = [_build_node(rc, sub_type, node_cache)]             # <<<<<<<<<<<<<<
  *         return
  * 
 */
-      __pyx_t_1 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_v_sub_type, __pyx_v_node_cache)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 630, __pyx_L1_error)
+      __pyx_t_1 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_v_sub_type, __pyx_v_node_cache)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 880, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_4 = PyList_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 630, __pyx_L1_error)
+      __pyx_t_4 = PyList_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 880, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_GIVEREF(__pyx_t_1);
-      if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 630, __pyx_L1_error);
+      if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 880, __pyx_L1_error);
       __pyx_t_1 = 0;
       __Pyx_GIVEREF(__pyx_t_4);
       __Pyx_GOTREF(__pyx_v_node->children);
@@ -24627,7 +26945,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __pyx_v_node->children = ((PyObject*)__pyx_t_4);
       __pyx_t_4 = 0;
 
-      /* "scalecodec/_value_decode.pyx":629
+      /* "scalecodec/_value_decode.pyx":879
  *         node.op = OP_OPTION
  *         sub_type = cls.sub_type
  *         if sub_type:             # <<<<<<<<<<<<<<
@@ -24636,7 +26954,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":631
+    /* "scalecodec/_value_decode.pyx":881
  *         if sub_type:
  *             node.children = [_build_node(rc, sub_type, node_cache)]
  *         return             # <<<<<<<<<<<<<<
@@ -24647,7 +26965,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":626
+    /* "scalecodec/_value_decode.pyx":876
  *         return
  * 
  *     if process is _KNOWN['option']:             # <<<<<<<<<<<<<<
@@ -24656,7 +26974,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":633
+  /* "scalecodec/_value_decode.pyx":883
  *         return
  * 
  *     if process is _KNOWN['vec']:             # <<<<<<<<<<<<<<
@@ -24665,38 +26983,38 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 633, __pyx_L1_error)
+    __PYX_ERR(0, 883, __pyx_L1_error)
   }
-  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_vec); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 633, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_vec); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 883, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":634
+    /* "scalecodec/_value_decode.pyx":884
  * 
  *     if process is _KNOWN['vec']:
  *         sub_type = cls.sub_type             # <<<<<<<<<<<<<<
  *         if not sub_type:
  *             raise UnsupportedType(f'Vec without sub_type: {cls}')
 */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_sub_type); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 634, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_sub_type); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 884, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_v_sub_type = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":635
+    /* "scalecodec/_value_decode.pyx":885
  *     if process is _KNOWN['vec']:
  *         sub_type = cls.sub_type
  *         if not sub_type:             # <<<<<<<<<<<<<<
  *             raise UnsupportedType(f'Vec without sub_type: {cls}')
  *         if rc.get_decoder_class(sub_type) is _KNOWN['u8_class']:
 */
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_sub_type); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 635, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_sub_type); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 885, __pyx_L1_error)
     __pyx_t_9 = (!__pyx_t_2);
     if (unlikely(__pyx_t_9)) {
 
-      /* "scalecodec/_value_decode.pyx":636
+      /* "scalecodec/_value_decode.pyx":886
  *         sub_type = cls.sub_type
  *         if not sub_type:
  *             raise UnsupportedType(f'Vec without sub_type: {cls}')             # <<<<<<<<<<<<<<
@@ -24704,11 +27022,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *             node.op = OP_BYTES
 */
       __pyx_t_1 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 636, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 886, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 636, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 886, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Vec_without_sub_type, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 636, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Vec_without_sub_type, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 886, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __pyx_t_7 = 1;
@@ -24729,14 +27047,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 636, __pyx_L1_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 886, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
       __Pyx_Raise(__pyx_t_4, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __PYX_ERR(0, 636, __pyx_L1_error)
+      __PYX_ERR(0, 886, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":635
+      /* "scalecodec/_value_decode.pyx":885
  *     if process is _KNOWN['vec']:
  *         sub_type = cls.sub_type
  *         if not sub_type:             # <<<<<<<<<<<<<<
@@ -24745,7 +27063,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":637
+    /* "scalecodec/_value_decode.pyx":887
  *         if not sub_type:
  *             raise UnsupportedType(f'Vec without sub_type: {cls}')
  *         if rc.get_decoder_class(sub_type) is _KNOWN['u8_class']:             # <<<<<<<<<<<<<<
@@ -24759,21 +27077,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       PyObject *__pyx_callargs[2] = {__pyx_t_6, __pyx_v_sub_type};
       __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get_decoder_class, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 637, __pyx_L1_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 887, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
     }
     if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 637, __pyx_L1_error)
+      __PYX_ERR(0, 887, __pyx_L1_error)
     }
-    __pyx_t_6 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_u8_class); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 637, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_u8_class); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 887, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_9 = (__pyx_t_4 == __pyx_t_6);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     if (__pyx_t_9) {
 
-      /* "scalecodec/_value_decode.pyx":638
+      /* "scalecodec/_value_decode.pyx":888
  *             raise UnsupportedType(f'Vec without sub_type: {cls}')
  *         if rc.get_decoder_class(sub_type) is _KNOWN['u8_class']:
  *             node.op = OP_BYTES             # <<<<<<<<<<<<<<
@@ -24782,7 +27100,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
       __pyx_v_node->op = 14;
 
-      /* "scalecodec/_value_decode.pyx":639
+      /* "scalecodec/_value_decode.pyx":889
  *         if rc.get_decoder_class(sub_type) is _KNOWN['u8_class']:
  *             node.op = OP_BYTES
  *             return             # <<<<<<<<<<<<<<
@@ -24793,7 +27111,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __pyx_r = Py_None; __Pyx_INCREF(Py_None);
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":637
+      /* "scalecodec/_value_decode.pyx":887
  *         if not sub_type:
  *             raise UnsupportedType(f'Vec without sub_type: {cls}')
  *         if rc.get_decoder_class(sub_type) is _KNOWN['u8_class']:             # <<<<<<<<<<<<<<
@@ -24802,7 +27120,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":640
+    /* "scalecodec/_value_decode.pyx":890
  *             node.op = OP_BYTES
  *             return
  *         node.op = OP_VEC             # <<<<<<<<<<<<<<
@@ -24811,19 +27129,19 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 15;
 
-    /* "scalecodec/_value_decode.pyx":641
+    /* "scalecodec/_value_decode.pyx":891
  *             return
  *         node.op = OP_VEC
  *         node.children = [_build_node(rc, sub_type, node_cache)]             # <<<<<<<<<<<<<<
  *         return
  * 
 */
-    __pyx_t_6 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_v_sub_type, __pyx_v_node_cache)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 641, __pyx_L1_error)
+    __pyx_t_6 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_v_sub_type, __pyx_v_node_cache)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 891, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_4 = PyList_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 641, __pyx_L1_error)
+    __pyx_t_4 = PyList_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 891, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_GIVEREF(__pyx_t_6);
-    if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_6) != (0)) __PYX_ERR(0, 641, __pyx_L1_error);
+    if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_6) != (0)) __PYX_ERR(0, 891, __pyx_L1_error);
     __pyx_t_6 = 0;
     __Pyx_GIVEREF(__pyx_t_4);
     __Pyx_GOTREF(__pyx_v_node->children);
@@ -24831,7 +27149,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->children = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":642
+    /* "scalecodec/_value_decode.pyx":892
  *         node.op = OP_VEC
  *         node.children = [_build_node(rc, sub_type, node_cache)]
  *         return             # <<<<<<<<<<<<<<
@@ -24842,7 +27160,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":633
+    /* "scalecodec/_value_decode.pyx":883
  *         return
  * 
  *     if process is _KNOWN['vec']:             # <<<<<<<<<<<<<<
@@ -24851,7 +27169,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":644
+  /* "scalecodec/_value_decode.pyx":894
  *         return
  * 
  *     if process is _KNOWN['array']:             # <<<<<<<<<<<<<<
@@ -24860,36 +27178,36 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 644, __pyx_L1_error)
+    __PYX_ERR(0, 894, __pyx_L1_error)
   }
-  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_array); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 644, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_array); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 894, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_9 = (__pyx_v_process == __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_9) {
 
-    /* "scalecodec/_value_decode.pyx":645
+    /* "scalecodec/_value_decode.pyx":895
  * 
  *     if process is _KNOWN['array']:
  *         sub_type = cls.sub_type             # <<<<<<<<<<<<<<
  *         count = cls.element_count or 0
  *         if count == 0 or rc.get_decoder_class(sub_type) is _KNOWN['u8_class']:
 */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_sub_type); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 645, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_sub_type); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 895, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_v_sub_type = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":646
+    /* "scalecodec/_value_decode.pyx":896
  *     if process is _KNOWN['array']:
  *         sub_type = cls.sub_type
  *         count = cls.element_count or 0             # <<<<<<<<<<<<<<
  *         if count == 0 or rc.get_decoder_class(sub_type) is _KNOWN['u8_class']:
  *             # element_count 0 decodes to [] regardless of sub type
 */
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_element_count); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 646, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_element_count); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 896, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 646, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 896, __pyx_L1_error)
     if (!__pyx_t_9) {
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     } else {
@@ -24898,7 +27216,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       goto __pyx_L16_bool_binop_done;
     }
-    __pyx_t_6 = __Pyx_PyLong_From_long(0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 646, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyLong_From_long(0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 896, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_4 = __pyx_t_6;
     __pyx_t_6 = 0;
@@ -24906,14 +27224,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_count = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":647
+    /* "scalecodec/_value_decode.pyx":897
  *         sub_type = cls.sub_type
  *         count = cls.element_count or 0
  *         if count == 0 or rc.get_decoder_class(sub_type) is _KNOWN['u8_class']:             # <<<<<<<<<<<<<<
  *             # element_count 0 decodes to [] regardless of sub type
  *             node.op = OP_ARRAY_U8
 */
-    __pyx_t_2 = (__Pyx_PyLong_BoolEqObjC(__pyx_v_count, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 647, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyLong_BoolEqObjC(__pyx_v_count, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 897, __pyx_L1_error)
     if (!__pyx_t_2) {
     } else {
       __pyx_t_9 = __pyx_t_2;
@@ -24926,14 +27244,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       PyObject *__pyx_callargs[2] = {__pyx_t_6, __pyx_v_sub_type};
       __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get_decoder_class, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 647, __pyx_L1_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 897, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
     }
     if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 647, __pyx_L1_error)
+      __PYX_ERR(0, 897, __pyx_L1_error)
     }
-    __pyx_t_6 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_u8_class); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 647, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_u8_class); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 897, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_2 = (__pyx_t_4 == __pyx_t_6);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -24942,7 +27260,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_L19_bool_binop_done:;
     if (__pyx_t_9) {
 
-      /* "scalecodec/_value_decode.pyx":649
+      /* "scalecodec/_value_decode.pyx":899
  *         if count == 0 or rc.get_decoder_class(sub_type) is _KNOWN['u8_class']:
  *             # element_count 0 decodes to [] regardless of sub type
  *             node.op = OP_ARRAY_U8             # <<<<<<<<<<<<<<
@@ -24951,17 +27269,17 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
       __pyx_v_node->op = 16;
 
-      /* "scalecodec/_value_decode.pyx":650
+      /* "scalecodec/_value_decode.pyx":900
  *             # element_count 0 decodes to [] regardless of sub type
  *             node.op = OP_ARRAY_U8
  *             node.n = count             # <<<<<<<<<<<<<<
  *             return
  *         node.op = OP_ARRAY
 */
-      __pyx_t_10 = __Pyx_PyIndex_AsSsize_t(__pyx_v_count); if (unlikely((__pyx_t_10 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 650, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyIndex_AsSsize_t(__pyx_v_count); if (unlikely((__pyx_t_10 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 900, __pyx_L1_error)
       __pyx_v_node->n = __pyx_t_10;
 
-      /* "scalecodec/_value_decode.pyx":651
+      /* "scalecodec/_value_decode.pyx":901
  *             node.op = OP_ARRAY_U8
  *             node.n = count
  *             return             # <<<<<<<<<<<<<<
@@ -24972,7 +27290,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __pyx_r = Py_None; __Pyx_INCREF(Py_None);
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":647
+      /* "scalecodec/_value_decode.pyx":897
  *         sub_type = cls.sub_type
  *         count = cls.element_count or 0
  *         if count == 0 or rc.get_decoder_class(sub_type) is _KNOWN['u8_class']:             # <<<<<<<<<<<<<<
@@ -24981,7 +27299,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":652
+    /* "scalecodec/_value_decode.pyx":902
  *             node.n = count
  *             return
  *         node.op = OP_ARRAY             # <<<<<<<<<<<<<<
@@ -24990,29 +27308,29 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 17;
 
-    /* "scalecodec/_value_decode.pyx":653
+    /* "scalecodec/_value_decode.pyx":903
  *             return
  *         node.op = OP_ARRAY
  *         node.n = count             # <<<<<<<<<<<<<<
  *         node.children = [_build_node(rc, sub_type, node_cache)]
  *         return
 */
-    __pyx_t_10 = __Pyx_PyIndex_AsSsize_t(__pyx_v_count); if (unlikely((__pyx_t_10 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 653, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyIndex_AsSsize_t(__pyx_v_count); if (unlikely((__pyx_t_10 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 903, __pyx_L1_error)
     __pyx_v_node->n = __pyx_t_10;
 
-    /* "scalecodec/_value_decode.pyx":654
+    /* "scalecodec/_value_decode.pyx":904
  *         node.op = OP_ARRAY
  *         node.n = count
  *         node.children = [_build_node(rc, sub_type, node_cache)]             # <<<<<<<<<<<<<<
  *         return
  * 
 */
-    __pyx_t_6 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_v_sub_type, __pyx_v_node_cache)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 654, __pyx_L1_error)
+    __pyx_t_6 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_v_sub_type, __pyx_v_node_cache)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 904, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_4 = PyList_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 654, __pyx_L1_error)
+    __pyx_t_4 = PyList_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 904, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_GIVEREF(__pyx_t_6);
-    if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_6) != (0)) __PYX_ERR(0, 654, __pyx_L1_error);
+    if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_6) != (0)) __PYX_ERR(0, 904, __pyx_L1_error);
     __pyx_t_6 = 0;
     __Pyx_GIVEREF(__pyx_t_4);
     __Pyx_GOTREF(__pyx_v_node->children);
@@ -25020,7 +27338,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->children = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":655
+    /* "scalecodec/_value_decode.pyx":905
  *         node.n = count
  *         node.children = [_build_node(rc, sub_type, node_cache)]
  *         return             # <<<<<<<<<<<<<<
@@ -25031,7 +27349,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":644
+    /* "scalecodec/_value_decode.pyx":894
  *         return
  * 
  *     if process is _KNOWN['array']:             # <<<<<<<<<<<<<<
@@ -25040,7 +27358,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":657
+  /* "scalecodec/_value_decode.pyx":907
  *         return
  * 
  *     if process is _KNOWN['struct']:             # <<<<<<<<<<<<<<
@@ -25049,27 +27367,27 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 657, __pyx_L1_error)
+    __PYX_ERR(0, 907, __pyx_L1_error)
   }
-  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_struct); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 657, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_struct); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 907, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_9 = (__pyx_v_process == __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_9) {
 
-    /* "scalecodec/_value_decode.pyx":658
+    /* "scalecodec/_value_decode.pyx":908
  * 
  *     if process is _KNOWN['struct']:
  *         type_mapping = cls.type_mapping             # <<<<<<<<<<<<<<
  *         if type_mapping is None:
  *             # e.g. classes that assemble an instance-level type_mapping in __init__
 */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 658, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 908, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_v_type_mapping = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":659
+    /* "scalecodec/_value_decode.pyx":909
  *     if process is _KNOWN['struct']:
  *         type_mapping = cls.type_mapping
  *         if type_mapping is None:             # <<<<<<<<<<<<<<
@@ -25079,7 +27397,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_t_9 = (__pyx_v_type_mapping == Py_None);
     if (unlikely(__pyx_t_9)) {
 
-      /* "scalecodec/_value_decode.pyx":661
+      /* "scalecodec/_value_decode.pyx":911
  *         if type_mapping is None:
  *             # e.g. classes that assemble an instance-level type_mapping in __init__
  *             raise UnsupportedType(f'Struct without class-level type_mapping: {cls}')             # <<<<<<<<<<<<<<
@@ -25087,11 +27405,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *         node.children = [
 */
       __pyx_t_6 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 661, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 911, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 661, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 911, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_3 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Struct_without_class_level_type, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 661, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Struct_without_class_level_type, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 911, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_t_7 = 1;
@@ -25112,14 +27430,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 661, __pyx_L1_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 911, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
       __Pyx_Raise(__pyx_t_4, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __PYX_ERR(0, 661, __pyx_L1_error)
+      __PYX_ERR(0, 911, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":659
+      /* "scalecodec/_value_decode.pyx":909
  *     if process is _KNOWN['struct']:
  *         type_mapping = cls.type_mapping
  *         if type_mapping is None:             # <<<<<<<<<<<<<<
@@ -25128,7 +27446,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":662
+    /* "scalecodec/_value_decode.pyx":912
  *             # e.g. classes that assemble an instance-level type_mapping in __init__
  *             raise UnsupportedType(f'Struct without class-level type_mapping: {cls}')
  *         node.op = OP_STRUCT             # <<<<<<<<<<<<<<
@@ -25137,7 +27455,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 18;
 
-    /* "scalecodec/_value_decode.pyx":663
+    /* "scalecodec/_value_decode.pyx":913
  *             raise UnsupportedType(f'Struct without class-level type_mapping: {cls}')
  *         node.op = OP_STRUCT
  *         node.children = [             # <<<<<<<<<<<<<<
@@ -25145,10 +27463,10 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *             for _, field_type in type_mapping
 */
     { /* enter inner scope */
-      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 663, __pyx_L25_error)
+      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 913, __pyx_L25_error)
       __Pyx_GOTREF(__pyx_t_4);
 
-      /* "scalecodec/_value_decode.pyx":665
+      /* "scalecodec/_value_decode.pyx":915
  *         node.children = [
  *             _build_node(rc, field_type or 'Null', node_cache)
  *             for _, field_type in type_mapping             # <<<<<<<<<<<<<<
@@ -25160,9 +27478,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __pyx_t_10 = 0;
         __pyx_t_11 = NULL;
       } else {
-        __pyx_t_10 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 665, __pyx_L25_error)
+        __pyx_t_10 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 915, __pyx_L25_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_5); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 665, __pyx_L25_error)
+        __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_5); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 915, __pyx_L25_error)
       }
       for (;;) {
         if (likely(!__pyx_t_11)) {
@@ -25170,7 +27488,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             {
               Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_5);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 665, __pyx_L25_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 915, __pyx_L25_error)
               #endif
               if (__pyx_t_10 >= __pyx_temp) break;
             }
@@ -25180,7 +27498,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             {
               Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_5);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 665, __pyx_L25_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 915, __pyx_L25_error)
               #endif
               if (__pyx_t_10 >= __pyx_temp) break;
             }
@@ -25191,13 +27509,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             #endif
             ++__pyx_t_10;
           }
-          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 665, __pyx_L25_error)
+          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 915, __pyx_L25_error)
         } else {
           __pyx_t_3 = __pyx_t_11(__pyx_t_5);
           if (unlikely(!__pyx_t_3)) {
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
-              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 665, __pyx_L25_error)
+              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 915, __pyx_L25_error)
               PyErr_Clear();
             }
             break;
@@ -25210,7 +27528,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
           if (unlikely(size != 2)) {
             if (size > 2) __Pyx_RaiseTooManyValuesError(2);
             else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-            __PYX_ERR(0, 665, __pyx_L25_error)
+            __PYX_ERR(0, 915, __pyx_L25_error)
           }
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
           if (likely(PyTuple_CheckExact(sequence))) {
@@ -25220,22 +27538,22 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             __Pyx_INCREF(__pyx_t_1);
           } else {
             __pyx_t_6 = __Pyx_PyList_GET_ITEM_REF(sequence, 0, __Pyx_ReferenceSharing_SharedReference);
-            if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 665, __pyx_L25_error)
+            if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 915, __pyx_L25_error)
             __Pyx_XGOTREF(__pyx_t_6);
             __pyx_t_1 = __Pyx_PyList_GET_ITEM_REF(sequence, 1, __Pyx_ReferenceSharing_SharedReference);
-            if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 665, __pyx_L25_error)
+            if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 915, __pyx_L25_error)
             __Pyx_XGOTREF(__pyx_t_1);
           }
           #else
-          __pyx_t_6 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 665, __pyx_L25_error)
+          __pyx_t_6 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 915, __pyx_L25_error)
           __Pyx_GOTREF(__pyx_t_6);
-          __pyx_t_1 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 665, __pyx_L25_error)
+          __pyx_t_1 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 915, __pyx_L25_error)
           __Pyx_GOTREF(__pyx_t_1);
           #endif
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         } else {
           Py_ssize_t index = -1;
-          __pyx_t_12 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 665, __pyx_L25_error)
+          __pyx_t_12 = PyObject_GetIter(__pyx_t_3); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 915, __pyx_L25_error)
           __Pyx_GOTREF(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __pyx_t_13 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_12);
@@ -25243,7 +27561,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
           __Pyx_GOTREF(__pyx_t_6);
           index = 1; __pyx_t_1 = __pyx_t_13(__pyx_t_12); if (unlikely(!__pyx_t_1)) goto __pyx_L28_unpacking_failed;
           __Pyx_GOTREF(__pyx_t_1);
-          if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_12), 2) < (0)) __PYX_ERR(0, 665, __pyx_L25_error)
+          if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_12), 2) < (0)) __PYX_ERR(0, 915, __pyx_L25_error)
           __pyx_t_13 = NULL;
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           goto __pyx_L29_unpacking_done;
@@ -25251,7 +27569,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           __pyx_t_13 = NULL;
           if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-          __PYX_ERR(0, 665, __pyx_L25_error)
+          __PYX_ERR(0, 915, __pyx_L25_error)
           __pyx_L29_unpacking_done:;
         }
         __Pyx_XDECREF_SET(__pyx_8genexpr1__pyx_v__, __pyx_t_6);
@@ -25259,14 +27577,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_XDECREF_SET(__pyx_8genexpr1__pyx_v_field_type, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "scalecodec/_value_decode.pyx":664
+        /* "scalecodec/_value_decode.pyx":914
  *         node.op = OP_STRUCT
  *         node.children = [
  *             _build_node(rc, field_type or 'Null', node_cache)             # <<<<<<<<<<<<<<
  *             for _, field_type in type_mapping
  *         ]
 */
-        __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_8genexpr1__pyx_v_field_type); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 664, __pyx_L25_error)
+        __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_8genexpr1__pyx_v_field_type); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 914, __pyx_L25_error)
         if (!__pyx_t_9) {
         } else {
           __Pyx_INCREF(__pyx_8genexpr1__pyx_v_field_type);
@@ -25276,13 +27594,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_INCREF(__pyx_mstate_global->__pyx_n_u_Null);
         __pyx_t_3 = __pyx_mstate_global->__pyx_n_u_Null;
         __pyx_L30_bool_binop_done:;
-        __pyx_t_1 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 664, __pyx_L25_error)
+        __pyx_t_1 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 914, __pyx_L25_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_1))) __PYX_ERR(0, 663, __pyx_L25_error)
+        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_1))) __PYX_ERR(0, 913, __pyx_L25_error)
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-        /* "scalecodec/_value_decode.pyx":665
+        /* "scalecodec/_value_decode.pyx":915
  *         node.children = [
  *             _build_node(rc, field_type or 'Null', node_cache)
  *             for _, field_type in type_mapping             # <<<<<<<<<<<<<<
@@ -25301,7 +27619,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __pyx_L33_exit_scope:;
     } /* exit inner scope */
 
-    /* "scalecodec/_value_decode.pyx":663
+    /* "scalecodec/_value_decode.pyx":913
  *             raise UnsupportedType(f'Struct without class-level type_mapping: {cls}')
  *         node.op = OP_STRUCT
  *         node.children = [             # <<<<<<<<<<<<<<
@@ -25314,7 +27632,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->children = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":667
+    /* "scalecodec/_value_decode.pyx":917
  *             for _, field_type in type_mapping
  *         ]
  *         node.keys = [field_name for field_name, _ in type_mapping]             # <<<<<<<<<<<<<<
@@ -25322,16 +27640,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  * 
 */
     { /* enter inner scope */
-      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 667, __pyx_L36_error)
+      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 917, __pyx_L36_error)
       __Pyx_GOTREF(__pyx_t_4);
       if (likely(PyList_CheckExact(__pyx_v_type_mapping)) || PyTuple_CheckExact(__pyx_v_type_mapping)) {
         __pyx_t_5 = __pyx_v_type_mapping; __Pyx_INCREF(__pyx_t_5);
         __pyx_t_10 = 0;
         __pyx_t_11 = NULL;
       } else {
-        __pyx_t_10 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 667, __pyx_L36_error)
+        __pyx_t_10 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 917, __pyx_L36_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_5); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 667, __pyx_L36_error)
+        __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_5); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 917, __pyx_L36_error)
       }
       for (;;) {
         if (likely(!__pyx_t_11)) {
@@ -25339,7 +27657,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             {
               Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_5);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 667, __pyx_L36_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 917, __pyx_L36_error)
               #endif
               if (__pyx_t_10 >= __pyx_temp) break;
             }
@@ -25349,7 +27667,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             {
               Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_5);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 667, __pyx_L36_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 917, __pyx_L36_error)
               #endif
               if (__pyx_t_10 >= __pyx_temp) break;
             }
@@ -25360,13 +27678,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             #endif
             ++__pyx_t_10;
           }
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 667, __pyx_L36_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 917, __pyx_L36_error)
         } else {
           __pyx_t_1 = __pyx_t_11(__pyx_t_5);
           if (unlikely(!__pyx_t_1)) {
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
-              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 667, __pyx_L36_error)
+              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 917, __pyx_L36_error)
               PyErr_Clear();
             }
             break;
@@ -25379,7 +27697,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
           if (unlikely(size != 2)) {
             if (size > 2) __Pyx_RaiseTooManyValuesError(2);
             else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-            __PYX_ERR(0, 667, __pyx_L36_error)
+            __PYX_ERR(0, 917, __pyx_L36_error)
           }
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
           if (likely(PyTuple_CheckExact(sequence))) {
@@ -25389,22 +27707,22 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             __Pyx_INCREF(__pyx_t_6);
           } else {
             __pyx_t_3 = __Pyx_PyList_GET_ITEM_REF(sequence, 0, __Pyx_ReferenceSharing_SharedReference);
-            if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 667, __pyx_L36_error)
+            if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 917, __pyx_L36_error)
             __Pyx_XGOTREF(__pyx_t_3);
             __pyx_t_6 = __Pyx_PyList_GET_ITEM_REF(sequence, 1, __Pyx_ReferenceSharing_SharedReference);
-            if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 667, __pyx_L36_error)
+            if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 917, __pyx_L36_error)
             __Pyx_XGOTREF(__pyx_t_6);
           }
           #else
-          __pyx_t_3 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 667, __pyx_L36_error)
+          __pyx_t_3 = __Pyx_PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 917, __pyx_L36_error)
           __Pyx_GOTREF(__pyx_t_3);
-          __pyx_t_6 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 667, __pyx_L36_error)
+          __pyx_t_6 = __Pyx_PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 917, __pyx_L36_error)
           __Pyx_GOTREF(__pyx_t_6);
           #endif
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         } else {
           Py_ssize_t index = -1;
-          __pyx_t_12 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 667, __pyx_L36_error)
+          __pyx_t_12 = PyObject_GetIter(__pyx_t_1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 917, __pyx_L36_error)
           __Pyx_GOTREF(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           __pyx_t_13 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_12);
@@ -25412,7 +27730,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
           __Pyx_GOTREF(__pyx_t_3);
           index = 1; __pyx_t_6 = __pyx_t_13(__pyx_t_12); if (unlikely(!__pyx_t_6)) goto __pyx_L39_unpacking_failed;
           __Pyx_GOTREF(__pyx_t_6);
-          if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_12), 2) < (0)) __PYX_ERR(0, 667, __pyx_L36_error)
+          if (__Pyx_IternextUnpackEndCheck(__pyx_t_13(__pyx_t_12), 2) < (0)) __PYX_ERR(0, 917, __pyx_L36_error)
           __pyx_t_13 = NULL;
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           goto __pyx_L40_unpacking_done;
@@ -25420,14 +27738,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           __pyx_t_13 = NULL;
           if (__Pyx_IterFinish() == 0) __Pyx_RaiseNeedMoreValuesError(index);
-          __PYX_ERR(0, 667, __pyx_L36_error)
+          __PYX_ERR(0, 917, __pyx_L36_error)
           __pyx_L40_unpacking_done:;
         }
         __Pyx_XDECREF_SET(__pyx_8genexpr2__pyx_v_field_name, __pyx_t_3);
         __pyx_t_3 = 0;
         __Pyx_XDECREF_SET(__pyx_8genexpr2__pyx_v__, __pyx_t_6);
         __pyx_t_6 = 0;
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_8genexpr2__pyx_v_field_name))) __PYX_ERR(0, 667, __pyx_L36_error)
+        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_8genexpr2__pyx_v_field_name))) __PYX_ERR(0, 917, __pyx_L36_error)
       }
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_XDECREF(__pyx_8genexpr2__pyx_v__); __pyx_8genexpr2__pyx_v__ = 0;
@@ -25445,7 +27763,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->keys = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":668
+    /* "scalecodec/_value_decode.pyx":918
  *         ]
  *         node.keys = [field_name for field_name, _ in type_mapping]
  *         return             # <<<<<<<<<<<<<<
@@ -25456,7 +27774,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":657
+    /* "scalecodec/_value_decode.pyx":907
  *         return
  * 
  *     if process is _KNOWN['struct']:             # <<<<<<<<<<<<<<
@@ -25465,7 +27783,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":670
+  /* "scalecodec/_value_decode.pyx":920
  *         return
  * 
  *     if process is _KNOWN['tuple']:             # <<<<<<<<<<<<<<
@@ -25474,27 +27792,27 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 670, __pyx_L1_error)
+    __PYX_ERR(0, 920, __pyx_L1_error)
   }
-  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_tuple); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 670, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_tuple); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 920, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_9 = (__pyx_v_process == __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_9) {
 
-    /* "scalecodec/_value_decode.pyx":671
+    /* "scalecodec/_value_decode.pyx":921
  * 
  *     if process is _KNOWN['tuple']:
  *         type_mapping = cls.type_mapping             # <<<<<<<<<<<<<<
  *         if type_mapping is None:
  *             raise UnsupportedType(f'Tuple without type_mapping: {cls}')
 */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 671, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 921, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_v_type_mapping = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":672
+    /* "scalecodec/_value_decode.pyx":922
  *     if process is _KNOWN['tuple']:
  *         type_mapping = cls.type_mapping
  *         if type_mapping is None:             # <<<<<<<<<<<<<<
@@ -25504,7 +27822,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_t_9 = (__pyx_v_type_mapping == Py_None);
     if (unlikely(__pyx_t_9)) {
 
-      /* "scalecodec/_value_decode.pyx":673
+      /* "scalecodec/_value_decode.pyx":923
  *         type_mapping = cls.type_mapping
  *         if type_mapping is None:
  *             raise UnsupportedType(f'Tuple without type_mapping: {cls}')             # <<<<<<<<<<<<<<
@@ -25512,11 +27830,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *             # the unit type (): decodes to an empty tuple, consuming nothing
 */
       __pyx_t_5 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 673, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 923, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 673, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 923, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_3 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Tuple_without_type_mapping, __pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 673, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Tuple_without_type_mapping, __pyx_t_6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 923, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __pyx_t_7 = 1;
@@ -25537,14 +27855,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 673, __pyx_L1_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 923, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
       __Pyx_Raise(__pyx_t_4, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __PYX_ERR(0, 673, __pyx_L1_error)
+      __PYX_ERR(0, 923, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":672
+      /* "scalecodec/_value_decode.pyx":922
  *     if process is _KNOWN['tuple']:
  *         type_mapping = cls.type_mapping
  *         if type_mapping is None:             # <<<<<<<<<<<<<<
@@ -25553,18 +27871,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":674
+    /* "scalecodec/_value_decode.pyx":924
  *         if type_mapping is None:
  *             raise UnsupportedType(f'Tuple without type_mapping: {cls}')
  *         if len(type_mapping) == 0:             # <<<<<<<<<<<<<<
  *             # the unit type (): decodes to an empty tuple, consuming nothing
  *             node.op = OP_TUPLE
 */
-    __pyx_t_10 = PyObject_Length(__pyx_v_type_mapping); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 674, __pyx_L1_error)
+    __pyx_t_10 = PyObject_Length(__pyx_v_type_mapping); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 924, __pyx_L1_error)
     __pyx_t_9 = (__pyx_t_10 == 0);
     if (__pyx_t_9) {
 
-      /* "scalecodec/_value_decode.pyx":676
+      /* "scalecodec/_value_decode.pyx":926
  *         if len(type_mapping) == 0:
  *             # the unit type (): decodes to an empty tuple, consuming nothing
  *             node.op = OP_TUPLE             # <<<<<<<<<<<<<<
@@ -25573,14 +27891,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
       __pyx_v_node->op = 19;
 
-      /* "scalecodec/_value_decode.pyx":677
+      /* "scalecodec/_value_decode.pyx":927
  *             # the unit type (): decodes to an empty tuple, consuming nothing
  *             node.op = OP_TUPLE
  *             node.children = []             # <<<<<<<<<<<<<<
  *             return
  *         children = [
 */
-      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 677, __pyx_L1_error)
+      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 927, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_GIVEREF(__pyx_t_4);
       __Pyx_GOTREF(__pyx_v_node->children);
@@ -25588,7 +27906,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __pyx_v_node->children = ((PyObject*)__pyx_t_4);
       __pyx_t_4 = 0;
 
-      /* "scalecodec/_value_decode.pyx":678
+      /* "scalecodec/_value_decode.pyx":928
  *             node.op = OP_TUPLE
  *             node.children = []
  *             return             # <<<<<<<<<<<<<<
@@ -25599,7 +27917,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __pyx_r = Py_None; __Pyx_INCREF(Py_None);
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":674
+      /* "scalecodec/_value_decode.pyx":924
  *         if type_mapping is None:
  *             raise UnsupportedType(f'Tuple without type_mapping: {cls}')
  *         if len(type_mapping) == 0:             # <<<<<<<<<<<<<<
@@ -25608,7 +27926,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":679
+    /* "scalecodec/_value_decode.pyx":929
  *             node.children = []
  *             return
  *         children = [             # <<<<<<<<<<<<<<
@@ -25616,10 +27934,10 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *             for member_type in type_mapping
 */
     { /* enter inner scope */
-      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 679, __pyx_L48_error)
+      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 929, __pyx_L48_error)
       __Pyx_GOTREF(__pyx_t_4);
 
-      /* "scalecodec/_value_decode.pyx":681
+      /* "scalecodec/_value_decode.pyx":931
  *         children = [
  *             _build_node(rc, member_type or 'Null', node_cache)
  *             for member_type in type_mapping             # <<<<<<<<<<<<<<
@@ -25631,9 +27949,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __pyx_t_10 = 0;
         __pyx_t_11 = NULL;
       } else {
-        __pyx_t_10 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 681, __pyx_L48_error)
+        __pyx_t_10 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 931, __pyx_L48_error)
         __Pyx_GOTREF(__pyx_t_1);
-        __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 681, __pyx_L48_error)
+        __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 931, __pyx_L48_error)
       }
       for (;;) {
         if (likely(!__pyx_t_11)) {
@@ -25641,7 +27959,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             {
               Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 681, __pyx_L48_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 931, __pyx_L48_error)
               #endif
               if (__pyx_t_10 >= __pyx_temp) break;
             }
@@ -25651,7 +27969,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             {
               Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_1);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 681, __pyx_L48_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 931, __pyx_L48_error)
               #endif
               if (__pyx_t_10 >= __pyx_temp) break;
             }
@@ -25662,13 +27980,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             #endif
             ++__pyx_t_10;
           }
-          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 681, __pyx_L48_error)
+          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 931, __pyx_L48_error)
         } else {
           __pyx_t_3 = __pyx_t_11(__pyx_t_1);
           if (unlikely(!__pyx_t_3)) {
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
-              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 681, __pyx_L48_error)
+              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 931, __pyx_L48_error)
               PyErr_Clear();
             }
             break;
@@ -25678,14 +27996,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_XDECREF_SET(__pyx_8genexpr3__pyx_v_member_type, __pyx_t_3);
         __pyx_t_3 = 0;
 
-        /* "scalecodec/_value_decode.pyx":680
+        /* "scalecodec/_value_decode.pyx":930
  *             return
  *         children = [
  *             _build_node(rc, member_type or 'Null', node_cache)             # <<<<<<<<<<<<<<
  *             for member_type in type_mapping
  *         ]
 */
-        __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_8genexpr3__pyx_v_member_type); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 680, __pyx_L48_error)
+        __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_8genexpr3__pyx_v_member_type); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 930, __pyx_L48_error)
         if (!__pyx_t_9) {
         } else {
           __Pyx_INCREF(__pyx_8genexpr3__pyx_v_member_type);
@@ -25695,13 +28013,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_INCREF(__pyx_mstate_global->__pyx_n_u_Null);
         __pyx_t_3 = __pyx_mstate_global->__pyx_n_u_Null;
         __pyx_L51_bool_binop_done:;
-        __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 680, __pyx_L48_error)
+        __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 930, __pyx_L48_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 679, __pyx_L48_error)
+        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 929, __pyx_L48_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-        /* "scalecodec/_value_decode.pyx":681
+        /* "scalecodec/_value_decode.pyx":931
  *         children = [
  *             _build_node(rc, member_type or 'Null', node_cache)
  *             for member_type in type_mapping             # <<<<<<<<<<<<<<
@@ -25720,14 +28038,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_children = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":683
+    /* "scalecodec/_value_decode.pyx":933
  *             for member_type in type_mapping
  *         ]
  *         node.op = OP_TUPLE1 if len(children) == 1 else OP_TUPLE             # <<<<<<<<<<<<<<
  *         node.children = children
  *         return
 */
-    __pyx_t_10 = __Pyx_PyList_GET_SIZE(__pyx_v_children); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 683, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyList_GET_SIZE(__pyx_v_children); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 933, __pyx_L1_error)
     __pyx_t_9 = (__pyx_t_10 == 1);
     if (__pyx_t_9) {
       __pyx_t_8 = 20;
@@ -25736,7 +28054,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     }
     __pyx_v_node->op = __pyx_t_8;
 
-    /* "scalecodec/_value_decode.pyx":684
+    /* "scalecodec/_value_decode.pyx":934
  *         ]
  *         node.op = OP_TUPLE1 if len(children) == 1 else OP_TUPLE
  *         node.children = children             # <<<<<<<<<<<<<<
@@ -25749,7 +28067,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __Pyx_DECREF(__pyx_v_node->children);
     __pyx_v_node->children = __pyx_v_children;
 
-    /* "scalecodec/_value_decode.pyx":685
+    /* "scalecodec/_value_decode.pyx":935
  *         node.op = OP_TUPLE1 if len(children) == 1 else OP_TUPLE
  *         node.children = children
  *         return             # <<<<<<<<<<<<<<
@@ -25760,7 +28078,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":670
+    /* "scalecodec/_value_decode.pyx":920
  *         return
  * 
  *     if process is _KNOWN['tuple']:             # <<<<<<<<<<<<<<
@@ -25769,7 +28087,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":687
+  /* "scalecodec/_value_decode.pyx":937
  *         return
  * 
  *     if process is _KNOWN['multiaddress']:             # <<<<<<<<<<<<<<
@@ -25778,38 +28096,38 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 687, __pyx_L1_error)
+    __PYX_ERR(0, 937, __pyx_L1_error)
   }
-  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_multiaddress); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 687, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_multiaddress); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 937, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_9 = (__pyx_v_process == __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_9) {
 
-    /* "scalecodec/_value_decode.pyx":688
+    /* "scalecodec/_value_decode.pyx":938
  * 
  *     if process is _KNOWN['multiaddress']:
  *         type_mapping = cls.type_mapping             # <<<<<<<<<<<<<<
  *         if not type_mapping:
  *             raise UnsupportedType(f'MultiAddress without type_mapping: {cls}')
 */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 688, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 938, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_v_type_mapping = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":689
+    /* "scalecodec/_value_decode.pyx":939
  *     if process is _KNOWN['multiaddress']:
  *         type_mapping = cls.type_mapping
  *         if not type_mapping:             # <<<<<<<<<<<<<<
  *             raise UnsupportedType(f'MultiAddress without type_mapping: {cls}')
  *         keys = []
 */
-    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_type_mapping); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 689, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_type_mapping); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 939, __pyx_L1_error)
     __pyx_t_2 = (!__pyx_t_9);
     if (unlikely(__pyx_t_2)) {
 
-      /* "scalecodec/_value_decode.pyx":690
+      /* "scalecodec/_value_decode.pyx":940
  *         type_mapping = cls.type_mapping
  *         if not type_mapping:
  *             raise UnsupportedType(f'MultiAddress without type_mapping: {cls}')             # <<<<<<<<<<<<<<
@@ -25817,11 +28135,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *         children = []
 */
       __pyx_t_1 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 690, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 940, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 690, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 940, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_MultiAddress_without_type_mappin, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 690, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_MultiAddress_without_type_mappin, __pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 940, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __pyx_t_7 = 1;
@@ -25842,14 +28160,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 690, __pyx_L1_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 940, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
       __Pyx_Raise(__pyx_t_4, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __PYX_ERR(0, 690, __pyx_L1_error)
+      __PYX_ERR(0, 940, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":689
+      /* "scalecodec/_value_decode.pyx":939
  *     if process is _KNOWN['multiaddress']:
  *         type_mapping = cls.type_mapping
  *         if not type_mapping:             # <<<<<<<<<<<<<<
@@ -25858,31 +28176,31 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":691
+    /* "scalecodec/_value_decode.pyx":941
  *         if not type_mapping:
  *             raise UnsupportedType(f'MultiAddress without type_mapping: {cls}')
  *         keys = []             # <<<<<<<<<<<<<<
  *         children = []
  *         for entry in type_mapping:
 */
-    __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 691, __pyx_L1_error)
+    __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 941, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_v_keys = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":692
+    /* "scalecodec/_value_decode.pyx":942
  *             raise UnsupportedType(f'MultiAddress without type_mapping: {cls}')
  *         keys = []
  *         children = []             # <<<<<<<<<<<<<<
  *         for entry in type_mapping:
  *             variant_name, variant_type = entry[0], entry[1]
 */
-    __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 692, __pyx_L1_error)
+    __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 942, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_v_children = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":693
+    /* "scalecodec/_value_decode.pyx":943
  *         keys = []
  *         children = []
  *         for entry in type_mapping:             # <<<<<<<<<<<<<<
@@ -25894,9 +28212,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __pyx_t_10 = 0;
       __pyx_t_11 = NULL;
     } else {
-      __pyx_t_10 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 693, __pyx_L1_error)
+      __pyx_t_10 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 943, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_4); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 693, __pyx_L1_error)
+      __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_4); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 943, __pyx_L1_error)
     }
     for (;;) {
       if (likely(!__pyx_t_11)) {
@@ -25904,7 +28222,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
           {
             Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_4);
             #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 693, __pyx_L1_error)
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 943, __pyx_L1_error)
             #endif
             if (__pyx_t_10 >= __pyx_temp) break;
           }
@@ -25914,7 +28232,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
           {
             Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_4);
             #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 693, __pyx_L1_error)
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 943, __pyx_L1_error)
             #endif
             if (__pyx_t_10 >= __pyx_temp) break;
           }
@@ -25925,13 +28243,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
           #endif
           ++__pyx_t_10;
         }
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 693, __pyx_L1_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 943, __pyx_L1_error)
       } else {
         __pyx_t_5 = __pyx_t_11(__pyx_t_4);
         if (unlikely(!__pyx_t_5)) {
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
-            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 693, __pyx_L1_error)
+            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 943, __pyx_L1_error)
             PyErr_Clear();
           }
           break;
@@ -25941,32 +28259,32 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __Pyx_XDECREF_SET(__pyx_v_entry, __pyx_t_5);
       __pyx_t_5 = 0;
 
-      /* "scalecodec/_value_decode.pyx":694
+      /* "scalecodec/_value_decode.pyx":944
  *         children = []
  *         for entry in type_mapping:
  *             variant_name, variant_type = entry[0], entry[1]             # <<<<<<<<<<<<<<
  *             keys.append(variant_name)
  *             if variant_type is None or variant_type == 'Null':
 */
-      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_entry, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 694, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_entry, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 944, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_6 = __Pyx_GetItemInt(__pyx_v_entry, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 694, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_GetItemInt(__pyx_v_entry, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 944, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_XDECREF_SET(__pyx_v_variant_name, __pyx_t_5);
       __pyx_t_5 = 0;
       __Pyx_XDECREF_SET(__pyx_v_variant_type, __pyx_t_6);
       __pyx_t_6 = 0;
 
-      /* "scalecodec/_value_decode.pyx":695
+      /* "scalecodec/_value_decode.pyx":945
  *         for entry in type_mapping:
  *             variant_name, variant_type = entry[0], entry[1]
  *             keys.append(variant_name)             # <<<<<<<<<<<<<<
  *             if variant_type is None or variant_type == 'Null':
  *                 children.append(None)
 */
-      __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_keys, __pyx_v_variant_name); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 695, __pyx_L1_error)
+      __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_keys, __pyx_v_variant_name); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 945, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":696
+      /* "scalecodec/_value_decode.pyx":946
  *             variant_name, variant_type = entry[0], entry[1]
  *             keys.append(variant_name)
  *             if variant_type is None or variant_type == 'Null':             # <<<<<<<<<<<<<<
@@ -25979,21 +28297,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __pyx_t_2 = __pyx_t_9;
         goto __pyx_L60_bool_binop_done;
       }
-      __pyx_t_9 = (__Pyx_PyUnicode_Equals(__pyx_v_variant_type, __pyx_mstate_global->__pyx_n_u_Null, Py_EQ)); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 696, __pyx_L1_error)
+      __pyx_t_9 = (__Pyx_PyUnicode_Equals(__pyx_v_variant_type, __pyx_mstate_global->__pyx_n_u_Null, Py_EQ)); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 946, __pyx_L1_error)
       __pyx_t_2 = __pyx_t_9;
       __pyx_L60_bool_binop_done:;
       if (__pyx_t_2) {
 
-        /* "scalecodec/_value_decode.pyx":697
+        /* "scalecodec/_value_decode.pyx":947
  *             keys.append(variant_name)
  *             if variant_type is None or variant_type == 'Null':
  *                 children.append(None)             # <<<<<<<<<<<<<<
  *             else:
  *                 children.append(_build_node(rc, variant_type, node_cache))
 */
-        __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_children, Py_None); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 697, __pyx_L1_error)
+        __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_children, Py_None); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 947, __pyx_L1_error)
 
-        /* "scalecodec/_value_decode.pyx":696
+        /* "scalecodec/_value_decode.pyx":946
  *             variant_name, variant_type = entry[0], entry[1]
  *             keys.append(variant_name)
  *             if variant_type is None or variant_type == 'Null':             # <<<<<<<<<<<<<<
@@ -26003,7 +28321,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         goto __pyx_L59;
       }
 
-      /* "scalecodec/_value_decode.pyx":699
+      /* "scalecodec/_value_decode.pyx":949
  *                 children.append(None)
  *             else:
  *                 children.append(_build_node(rc, variant_type, node_cache))             # <<<<<<<<<<<<<<
@@ -26011,14 +28329,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *         node.keys = keys
 */
       /*else*/ {
-        __pyx_t_6 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_v_variant_type, __pyx_v_node_cache)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 699, __pyx_L1_error)
+        __pyx_t_6 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_v_variant_type, __pyx_v_node_cache)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 949, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_children, __pyx_t_6); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 699, __pyx_L1_error)
+        __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_children, __pyx_t_6); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 949, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       }
       __pyx_L59:;
 
-      /* "scalecodec/_value_decode.pyx":693
+      /* "scalecodec/_value_decode.pyx":943
  *         keys = []
  *         children = []
  *         for entry in type_mapping:             # <<<<<<<<<<<<<<
@@ -26028,7 +28346,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":700
+    /* "scalecodec/_value_decode.pyx":950
  *             else:
  *                 children.append(_build_node(rc, variant_type, node_cache))
  *         node.op = OP_MULTIADDR             # <<<<<<<<<<<<<<
@@ -26037,7 +28355,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 37;
 
-    /* "scalecodec/_value_decode.pyx":701
+    /* "scalecodec/_value_decode.pyx":951
  *                 children.append(_build_node(rc, variant_type, node_cache))
  *         node.op = OP_MULTIADDR
  *         node.keys = keys             # <<<<<<<<<<<<<<
@@ -26050,7 +28368,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __Pyx_DECREF(__pyx_v_node->keys);
     __pyx_v_node->keys = __pyx_v_keys;
 
-    /* "scalecodec/_value_decode.pyx":702
+    /* "scalecodec/_value_decode.pyx":952
  *         node.op = OP_MULTIADDR
  *         node.keys = keys
  *         node.children = children             # <<<<<<<<<<<<<<
@@ -26063,7 +28381,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __Pyx_DECREF(__pyx_v_node->children);
     __pyx_v_node->children = __pyx_v_children;
 
-    /* "scalecodec/_value_decode.pyx":703
+    /* "scalecodec/_value_decode.pyx":953
  *         node.keys = keys
  *         node.children = children
  *         return             # <<<<<<<<<<<<<<
@@ -26074,7 +28392,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":687
+    /* "scalecodec/_value_decode.pyx":937
  *         return
  * 
  *     if process is _KNOWN['multiaddress']:             # <<<<<<<<<<<<<<
@@ -26083,7 +28401,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":705
+  /* "scalecodec/_value_decode.pyx":955
  *         return
  * 
  *     if process is _KNOWN['generic_call']:             # <<<<<<<<<<<<<<
@@ -26092,15 +28410,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 705, __pyx_L1_error)
+    __PYX_ERR(0, 955, __pyx_L1_error)
   }
-  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_generic_call); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 705, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_generic_call); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 955, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":706
+    /* "scalecodec/_value_decode.pyx":956
  * 
  *     if process is _KNOWN['generic_call']:
  *         node.op = OP_CALL             # <<<<<<<<<<<<<<
@@ -26109,14 +28427,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 38;
 
-    /* "scalecodec/_value_decode.pyx":707
+    /* "scalecodec/_value_decode.pyx":957
  *     if process is _KNOWN['generic_call']:
  *         node.op = OP_CALL
  *         node.aux = _build_call_table(rc, cls, node_cache)             # <<<<<<<<<<<<<<
  *         return
  * 
 */
-    __pyx_t_4 = __pyx_f_10scalecodec_13_value_decode__build_call_table(__pyx_v_rc, __pyx_v_cls, __pyx_v_node_cache); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 707, __pyx_L1_error)
+    __pyx_t_4 = __pyx_f_10scalecodec_13_value_decode__build_call_table(__pyx_v_rc, __pyx_v_cls, __pyx_v_node_cache); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 957, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_GIVEREF(__pyx_t_4);
     __Pyx_GOTREF(__pyx_v_node->aux);
@@ -26124,7 +28442,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->aux = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":708
+    /* "scalecodec/_value_decode.pyx":958
  *         node.op = OP_CALL
  *         node.aux = _build_call_table(rc, cls, node_cache)
  *         return             # <<<<<<<<<<<<<<
@@ -26135,7 +28453,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":705
+    /* "scalecodec/_value_decode.pyx":955
  *         return
  * 
  *     if process is _KNOWN['generic_call']:             # <<<<<<<<<<<<<<
@@ -26144,7 +28462,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":710
+  /* "scalecodec/_value_decode.pyx":960
  *         return
  * 
  *     if process is _KNOWN['era']:             # <<<<<<<<<<<<<<
@@ -26153,15 +28471,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 710, __pyx_L1_error)
+    __PYX_ERR(0, 960, __pyx_L1_error)
   }
-  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_era); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 710, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_era); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 960, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":711
+    /* "scalecodec/_value_decode.pyx":961
  * 
  *     if process is _KNOWN['era']:
  *         node.op = OP_ERA             # <<<<<<<<<<<<<<
@@ -26170,7 +28488,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 39;
 
-    /* "scalecodec/_value_decode.pyx":712
+    /* "scalecodec/_value_decode.pyx":962
  *     if process is _KNOWN['era']:
  *         node.op = OP_ERA
  *         return             # <<<<<<<<<<<<<<
@@ -26181,7 +28499,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":710
+    /* "scalecodec/_value_decode.pyx":960
  *         return
  * 
  *     if process is _KNOWN['era']:             # <<<<<<<<<<<<<<
@@ -26190,7 +28508,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":714
+  /* "scalecodec/_value_decode.pyx":964
  *         return
  * 
  *     if process is _KNOWN['scale_info_event']:             # <<<<<<<<<<<<<<
@@ -26199,15 +28517,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 714, __pyx_L1_error)
+    __PYX_ERR(0, 964, __pyx_L1_error)
   }
-  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_scale_info_event); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 714, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_scale_info_event); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 964, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":715
+    /* "scalecodec/_value_decode.pyx":965
  * 
  *     if process is _KNOWN['scale_info_event']:
  *         node.op = OP_EVENT             # <<<<<<<<<<<<<<
@@ -26216,14 +28534,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 40;
 
-    /* "scalecodec/_value_decode.pyx":716
+    /* "scalecodec/_value_decode.pyx":966
  *     if process is _KNOWN['scale_info_event']:
  *         node.op = OP_EVENT
  *         node.aux = _build_event_table(rc, cls, node_cache)             # <<<<<<<<<<<<<<
  *         return
  * 
 */
-    __pyx_t_4 = __pyx_f_10scalecodec_13_value_decode__build_event_table(__pyx_v_rc, __pyx_v_cls, __pyx_v_node_cache); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 716, __pyx_L1_error)
+    __pyx_t_4 = __pyx_f_10scalecodec_13_value_decode__build_event_table(__pyx_v_rc, __pyx_v_cls, __pyx_v_node_cache); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 966, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_GIVEREF(__pyx_t_4);
     __Pyx_GOTREF(__pyx_v_node->aux);
@@ -26231,7 +28549,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->aux = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":717
+    /* "scalecodec/_value_decode.pyx":967
  *         node.op = OP_EVENT
  *         node.aux = _build_event_table(rc, cls, node_cache)
  *         return             # <<<<<<<<<<<<<<
@@ -26242,7 +28560,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":714
+    /* "scalecodec/_value_decode.pyx":964
  *         return
  * 
  *     if process is _KNOWN['scale_info_event']:             # <<<<<<<<<<<<<<
@@ -26251,7 +28569,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":719
+  /* "scalecodec/_value_decode.pyx":969
  *         return
  * 
  *     if process is _KNOWN['event_record']:             # <<<<<<<<<<<<<<
@@ -26260,34 +28578,34 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 719, __pyx_L1_error)
+    __PYX_ERR(0, 969, __pyx_L1_error)
   }
-  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_event_record); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 719, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_event_record); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 969, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_4);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":720
+    /* "scalecodec/_value_decode.pyx":970
  * 
  *     if process is _KNOWN['event_record']:
  *         type_mapping = cls.type_mapping             # <<<<<<<<<<<<<<
  *         if (
  *             not type_mapping
 */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 720, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 970, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_v_type_mapping = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":722
+    /* "scalecodec/_value_decode.pyx":972
  *         type_mapping = cls.type_mapping
  *         if (
  *             not type_mapping             # <<<<<<<<<<<<<<
  *             or len(type_mapping) != 3
  *             or [f[0] for f in type_mapping] != ['phase', 'event', 'topics']
 */
-    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_type_mapping); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 722, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_type_mapping); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 972, __pyx_L1_error)
     __pyx_t_15 = (!__pyx_t_9);
     if (!__pyx_t_15) {
     } else {
@@ -26295,14 +28613,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       goto __pyx_L68_bool_binop_done;
     }
 
-    /* "scalecodec/_value_decode.pyx":723
+    /* "scalecodec/_value_decode.pyx":973
  *         if (
  *             not type_mapping
  *             or len(type_mapping) != 3             # <<<<<<<<<<<<<<
  *             or [f[0] for f in type_mapping] != ['phase', 'event', 'topics']
  *         ):
 */
-    __pyx_t_10 = PyObject_Length(__pyx_v_type_mapping); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 723, __pyx_L1_error)
+    __pyx_t_10 = PyObject_Length(__pyx_v_type_mapping); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 973, __pyx_L1_error)
     __pyx_t_15 = (__pyx_t_10 != 3);
     if (!__pyx_t_15) {
     } else {
@@ -26310,7 +28628,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       goto __pyx_L68_bool_binop_done;
     }
 
-    /* "scalecodec/_value_decode.pyx":724
+    /* "scalecodec/_value_decode.pyx":974
  *             not type_mapping
  *             or len(type_mapping) != 3
  *             or [f[0] for f in type_mapping] != ['phase', 'event', 'topics']             # <<<<<<<<<<<<<<
@@ -26318,16 +28636,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *             raise UnsupportedType(f'EventRecord with unexpected shape: {cls}')
 */
     { /* enter inner scope */
-      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 724, __pyx_L73_error)
+      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 974, __pyx_L73_error)
       __Pyx_GOTREF(__pyx_t_4);
       if (likely(PyList_CheckExact(__pyx_v_type_mapping)) || PyTuple_CheckExact(__pyx_v_type_mapping)) {
         __pyx_t_6 = __pyx_v_type_mapping; __Pyx_INCREF(__pyx_t_6);
         __pyx_t_10 = 0;
         __pyx_t_11 = NULL;
       } else {
-        __pyx_t_10 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 724, __pyx_L73_error)
+        __pyx_t_10 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 974, __pyx_L73_error)
         __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 724, __pyx_L73_error)
+        __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 974, __pyx_L73_error)
       }
       for (;;) {
         if (likely(!__pyx_t_11)) {
@@ -26335,7 +28653,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             {
               Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_6);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 724, __pyx_L73_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 974, __pyx_L73_error)
               #endif
               if (__pyx_t_10 >= __pyx_temp) break;
             }
@@ -26345,7 +28663,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             {
               Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_6);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 724, __pyx_L73_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 974, __pyx_L73_error)
               #endif
               if (__pyx_t_10 >= __pyx_temp) break;
             }
@@ -26356,13 +28674,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             #endif
             ++__pyx_t_10;
           }
-          if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 724, __pyx_L73_error)
+          if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 974, __pyx_L73_error)
         } else {
           __pyx_t_5 = __pyx_t_11(__pyx_t_6);
           if (unlikely(!__pyx_t_5)) {
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
-              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 724, __pyx_L73_error)
+              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 974, __pyx_L73_error)
               PyErr_Clear();
             }
             break;
@@ -26371,9 +28689,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_XDECREF_SET(__pyx_8genexpr4__pyx_v_f, __pyx_t_5);
         __pyx_t_5 = 0;
-        __pyx_t_5 = __Pyx_GetItemInt(__pyx_8genexpr4__pyx_v_f, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_SharedReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 724, __pyx_L73_error)
+        __pyx_t_5 = __Pyx_GetItemInt(__pyx_8genexpr4__pyx_v_f, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_SharedReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 974, __pyx_L73_error)
         __Pyx_GOTREF(__pyx_t_5);
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 724, __pyx_L73_error)
+        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 974, __pyx_L73_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       }
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -26384,26 +28702,26 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       goto __pyx_L1_error;
       __pyx_L77_exit_scope:;
     } /* exit inner scope */
-    __pyx_t_6 = PyList_New(3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 724, __pyx_L1_error)
+    __pyx_t_6 = PyList_New(3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 974, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_INCREF(__pyx_mstate_global->__pyx_n_u_phase);
     __Pyx_GIVEREF(__pyx_mstate_global->__pyx_n_u_phase);
-    if (__Pyx_PyList_SET_ITEM(__pyx_t_6, 0, __pyx_mstate_global->__pyx_n_u_phase) != (0)) __PYX_ERR(0, 724, __pyx_L1_error);
+    if (__Pyx_PyList_SET_ITEM(__pyx_t_6, 0, __pyx_mstate_global->__pyx_n_u_phase) != (0)) __PYX_ERR(0, 974, __pyx_L1_error);
     __Pyx_INCREF(__pyx_mstate_global->__pyx_n_u_event);
     __Pyx_GIVEREF(__pyx_mstate_global->__pyx_n_u_event);
-    if (__Pyx_PyList_SET_ITEM(__pyx_t_6, 1, __pyx_mstate_global->__pyx_n_u_event) != (0)) __PYX_ERR(0, 724, __pyx_L1_error);
+    if (__Pyx_PyList_SET_ITEM(__pyx_t_6, 1, __pyx_mstate_global->__pyx_n_u_event) != (0)) __PYX_ERR(0, 974, __pyx_L1_error);
     __Pyx_INCREF(__pyx_mstate_global->__pyx_n_u_topics);
     __Pyx_GIVEREF(__pyx_mstate_global->__pyx_n_u_topics);
-    if (__Pyx_PyList_SET_ITEM(__pyx_t_6, 2, __pyx_mstate_global->__pyx_n_u_topics) != (0)) __PYX_ERR(0, 724, __pyx_L1_error);
-    __pyx_t_5 = PyObject_RichCompare(__pyx_t_4, __pyx_t_6, Py_NE); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 724, __pyx_L1_error)
+    if (__Pyx_PyList_SET_ITEM(__pyx_t_6, 2, __pyx_mstate_global->__pyx_n_u_topics) != (0)) __PYX_ERR(0, 974, __pyx_L1_error);
+    __pyx_t_5 = PyObject_RichCompare(__pyx_t_4, __pyx_t_6, Py_NE); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 974, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_15 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 724, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 974, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_2 = __pyx_t_15;
     __pyx_L68_bool_binop_done:;
 
-    /* "scalecodec/_value_decode.pyx":721
+    /* "scalecodec/_value_decode.pyx":971
  *     if process is _KNOWN['event_record']:
  *         type_mapping = cls.type_mapping
  *         if (             # <<<<<<<<<<<<<<
@@ -26412,7 +28730,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     if (unlikely(__pyx_t_2)) {
 
-      /* "scalecodec/_value_decode.pyx":726
+      /* "scalecodec/_value_decode.pyx":976
  *             or [f[0] for f in type_mapping] != ['phase', 'event', 'topics']
  *         ):
  *             raise UnsupportedType(f'EventRecord with unexpected shape: {cls}')             # <<<<<<<<<<<<<<
@@ -26420,11 +28738,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *         if event_node.op != OP_EVENT:
 */
       __pyx_t_6 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 726, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 976, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 726, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 976, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_3 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_EventRecord_with_unexpected_shap, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 726, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_EventRecord_with_unexpected_shap, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 976, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_t_7 = 1;
@@ -26445,14 +28763,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 726, __pyx_L1_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 976, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
       }
       __Pyx_Raise(__pyx_t_5, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __PYX_ERR(0, 726, __pyx_L1_error)
+      __PYX_ERR(0, 976, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":721
+      /* "scalecodec/_value_decode.pyx":971
  *     if process is _KNOWN['event_record']:
  *         type_mapping = cls.type_mapping
  *         if (             # <<<<<<<<<<<<<<
@@ -26461,25 +28779,25 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":727
+    /* "scalecodec/_value_decode.pyx":977
  *         ):
  *             raise UnsupportedType(f'EventRecord with unexpected shape: {cls}')
  *         event_node = _build_node(rc, type_mapping[1][1], node_cache)             # <<<<<<<<<<<<<<
  *         if event_node.op != OP_EVENT:
  *             raise UnsupportedType(f'EventRecord event field is not a runtime event: {cls}')
 */
-    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_type_mapping, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 727, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_type_mapping, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 977, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_4 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 727, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 977, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_4, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 727, __pyx_L1_error)
+    __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_4, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 977, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_v_event_node = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "scalecodec/_value_decode.pyx":728
+    /* "scalecodec/_value_decode.pyx":978
  *             raise UnsupportedType(f'EventRecord with unexpected shape: {cls}')
  *         event_node = _build_node(rc, type_mapping[1][1], node_cache)
  *         if event_node.op != OP_EVENT:             # <<<<<<<<<<<<<<
@@ -26489,7 +28807,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_t_2 = (__pyx_v_event_node->op != 40);
     if (unlikely(__pyx_t_2)) {
 
-      /* "scalecodec/_value_decode.pyx":729
+      /* "scalecodec/_value_decode.pyx":979
  *         event_node = _build_node(rc, type_mapping[1][1], node_cache)
  *         if event_node.op != OP_EVENT:
  *             raise UnsupportedType(f'EventRecord event field is not a runtime event: {cls}')             # <<<<<<<<<<<<<<
@@ -26497,11 +28815,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *         node.children = [
 */
       __pyx_t_4 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 729, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 979, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 729, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 979, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_EventRecord_event_field_is_not_a, __pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 729, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_EventRecord_event_field_is_not_a, __pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 979, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __pyx_t_7 = 1;
@@ -26522,14 +28840,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 729, __pyx_L1_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 979, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
       }
       __Pyx_Raise(__pyx_t_5, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __PYX_ERR(0, 729, __pyx_L1_error)
+      __PYX_ERR(0, 979, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":728
+      /* "scalecodec/_value_decode.pyx":978
  *             raise UnsupportedType(f'EventRecord with unexpected shape: {cls}')
  *         event_node = _build_node(rc, type_mapping[1][1], node_cache)
  *         if event_node.op != OP_EVENT:             # <<<<<<<<<<<<<<
@@ -26538,7 +28856,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":730
+    /* "scalecodec/_value_decode.pyx":980
  *         if event_node.op != OP_EVENT:
  *             raise UnsupportedType(f'EventRecord event field is not a runtime event: {cls}')
  *         node.op = OP_EVENT_RECORD             # <<<<<<<<<<<<<<
@@ -26547,51 +28865,51 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 41;
 
-    /* "scalecodec/_value_decode.pyx":732
+    /* "scalecodec/_value_decode.pyx":982
  *         node.op = OP_EVENT_RECORD
  *         node.children = [
  *             _build_node(rc, type_mapping[0][1], node_cache),   # phase             # <<<<<<<<<<<<<<
  *             _build_node(rc, type_mapping[2][1], node_cache),   # topics
  *         ]
 */
-    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_type_mapping, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 732, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_type_mapping, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 982, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_3 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 732, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 982, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 732, __pyx_L1_error)
+    __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 982, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-    /* "scalecodec/_value_decode.pyx":733
+    /* "scalecodec/_value_decode.pyx":983
  *         node.children = [
  *             _build_node(rc, type_mapping[0][1], node_cache),   # phase
  *             _build_node(rc, type_mapping[2][1], node_cache),   # topics             # <<<<<<<<<<<<<<
  *         ]
  *         node.aux = event_node.aux
 */
-    __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_type_mapping, 2, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 733, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_type_mapping, 2, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 983, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_1 = __Pyx_GetItemInt(__pyx_t_3, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 733, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetItemInt(__pyx_t_3, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 983, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_1, __pyx_v_node_cache)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 733, __pyx_L1_error)
+    __pyx_t_3 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_1, __pyx_v_node_cache)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 983, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":731
+    /* "scalecodec/_value_decode.pyx":981
  *             raise UnsupportedType(f'EventRecord event field is not a runtime event: {cls}')
  *         node.op = OP_EVENT_RECORD
  *         node.children = [             # <<<<<<<<<<<<<<
  *             _build_node(rc, type_mapping[0][1], node_cache),   # phase
  *             _build_node(rc, type_mapping[2][1], node_cache),   # topics
 */
-    __pyx_t_1 = PyList_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 731, __pyx_L1_error)
+    __pyx_t_1 = PyList_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 981, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_GIVEREF(__pyx_t_5);
-    if (__Pyx_PyList_SET_ITEM(__pyx_t_1, 0, __pyx_t_5) != (0)) __PYX_ERR(0, 731, __pyx_L1_error);
+    if (__Pyx_PyList_SET_ITEM(__pyx_t_1, 0, __pyx_t_5) != (0)) __PYX_ERR(0, 981, __pyx_L1_error);
     __Pyx_GIVEREF(__pyx_t_3);
-    if (__Pyx_PyList_SET_ITEM(__pyx_t_1, 1, __pyx_t_3) != (0)) __PYX_ERR(0, 731, __pyx_L1_error);
+    if (__Pyx_PyList_SET_ITEM(__pyx_t_1, 1, __pyx_t_3) != (0)) __PYX_ERR(0, 981, __pyx_L1_error);
     __pyx_t_5 = 0;
     __pyx_t_3 = 0;
     __Pyx_GIVEREF(__pyx_t_1);
@@ -26600,7 +28918,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->children = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":735
+    /* "scalecodec/_value_decode.pyx":985
  *             _build_node(rc, type_mapping[2][1], node_cache),   # topics
  *         ]
  *         node.aux = event_node.aux             # <<<<<<<<<<<<<<
@@ -26615,7 +28933,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->aux = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":736
+    /* "scalecodec/_value_decode.pyx":986
  *         ]
  *         node.aux = event_node.aux
  *         return             # <<<<<<<<<<<<<<
@@ -26626,7 +28944,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":719
+    /* "scalecodec/_value_decode.pyx":969
  *         return
  * 
  *     if process is _KNOWN['event_record']:             # <<<<<<<<<<<<<<
@@ -26635,7 +28953,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":738
+  /* "scalecodec/_value_decode.pyx":988
  *         return
  * 
  *     if process is _KNOWN['enum']:             # <<<<<<<<<<<<<<
@@ -26644,61 +28962,61 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 738, __pyx_L1_error)
+    __PYX_ERR(0, 988, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_enum); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 738, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_enum); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 988, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":739
+    /* "scalecodec/_value_decode.pyx":989
  * 
  *     if process is _KNOWN['enum']:
  *         type_mapping = cls.type_mapping             # <<<<<<<<<<<<<<
  *         if type_mapping:
  *             keys = []
 */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 739, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 989, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_v_type_mapping = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":740
+    /* "scalecodec/_value_decode.pyx":990
  *     if process is _KNOWN['enum']:
  *         type_mapping = cls.type_mapping
  *         if type_mapping:             # <<<<<<<<<<<<<<
  *             keys = []
  *             children = []
 */
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_type_mapping); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 740, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_type_mapping); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 990, __pyx_L1_error)
     if (__pyx_t_2) {
 
-      /* "scalecodec/_value_decode.pyx":741
+      /* "scalecodec/_value_decode.pyx":991
  *         type_mapping = cls.type_mapping
  *         if type_mapping:
  *             keys = []             # <<<<<<<<<<<<<<
  *             children = []
  *             for entry in type_mapping:
 */
-      __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 741, __pyx_L1_error)
+      __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 991, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_v_keys = ((PyObject*)__pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "scalecodec/_value_decode.pyx":742
+      /* "scalecodec/_value_decode.pyx":992
  *         if type_mapping:
  *             keys = []
  *             children = []             # <<<<<<<<<<<<<<
  *             for entry in type_mapping:
  *                 variant_name, variant_type = entry[0], entry[1]
 */
-      __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 742, __pyx_L1_error)
+      __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 992, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_v_children = ((PyObject*)__pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "scalecodec/_value_decode.pyx":743
+      /* "scalecodec/_value_decode.pyx":993
  *             keys = []
  *             children = []
  *             for entry in type_mapping:             # <<<<<<<<<<<<<<
@@ -26710,9 +29028,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __pyx_t_10 = 0;
         __pyx_t_11 = NULL;
       } else {
-        __pyx_t_10 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 743, __pyx_L1_error)
+        __pyx_t_10 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_type_mapping); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 993, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
-        __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 743, __pyx_L1_error)
+        __pyx_t_11 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 993, __pyx_L1_error)
       }
       for (;;) {
         if (likely(!__pyx_t_11)) {
@@ -26720,7 +29038,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             {
               Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 743, __pyx_L1_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 993, __pyx_L1_error)
               #endif
               if (__pyx_t_10 >= __pyx_temp) break;
             }
@@ -26730,7 +29048,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             {
               Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_1);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 743, __pyx_L1_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 993, __pyx_L1_error)
               #endif
               if (__pyx_t_10 >= __pyx_temp) break;
             }
@@ -26741,13 +29059,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
             #endif
             ++__pyx_t_10;
           }
-          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 743, __pyx_L1_error)
+          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 993, __pyx_L1_error)
         } else {
           __pyx_t_3 = __pyx_t_11(__pyx_t_1);
           if (unlikely(!__pyx_t_3)) {
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
-              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 743, __pyx_L1_error)
+              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 993, __pyx_L1_error)
               PyErr_Clear();
             }
             break;
@@ -26757,32 +29075,32 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_XDECREF_SET(__pyx_v_entry, __pyx_t_3);
         __pyx_t_3 = 0;
 
-        /* "scalecodec/_value_decode.pyx":744
+        /* "scalecodec/_value_decode.pyx":994
  *             children = []
  *             for entry in type_mapping:
  *                 variant_name, variant_type = entry[0], entry[1]             # <<<<<<<<<<<<<<
  *                 keys.append(variant_name)
  *                 if variant_type is None or variant_type == 'Null':
 */
-        __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_entry, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 744, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_entry, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 994, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_entry, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 744, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_GetItemInt(__pyx_v_entry, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 994, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_XDECREF_SET(__pyx_v_variant_name, __pyx_t_3);
         __pyx_t_3 = 0;
         __Pyx_XDECREF_SET(__pyx_v_variant_type, __pyx_t_5);
         __pyx_t_5 = 0;
 
-        /* "scalecodec/_value_decode.pyx":745
+        /* "scalecodec/_value_decode.pyx":995
  *             for entry in type_mapping:
  *                 variant_name, variant_type = entry[0], entry[1]
  *                 keys.append(variant_name)             # <<<<<<<<<<<<<<
  *                 if variant_type is None or variant_type == 'Null':
  *                     children.append(None)
 */
-        __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_keys, __pyx_v_variant_name); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 745, __pyx_L1_error)
+        __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_keys, __pyx_v_variant_name); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 995, __pyx_L1_error)
 
-        /* "scalecodec/_value_decode.pyx":746
+        /* "scalecodec/_value_decode.pyx":996
  *                 variant_name, variant_type = entry[0], entry[1]
  *                 keys.append(variant_name)
  *                 if variant_type is None or variant_type == 'Null':             # <<<<<<<<<<<<<<
@@ -26795,21 +29113,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
           __pyx_t_2 = __pyx_t_15;
           goto __pyx_L84_bool_binop_done;
         }
-        __pyx_t_15 = (__Pyx_PyUnicode_Equals(__pyx_v_variant_type, __pyx_mstate_global->__pyx_n_u_Null, Py_EQ)); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 746, __pyx_L1_error)
+        __pyx_t_15 = (__Pyx_PyUnicode_Equals(__pyx_v_variant_type, __pyx_mstate_global->__pyx_n_u_Null, Py_EQ)); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 996, __pyx_L1_error)
         __pyx_t_2 = __pyx_t_15;
         __pyx_L84_bool_binop_done:;
         if (__pyx_t_2) {
 
-          /* "scalecodec/_value_decode.pyx":747
+          /* "scalecodec/_value_decode.pyx":997
  *                 keys.append(variant_name)
  *                 if variant_type is None or variant_type == 'Null':
  *                     children.append(None)             # <<<<<<<<<<<<<<
  *                 else:
  *                     children.append(_build_node(rc, variant_type, node_cache))
 */
-          __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_children, Py_None); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 747, __pyx_L1_error)
+          __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_children, Py_None); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 997, __pyx_L1_error)
 
-          /* "scalecodec/_value_decode.pyx":746
+          /* "scalecodec/_value_decode.pyx":996
  *                 variant_name, variant_type = entry[0], entry[1]
  *                 keys.append(variant_name)
  *                 if variant_type is None or variant_type == 'Null':             # <<<<<<<<<<<<<<
@@ -26819,7 +29137,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
           goto __pyx_L83;
         }
 
-        /* "scalecodec/_value_decode.pyx":749
+        /* "scalecodec/_value_decode.pyx":999
  *                     children.append(None)
  *                 else:
  *                     children.append(_build_node(rc, variant_type, node_cache))             # <<<<<<<<<<<<<<
@@ -26827,14 +29145,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *             node.keys = keys
 */
         /*else*/ {
-          __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_v_variant_type, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 749, __pyx_L1_error)
+          __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_v_variant_type, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 999, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
-          __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_children, __pyx_t_5); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 749, __pyx_L1_error)
+          __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_children, __pyx_t_5); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 999, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         }
         __pyx_L83:;
 
-        /* "scalecodec/_value_decode.pyx":743
+        /* "scalecodec/_value_decode.pyx":993
  *             keys = []
  *             children = []
  *             for entry in type_mapping:             # <<<<<<<<<<<<<<
@@ -26844,7 +29162,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "scalecodec/_value_decode.pyx":750
+      /* "scalecodec/_value_decode.pyx":1000
  *                 else:
  *                     children.append(_build_node(rc, variant_type, node_cache))
  *             node.op = OP_ENUM             # <<<<<<<<<<<<<<
@@ -26853,7 +29171,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
       __pyx_v_node->op = 21;
 
-      /* "scalecodec/_value_decode.pyx":751
+      /* "scalecodec/_value_decode.pyx":1001
  *                     children.append(_build_node(rc, variant_type, node_cache))
  *             node.op = OP_ENUM
  *             node.keys = keys             # <<<<<<<<<<<<<<
@@ -26866,7 +29184,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __Pyx_DECREF(__pyx_v_node->keys);
       __pyx_v_node->keys = __pyx_v_keys;
 
-      /* "scalecodec/_value_decode.pyx":752
+      /* "scalecodec/_value_decode.pyx":1002
  *             node.op = OP_ENUM
  *             node.keys = keys
  *             node.children = children             # <<<<<<<<<<<<<<
@@ -26879,7 +29197,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __Pyx_DECREF(__pyx_v_node->children);
       __pyx_v_node->children = __pyx_v_children;
 
-      /* "scalecodec/_value_decode.pyx":753
+      /* "scalecodec/_value_decode.pyx":1003
  *             node.keys = keys
  *             node.children = children
  *             return             # <<<<<<<<<<<<<<
@@ -26890,7 +29208,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __pyx_r = Py_None; __Pyx_INCREF(Py_None);
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":740
+      /* "scalecodec/_value_decode.pyx":990
  *     if process is _KNOWN['enum']:
  *         type_mapping = cls.type_mapping
  *         if type_mapping:             # <<<<<<<<<<<<<<
@@ -26899,29 +29217,29 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":754
+    /* "scalecodec/_value_decode.pyx":1004
  *             node.children = children
  *             return
  *         value_list = cls.value_list             # <<<<<<<<<<<<<<
  *         if value_list:
  *             node.op = OP_ENUM_VALUES
 */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_value_list); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 754, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_value_list); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1004, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_v_value_list = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":755
+    /* "scalecodec/_value_decode.pyx":1005
  *             return
  *         value_list = cls.value_list
  *         if value_list:             # <<<<<<<<<<<<<<
  *             node.op = OP_ENUM_VALUES
  *             node.aux = list(value_list)
 */
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_value_list); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 755, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_value_list); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 1005, __pyx_L1_error)
     if (__pyx_t_2) {
 
-      /* "scalecodec/_value_decode.pyx":756
+      /* "scalecodec/_value_decode.pyx":1006
  *         value_list = cls.value_list
  *         if value_list:
  *             node.op = OP_ENUM_VALUES             # <<<<<<<<<<<<<<
@@ -26930,14 +29248,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
       __pyx_v_node->op = 22;
 
-      /* "scalecodec/_value_decode.pyx":757
+      /* "scalecodec/_value_decode.pyx":1007
  *         if value_list:
  *             node.op = OP_ENUM_VALUES
  *             node.aux = list(value_list)             # <<<<<<<<<<<<<<
  *             return
  *         # uninhabited enum (e.g. Void): no variant can ever decode; any index
 */
-      __pyx_t_1 = PySequence_List(__pyx_v_value_list); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 757, __pyx_L1_error)
+      __pyx_t_1 = PySequence_List(__pyx_v_value_list); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1007, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_GIVEREF(__pyx_t_1);
       __Pyx_GOTREF(__pyx_v_node->aux);
@@ -26945,7 +29263,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __pyx_v_node->aux = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "scalecodec/_value_decode.pyx":758
+      /* "scalecodec/_value_decode.pyx":1008
  *             node.op = OP_ENUM_VALUES
  *             node.aux = list(value_list)
  *             return             # <<<<<<<<<<<<<<
@@ -26956,7 +29274,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __pyx_r = Py_None; __Pyx_INCREF(Py_None);
       goto __pyx_L0;
 
-      /* "scalecodec/_value_decode.pyx":755
+      /* "scalecodec/_value_decode.pyx":1005
  *             return
  *         value_list = cls.value_list
  *         if value_list:             # <<<<<<<<<<<<<<
@@ -26965,7 +29283,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":761
+    /* "scalecodec/_value_decode.pyx":1011
  *         # uninhabited enum (e.g. Void): no variant can ever decode; any index
  *         # raises, exactly like the classic path
  *         node.op = OP_ENUM             # <<<<<<<<<<<<<<
@@ -26974,14 +29292,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 21;
 
-    /* "scalecodec/_value_decode.pyx":762
+    /* "scalecodec/_value_decode.pyx":1012
  *         # raises, exactly like the classic path
  *         node.op = OP_ENUM
  *         node.keys = []             # <<<<<<<<<<<<<<
  *         node.children = []
  *         return
 */
-    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 762, __pyx_L1_error)
+    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1012, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_GIVEREF(__pyx_t_1);
     __Pyx_GOTREF(__pyx_v_node->keys);
@@ -26989,14 +29307,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->keys = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":763
+    /* "scalecodec/_value_decode.pyx":1013
  *         node.op = OP_ENUM
  *         node.keys = []
  *         node.children = []             # <<<<<<<<<<<<<<
  *         return
  * 
 */
-    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 763, __pyx_L1_error)
+    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1013, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_GIVEREF(__pyx_t_1);
     __Pyx_GOTREF(__pyx_v_node->children);
@@ -27004,7 +29322,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->children = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":764
+    /* "scalecodec/_value_decode.pyx":1014
  *         node.keys = []
  *         node.children = []
  *         return             # <<<<<<<<<<<<<<
@@ -27015,7 +29333,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":738
+    /* "scalecodec/_value_decode.pyx":988
  *         return
  * 
  *     if process is _KNOWN['enum']:             # <<<<<<<<<<<<<<
@@ -27024,7 +29342,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":766
+  /* "scalecodec/_value_decode.pyx":1016
  *         return
  * 
  *     if process is _KNOWN['null']:             # <<<<<<<<<<<<<<
@@ -27033,15 +29351,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 766, __pyx_L1_error)
+    __PYX_ERR(0, 1016, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_null); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 766, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_null); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1016, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":767
+    /* "scalecodec/_value_decode.pyx":1017
  * 
  *     if process is _KNOWN['null']:
  *         node.op = OP_NULL             # <<<<<<<<<<<<<<
@@ -27050,7 +29368,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 29;
 
-    /* "scalecodec/_value_decode.pyx":768
+    /* "scalecodec/_value_decode.pyx":1018
  *     if process is _KNOWN['null']:
  *         node.op = OP_NULL
  *         return             # <<<<<<<<<<<<<<
@@ -27061,7 +29379,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":766
+    /* "scalecodec/_value_decode.pyx":1016
  *         return
  * 
  *     if process is _KNOWN['null']:             # <<<<<<<<<<<<<<
@@ -27070,7 +29388,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":770
+  /* "scalecodec/_value_decode.pyx":1020
  *         return
  * 
  *     if process is _KNOWN['bitvec']:             # <<<<<<<<<<<<<<
@@ -27079,15 +29397,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 770, __pyx_L1_error)
+    __PYX_ERR(0, 1020, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_bitvec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 770, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_bitvec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1020, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":771
+    /* "scalecodec/_value_decode.pyx":1021
  * 
  *     if process is _KNOWN['bitvec']:
  *         node.op = OP_BITVEC             # <<<<<<<<<<<<<<
@@ -27096,7 +29414,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 28;
 
-    /* "scalecodec/_value_decode.pyx":772
+    /* "scalecodec/_value_decode.pyx":1022
  *     if process is _KNOWN['bitvec']:
  *         node.op = OP_BITVEC
  *         return             # <<<<<<<<<<<<<<
@@ -27107,7 +29425,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":770
+    /* "scalecodec/_value_decode.pyx":1020
  *         return
  * 
  *     if process is _KNOWN['bitvec']:             # <<<<<<<<<<<<<<
@@ -27116,7 +29434,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":774
+  /* "scalecodec/_value_decode.pyx":1024
  *         return
  * 
  *     if process is _KNOWN['btreemap']:             # <<<<<<<<<<<<<<
@@ -27125,15 +29443,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 774, __pyx_L1_error)
+    __PYX_ERR(0, 1024, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_btreemap); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 774, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_btreemap); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1024, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":775
+    /* "scalecodec/_value_decode.pyx":1025
  * 
  *     if process is _KNOWN['btreemap']:
  *         node.op = OP_BTREEMAP             # <<<<<<<<<<<<<<
@@ -27142,19 +29460,19 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 30;
 
-    /* "scalecodec/_value_decode.pyx":776
+    /* "scalecodec/_value_decode.pyx":1026
  *     if process is _KNOWN['btreemap']:
  *         node.op = OP_BTREEMAP
  *         node.children = [_build_map_pairs_node(rc, cls, node_cache)]             # <<<<<<<<<<<<<<
  *         return
  * 
 */
-    __pyx_t_1 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_map_pairs_node(__pyx_v_rc, __pyx_v_cls, __pyx_v_node_cache)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 776, __pyx_L1_error)
+    __pyx_t_1 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_map_pairs_node(__pyx_v_rc, __pyx_v_cls, __pyx_v_node_cache)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1026, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_5 = PyList_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 776, __pyx_L1_error)
+    __pyx_t_5 = PyList_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1026, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_GIVEREF(__pyx_t_1);
-    if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 776, __pyx_L1_error);
+    if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 1026, __pyx_L1_error);
     __pyx_t_1 = 0;
     __Pyx_GIVEREF(__pyx_t_5);
     __Pyx_GOTREF(__pyx_v_node->children);
@@ -27162,7 +29480,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->children = ((PyObject*)__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "scalecodec/_value_decode.pyx":777
+    /* "scalecodec/_value_decode.pyx":1027
  *         node.op = OP_BTREEMAP
  *         node.children = [_build_map_pairs_node(rc, cls, node_cache)]
  *         return             # <<<<<<<<<<<<<<
@@ -27173,7 +29491,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":774
+    /* "scalecodec/_value_decode.pyx":1024
  *         return
  * 
  *     if process is _KNOWN['btreemap']:             # <<<<<<<<<<<<<<
@@ -27182,7 +29500,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":779
+  /* "scalecodec/_value_decode.pyx":1029
  *         return
  * 
  *     if process is _KNOWN['map']:             # <<<<<<<<<<<<<<
@@ -27191,15 +29509,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 779, __pyx_L1_error)
+    __PYX_ERR(0, 1029, __pyx_L1_error)
   }
-  __pyx_t_5 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_map); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 779, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_map); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1029, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_5);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":780
+    /* "scalecodec/_value_decode.pyx":1030
  * 
  *     if process is _KNOWN['map']:
  *         node.op = OP_WRAP             # <<<<<<<<<<<<<<
@@ -27208,19 +29526,19 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 31;
 
-    /* "scalecodec/_value_decode.pyx":781
+    /* "scalecodec/_value_decode.pyx":1031
  *     if process is _KNOWN['map']:
  *         node.op = OP_WRAP
  *         node.children = [_build_map_pairs_node(rc, cls, node_cache)]             # <<<<<<<<<<<<<<
  *         return
  * 
 */
-    __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_map_pairs_node(__pyx_v_rc, __pyx_v_cls, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 781, __pyx_L1_error)
+    __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_map_pairs_node(__pyx_v_rc, __pyx_v_cls, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1031, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 781, __pyx_L1_error)
+    __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1031, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_GIVEREF(__pyx_t_5);
-    if (__Pyx_PyList_SET_ITEM(__pyx_t_1, 0, __pyx_t_5) != (0)) __PYX_ERR(0, 781, __pyx_L1_error);
+    if (__Pyx_PyList_SET_ITEM(__pyx_t_1, 0, __pyx_t_5) != (0)) __PYX_ERR(0, 1031, __pyx_L1_error);
     __pyx_t_5 = 0;
     __Pyx_GIVEREF(__pyx_t_1);
     __Pyx_GOTREF(__pyx_v_node->children);
@@ -27228,7 +29546,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->children = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":782
+    /* "scalecodec/_value_decode.pyx":1032
  *         node.op = OP_WRAP
  *         node.children = [_build_map_pairs_node(rc, cls, node_cache)]
  *         return             # <<<<<<<<<<<<<<
@@ -27239,7 +29557,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":779
+    /* "scalecodec/_value_decode.pyx":1029
  *         return
  * 
  *     if process is _KNOWN['map']:             # <<<<<<<<<<<<<<
@@ -27248,7 +29566,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":784
+  /* "scalecodec/_value_decode.pyx":1034
  *         return
  * 
  *     if process is _KNOWN['btreeset']:             # <<<<<<<<<<<<<<
@@ -27257,38 +29575,38 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 784, __pyx_L1_error)
+    __PYX_ERR(0, 1034, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_btreeset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 784, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_btreeset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1034, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":785
+    /* "scalecodec/_value_decode.pyx":1035
  * 
  *     if process is _KNOWN['btreeset']:
  *         type_mapping = getattr(cls, 'type_mapping', None)             # <<<<<<<<<<<<<<
  *         if not type_mapping:
  *             raise UnsupportedType(f'BTreeSet without type_mapping: {cls}')
 */
-    __pyx_t_1 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 785, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1035, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_v_type_mapping = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":786
+    /* "scalecodec/_value_decode.pyx":1036
  *     if process is _KNOWN['btreeset']:
  *         type_mapping = getattr(cls, 'type_mapping', None)
  *         if not type_mapping:             # <<<<<<<<<<<<<<
  *             raise UnsupportedType(f'BTreeSet without type_mapping: {cls}')
  *         node.op = OP_WRAP
 */
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_type_mapping); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 786, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_type_mapping); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 1036, __pyx_L1_error)
     __pyx_t_15 = (!__pyx_t_2);
     if (unlikely(__pyx_t_15)) {
 
-      /* "scalecodec/_value_decode.pyx":787
+      /* "scalecodec/_value_decode.pyx":1037
  *         type_mapping = getattr(cls, 'type_mapping', None)
  *         if not type_mapping:
  *             raise UnsupportedType(f'BTreeSet without type_mapping: {cls}')             # <<<<<<<<<<<<<<
@@ -27296,11 +29614,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *         node.children = [_build_node(rc, type_mapping[0], node_cache)]
 */
       __pyx_t_5 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 787, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1037, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 787, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1037, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_BTreeSet_without_type_mapping, __pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 787, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_BTreeSet_without_type_mapping, __pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1037, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_7 = 1;
@@ -27321,14 +29639,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 787, __pyx_L1_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1037, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __Pyx_Raise(__pyx_t_1, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __PYX_ERR(0, 787, __pyx_L1_error)
+      __PYX_ERR(0, 1037, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":786
+      /* "scalecodec/_value_decode.pyx":1036
  *     if process is _KNOWN['btreeset']:
  *         type_mapping = getattr(cls, 'type_mapping', None)
  *         if not type_mapping:             # <<<<<<<<<<<<<<
@@ -27337,7 +29655,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":788
+    /* "scalecodec/_value_decode.pyx":1038
  *         if not type_mapping:
  *             raise UnsupportedType(f'BTreeSet without type_mapping: {cls}')
  *         node.op = OP_WRAP             # <<<<<<<<<<<<<<
@@ -27346,22 +29664,22 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 31;
 
-    /* "scalecodec/_value_decode.pyx":789
+    /* "scalecodec/_value_decode.pyx":1039
  *             raise UnsupportedType(f'BTreeSet without type_mapping: {cls}')
  *         node.op = OP_WRAP
  *         node.children = [_build_node(rc, type_mapping[0], node_cache)]             # <<<<<<<<<<<<<<
  *         return
  * 
 */
-    __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_type_mapping, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 789, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_type_mapping, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1039, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_1, __pyx_v_node_cache)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 789, __pyx_L1_error)
+    __pyx_t_3 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_1, __pyx_v_node_cache)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1039, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 789, __pyx_L1_error)
+    __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1039, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_GIVEREF(__pyx_t_3);
-    if (__Pyx_PyList_SET_ITEM(__pyx_t_1, 0, __pyx_t_3) != (0)) __PYX_ERR(0, 789, __pyx_L1_error);
+    if (__Pyx_PyList_SET_ITEM(__pyx_t_1, 0, __pyx_t_3) != (0)) __PYX_ERR(0, 1039, __pyx_L1_error);
     __pyx_t_3 = 0;
     __Pyx_GIVEREF(__pyx_t_1);
     __Pyx_GOTREF(__pyx_v_node->children);
@@ -27369,7 +29687,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->children = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":790
+    /* "scalecodec/_value_decode.pyx":1040
  *         node.op = OP_WRAP
  *         node.children = [_build_node(rc, type_mapping[0], node_cache)]
  *         return             # <<<<<<<<<<<<<<
@@ -27380,7 +29698,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":784
+    /* "scalecodec/_value_decode.pyx":1034
  *         return
  * 
  *     if process is _KNOWN['btreeset']:             # <<<<<<<<<<<<<<
@@ -27389,7 +29707,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":792
+  /* "scalecodec/_value_decode.pyx":1042
  *         return
  * 
  *     if process is _KNOWN['set']:             # <<<<<<<<<<<<<<
@@ -27398,27 +29716,27 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   if (unlikely(__pyx_v_10scalecodec_13_value_decode__KNOWN == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 792, __pyx_L1_error)
+    __PYX_ERR(0, 1042, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_set); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 792, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_10scalecodec_13_value_decode__KNOWN, __pyx_mstate_global->__pyx_n_u_set); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1042, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_15 = (__pyx_v_process == __pyx_t_1);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_15) {
 
-    /* "scalecodec/_value_decode.pyx":793
+    /* "scalecodec/_value_decode.pyx":1043
  * 
  *     if process is _KNOWN['set']:
  *         value_list = cls.value_list             # <<<<<<<<<<<<<<
  *         if not isinstance(value_list, dict) or not value_list:
  *             raise UnsupportedType(f'Set without value_list: {cls}')
 */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_value_list); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 793, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_value_list); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1043, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_v_value_list = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "scalecodec/_value_decode.pyx":794
+    /* "scalecodec/_value_decode.pyx":1044
  *     if process is _KNOWN['set']:
  *         value_list = cls.value_list
  *         if not isinstance(value_list, dict) or not value_list:             # <<<<<<<<<<<<<<
@@ -27432,13 +29750,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       __pyx_t_15 = __pyx_t_9;
       goto __pyx_L96_bool_binop_done;
     }
-    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_value_list); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 794, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_v_value_list); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 1044, __pyx_L1_error)
     __pyx_t_2 = (!__pyx_t_9);
     __pyx_t_15 = __pyx_t_2;
     __pyx_L96_bool_binop_done:;
     if (unlikely(__pyx_t_15)) {
 
-      /* "scalecodec/_value_decode.pyx":795
+      /* "scalecodec/_value_decode.pyx":1045
  *         value_list = cls.value_list
  *         if not isinstance(value_list, dict) or not value_list:
  *             raise UnsupportedType(f'Set without value_list: {cls}')             # <<<<<<<<<<<<<<
@@ -27446,11 +29764,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *         node.aux = list(value_list.items())
 */
       __pyx_t_3 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 795, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1045, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 795, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1045, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_4 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Set_without_value_list, __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 795, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Set_without_value_list, __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1045, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __pyx_t_7 = 1;
@@ -27471,14 +29789,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 795, __pyx_L1_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1045, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __Pyx_Raise(__pyx_t_1, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __PYX_ERR(0, 795, __pyx_L1_error)
+      __PYX_ERR(0, 1045, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":794
+      /* "scalecodec/_value_decode.pyx":1044
  *     if process is _KNOWN['set']:
  *         value_list = cls.value_list
  *         if not isinstance(value_list, dict) or not value_list:             # <<<<<<<<<<<<<<
@@ -27487,7 +29805,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":796
+    /* "scalecodec/_value_decode.pyx":1046
  *         if not isinstance(value_list, dict) or not value_list:
  *             raise UnsupportedType(f'Set without value_list: {cls}')
  *         node.op = OP_SET             # <<<<<<<<<<<<<<
@@ -27496,7 +29814,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
     __pyx_v_node->op = 36;
 
-    /* "scalecodec/_value_decode.pyx":797
+    /* "scalecodec/_value_decode.pyx":1047
  *             raise UnsupportedType(f'Set without value_list: {cls}')
  *         node.op = OP_SET
  *         node.aux = list(value_list.items())             # <<<<<<<<<<<<<<
@@ -27510,10 +29828,10 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
       PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
       __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_items, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 797, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1047, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
-    __pyx_t_6 = __Pyx_PySequence_ListKeepNew(__pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 797, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PySequence_ListKeepNew(__pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1047, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_GIVEREF(__pyx_t_6);
@@ -27522,16 +29840,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->aux = __pyx_t_6;
     __pyx_t_6 = 0;
 
-    /* "scalecodec/_value_decode.pyx":798
+    /* "scalecodec/_value_decode.pyx":1048
  *         node.op = OP_SET
  *         node.aux = list(value_list.items())
  *         node.children = [_build_node(rc, cls.value_type or 'u64', node_cache)]             # <<<<<<<<<<<<<<
  *         return
  * 
 */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_value_type); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 798, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_value_type); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1048, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_15 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 798, __pyx_L1_error)
+    __pyx_t_15 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_15 < 0))) __PYX_ERR(0, 1048, __pyx_L1_error)
     if (!__pyx_t_15) {
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     } else {
@@ -27543,13 +29861,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __Pyx_INCREF(__pyx_mstate_global->__pyx_n_u_u64);
     __pyx_t_6 = __pyx_mstate_global->__pyx_n_u_u64;
     __pyx_L98_bool_binop_done:;
-    __pyx_t_1 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_6, __pyx_v_node_cache)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 798, __pyx_L1_error)
+    __pyx_t_1 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_6, __pyx_v_node_cache)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1048, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_6 = PyList_New(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 798, __pyx_L1_error)
+    __pyx_t_6 = PyList_New(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1048, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_GIVEREF(__pyx_t_1);
-    if (__Pyx_PyList_SET_ITEM(__pyx_t_6, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 798, __pyx_L1_error);
+    if (__Pyx_PyList_SET_ITEM(__pyx_t_6, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 1048, __pyx_L1_error);
     __pyx_t_1 = 0;
     __Pyx_GIVEREF(__pyx_t_6);
     __Pyx_GOTREF(__pyx_v_node->children);
@@ -27557,7 +29875,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_v_node->children = ((PyObject*)__pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "scalecodec/_value_decode.pyx":799
+    /* "scalecodec/_value_decode.pyx":1049
  *         node.aux = list(value_list.items())
  *         node.children = [_build_node(rc, cls.value_type or 'u64', node_cache)]
  *         return             # <<<<<<<<<<<<<<
@@ -27568,7 +29886,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":792
+    /* "scalecodec/_value_decode.pyx":1042
  *         return
  * 
  *     if process is _KNOWN['set']:             # <<<<<<<<<<<<<<
@@ -27577,7 +29895,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":801
+  /* "scalecodec/_value_decode.pyx":1051
  *         return
  * 
  *     raise UnsupportedType(             # <<<<<<<<<<<<<<
@@ -27585,29 +29903,29 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *         f'{getattr(process, "__qualname__", process)!r})'
 */
   __pyx_t_1 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 801, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1051, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
 
-  /* "scalecodec/_value_decode.pyx":802
+  /* "scalecodec/_value_decode.pyx":1052
  * 
  *     raise UnsupportedType(
  *         f'No value-decode support for {cls!r} (process from '             # <<<<<<<<<<<<<<
  *         f'{getattr(process, "__qualname__", process)!r})'
  *     )
 */
-  __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_cls), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 802, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_cls), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1052, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
 
-  /* "scalecodec/_value_decode.pyx":803
+  /* "scalecodec/_value_decode.pyx":1053
  *     raise UnsupportedType(
  *         f'No value-decode support for {cls!r} (process from '
  *         f'{getattr(process, "__qualname__", process)!r})'             # <<<<<<<<<<<<<<
  *     )
  * 
 */
-  __pyx_t_5 = __Pyx_GetAttr3(__pyx_v_process, __pyx_mstate_global->__pyx_n_u_qualname, __pyx_v_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 803, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_GetAttr3(__pyx_v_process, __pyx_mstate_global->__pyx_n_u_qualname, __pyx_v_process); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1053, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_12 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_5), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 803, __pyx_L1_error)
+  __pyx_t_12 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_5), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 1053, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_16[0] = __pyx_mstate_global->__pyx_kp_u_No_value_decode_support_for;
@@ -27616,7 +29934,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
   __pyx_t_16[3] = __pyx_t_12;
   __pyx_t_16[4] = __pyx_mstate_global->__pyx_kp_u__5;
 
-  /* "scalecodec/_value_decode.pyx":802
+  /* "scalecodec/_value_decode.pyx":1052
  * 
  *     raise UnsupportedType(
  *         f'No value-decode support for {cls!r} (process from '             # <<<<<<<<<<<<<<
@@ -27624,7 +29942,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
  *     )
 */
   __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_16, 5, 28 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_3) + 15 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_12) + 1, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3) | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_12));
-  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 802, __pyx_L1_error)
+  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1052, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
@@ -27646,14 +29964,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 801, __pyx_L1_error)
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1051, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
   }
   __Pyx_Raise(__pyx_t_6, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __PYX_ERR(0, 801, __pyx_L1_error)
+  __PYX_ERR(0, 1051, __pyx_L1_error)
 
-  /* "scalecodec/_value_decode.pyx":596
+  /* "scalecodec/_value_decode.pyx":846
  * 
  * 
  * cdef _fill_node(_Node node, rc, cls, dict node_cache):             # <<<<<<<<<<<<<<
@@ -27695,7 +30013,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__fill_node(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":807
+/* "scalecodec/_value_decode.pyx":1057
  * 
  * 
  * cdef _Node _build_map_pairs_node(rc, cls, dict node_cache):             # <<<<<<<<<<<<<<
@@ -27727,29 +30045,29 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_build_map_pairs_node", 0);
 
-  /* "scalecodec/_value_decode.pyx":810
+  /* "scalecodec/_value_decode.pyx":1060
  *     """The list-of-(key, value) producer both Map and BTreeMap decode through."""
  *     cdef _Node vec_node, pair_node
  *     type_mapping = getattr(cls, 'type_mapping', None)             # <<<<<<<<<<<<<<
  *     if type_mapping:
  *         # scale_info shape: a single wrapped type (typically Vec<(K, V)>)
 */
-  __pyx_t_1 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 810, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_type_mapping, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1060, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_type_mapping = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":811
+  /* "scalecodec/_value_decode.pyx":1061
  *     cdef _Node vec_node, pair_node
  *     type_mapping = getattr(cls, 'type_mapping', None)
  *     if type_mapping:             # <<<<<<<<<<<<<<
  *         # scale_info shape: a single wrapped type (typically Vec<(K, V)>)
  *         return _build_node(rc, type_mapping[0], node_cache)
 */
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_type_mapping); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 811, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_type_mapping); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 1061, __pyx_L1_error)
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":813
+    /* "scalecodec/_value_decode.pyx":1063
  *     if type_mapping:
  *         # scale_info shape: a single wrapped type (typically Vec<(K, V)>)
  *         return _build_node(rc, type_mapping[0], node_cache)             # <<<<<<<<<<<<<<
@@ -27757,16 +30075,16 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
  *     if not sub_type:
 */
     __Pyx_XDECREF((PyObject *)__pyx_r);
-    __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_type_mapping, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 813, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_type_mapping, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1063, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_1, __pyx_v_node_cache)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 813, __pyx_L1_error)
+    __pyx_t_3 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_1, __pyx_v_node_cache)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1063, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_r = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_3);
     __pyx_t_3 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":811
+    /* "scalecodec/_value_decode.pyx":1061
  *     cdef _Node vec_node, pair_node
  *     type_mapping = getattr(cls, 'type_mapping', None)
  *     if type_mapping:             # <<<<<<<<<<<<<<
@@ -27775,30 +30093,30 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":814
+  /* "scalecodec/_value_decode.pyx":1064
  *         # scale_info shape: a single wrapped type (typically Vec<(K, V)>)
  *         return _build_node(rc, type_mapping[0], node_cache)
  *     sub_type = getattr(cls, 'sub_type', None)             # <<<<<<<<<<<<<<
  *     if not sub_type:
  *         raise UnsupportedType(f'Map without sub_type or type_mapping: {cls}')
 */
-  __pyx_t_3 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_sub_type, Py_None); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 814, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_sub_type, Py_None); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1064, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_v_sub_type = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "scalecodec/_value_decode.pyx":815
+  /* "scalecodec/_value_decode.pyx":1065
  *         return _build_node(rc, type_mapping[0], node_cache)
  *     sub_type = getattr(cls, 'sub_type', None)
  *     if not sub_type:             # <<<<<<<<<<<<<<
  *         raise UnsupportedType(f'Map without sub_type or type_mapping: {cls}')
  *     sub_type_parts = [x.strip() for x in sub_type.split(',')]
 */
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_sub_type); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 815, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_sub_type); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 1065, __pyx_L1_error)
   __pyx_t_4 = (!__pyx_t_2);
   if (unlikely(__pyx_t_4)) {
 
-    /* "scalecodec/_value_decode.pyx":816
+    /* "scalecodec/_value_decode.pyx":1066
  *     sub_type = getattr(cls, 'sub_type', None)
  *     if not sub_type:
  *         raise UnsupportedType(f'Map without sub_type or type_mapping: {cls}')             # <<<<<<<<<<<<<<
@@ -27806,11 +30124,11 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
  *     if len(sub_type_parts) != 2:
 */
     __pyx_t_1 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 816, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1066, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 816, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1066, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Map_without_sub_type_or_type_map, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 816, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Map_without_sub_type_or_type_map, __pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1066, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_8 = 1;
@@ -27831,14 +30149,14 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
       __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 816, __pyx_L1_error)
+      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1066, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
     }
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 816, __pyx_L1_error)
+    __PYX_ERR(0, 1066, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":815
+    /* "scalecodec/_value_decode.pyx":1065
  *         return _build_node(rc, type_mapping[0], node_cache)
  *     sub_type = getattr(cls, 'sub_type', None)
  *     if not sub_type:             # <<<<<<<<<<<<<<
@@ -27847,7 +30165,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":817
+  /* "scalecodec/_value_decode.pyx":1067
  *     if not sub_type:
  *         raise UnsupportedType(f'Map without sub_type or type_mapping: {cls}')
  *     sub_type_parts = [x.strip() for x in sub_type.split(',')]             # <<<<<<<<<<<<<<
@@ -27855,7 +30173,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
  *         raise UnsupportedType(f'Map sub_type not a key/value pair: {sub_type!r}')
 */
   { /* enter inner scope */
-    __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 817, __pyx_L7_error)
+    __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1067, __pyx_L7_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_7 = __pyx_v_sub_type;
     __Pyx_INCREF(__pyx_t_7);
@@ -27864,7 +30182,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
       PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_mstate_global->__pyx_kp_u__6};
       __pyx_t_5 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_split, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 817, __pyx_L7_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1067, __pyx_L7_error)
       __Pyx_GOTREF(__pyx_t_5);
     }
     if (likely(PyList_CheckExact(__pyx_t_5)) || PyTuple_CheckExact(__pyx_t_5)) {
@@ -27872,9 +30190,9 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
       __pyx_t_9 = 0;
       __pyx_t_10 = NULL;
     } else {
-      __pyx_t_9 = -1; __pyx_t_7 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 817, __pyx_L7_error)
+      __pyx_t_9 = -1; __pyx_t_7 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1067, __pyx_L7_error)
       __Pyx_GOTREF(__pyx_t_7);
-      __pyx_t_10 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_7); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 817, __pyx_L7_error)
+      __pyx_t_10 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_7); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 1067, __pyx_L7_error)
     }
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     for (;;) {
@@ -27883,7 +30201,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
           {
             Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_7);
             #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 817, __pyx_L7_error)
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1067, __pyx_L7_error)
             #endif
             if (__pyx_t_9 >= __pyx_temp) break;
           }
@@ -27893,7 +30211,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
           {
             Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_7);
             #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 817, __pyx_L7_error)
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1067, __pyx_L7_error)
             #endif
             if (__pyx_t_9 >= __pyx_temp) break;
           }
@@ -27904,13 +30222,13 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
           #endif
           ++__pyx_t_9;
         }
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 817, __pyx_L7_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1067, __pyx_L7_error)
       } else {
         __pyx_t_5 = __pyx_t_10(__pyx_t_7);
         if (unlikely(!__pyx_t_5)) {
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
-            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 817, __pyx_L7_error)
+            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 1067, __pyx_L7_error)
             PyErr_Clear();
           }
           break;
@@ -27926,10 +30244,10 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
         PyObject *__pyx_callargs[2] = {__pyx_t_1, NULL};
         __pyx_t_5 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_8, (1-__pyx_t_8) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 817, __pyx_L7_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1067, __pyx_L7_error)
         __Pyx_GOTREF(__pyx_t_5);
       }
-      if (unlikely(__Pyx_ListComp_Append(__pyx_t_3, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 817, __pyx_L7_error)
+      if (unlikely(__Pyx_ListComp_Append(__pyx_t_3, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 1067, __pyx_L7_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -27943,18 +30261,18 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
   __pyx_v_sub_type_parts = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "scalecodec/_value_decode.pyx":818
+  /* "scalecodec/_value_decode.pyx":1068
  *         raise UnsupportedType(f'Map without sub_type or type_mapping: {cls}')
  *     sub_type_parts = [x.strip() for x in sub_type.split(',')]
  *     if len(sub_type_parts) != 2:             # <<<<<<<<<<<<<<
  *         raise UnsupportedType(f'Map sub_type not a key/value pair: {sub_type!r}')
  *     pair_node = _Node.__new__(_Node)
 */
-  __pyx_t_9 = __Pyx_PyList_GET_SIZE(__pyx_v_sub_type_parts); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 818, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyList_GET_SIZE(__pyx_v_sub_type_parts); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1068, __pyx_L1_error)
   __pyx_t_4 = (__pyx_t_9 != 2);
   if (unlikely(__pyx_t_4)) {
 
-    /* "scalecodec/_value_decode.pyx":819
+    /* "scalecodec/_value_decode.pyx":1069
  *     sub_type_parts = [x.strip() for x in sub_type.split(',')]
  *     if len(sub_type_parts) != 2:
  *         raise UnsupportedType(f'Map sub_type not a key/value pair: {sub_type!r}')             # <<<<<<<<<<<<<<
@@ -27962,11 +30280,11 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
  *     pair_node.op = OP_TUPLE
 */
     __pyx_t_7 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 819, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1069, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_1 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_sub_type), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 819, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_sub_type), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1069, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Map_sub_type_not_a_key_value_pai, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 819, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Map_sub_type_not_a_key_value_pai, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1069, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_8 = 1;
@@ -27987,14 +30305,14 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 819, __pyx_L1_error)
+      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1069, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
     }
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 819, __pyx_L1_error)
+    __PYX_ERR(0, 1069, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":818
+    /* "scalecodec/_value_decode.pyx":1068
  *         raise UnsupportedType(f'Map without sub_type or type_mapping: {cls}')
  *     sub_type_parts = [x.strip() for x in sub_type.split(',')]
  *     if len(sub_type_parts) != 2:             # <<<<<<<<<<<<<<
@@ -28003,19 +30321,19 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":820
+  /* "scalecodec/_value_decode.pyx":1070
  *     if len(sub_type_parts) != 2:
  *         raise UnsupportedType(f'Map sub_type not a key/value pair: {sub_type!r}')
  *     pair_node = _Node.__new__(_Node)             # <<<<<<<<<<<<<<
  *     pair_node.op = OP_TUPLE
  *     pair_node.children = [
 */
-  __pyx_t_3 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode__Node(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 820, __pyx_L1_error)
+  __pyx_t_3 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode__Node(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1070, __pyx_L1_error)
   __Pyx_GOTREF((PyObject *)__pyx_t_3);
   __pyx_v_pair_node = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "scalecodec/_value_decode.pyx":821
+  /* "scalecodec/_value_decode.pyx":1071
  *         raise UnsupportedType(f'Map sub_type not a key/value pair: {sub_type!r}')
  *     pair_node = _Node.__new__(_Node)
  *     pair_node.op = OP_TUPLE             # <<<<<<<<<<<<<<
@@ -28024,7 +30342,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   __pyx_v_pair_node->op = 19;
 
-  /* "scalecodec/_value_decode.pyx":823
+  /* "scalecodec/_value_decode.pyx":1073
  *     pair_node.op = OP_TUPLE
  *     pair_node.children = [
  *         _build_node(rc, sub_type_parts[0], node_cache),             # <<<<<<<<<<<<<<
@@ -28033,11 +30351,11 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   __pyx_t_3 = __Pyx_PyList_GET_ITEM(__pyx_v_sub_type_parts, 0);
   __Pyx_INCREF(__pyx_t_3);
-  __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 823, __pyx_L1_error)
+  __pyx_t_5 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1073, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "scalecodec/_value_decode.pyx":824
+  /* "scalecodec/_value_decode.pyx":1074
  *     pair_node.children = [
  *         _build_node(rc, sub_type_parts[0], node_cache),
  *         _build_node(rc, sub_type_parts[1], node_cache),             # <<<<<<<<<<<<<<
@@ -28046,23 +30364,23 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   __pyx_t_3 = __Pyx_PyList_GET_ITEM(__pyx_v_sub_type_parts, 1);
   __Pyx_INCREF(__pyx_t_3);
-  __pyx_t_6 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 824, __pyx_L1_error)
+  __pyx_t_6 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1074, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "scalecodec/_value_decode.pyx":822
+  /* "scalecodec/_value_decode.pyx":1072
  *     pair_node = _Node.__new__(_Node)
  *     pair_node.op = OP_TUPLE
  *     pair_node.children = [             # <<<<<<<<<<<<<<
  *         _build_node(rc, sub_type_parts[0], node_cache),
  *         _build_node(rc, sub_type_parts[1], node_cache),
 */
-  __pyx_t_3 = PyList_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 822, __pyx_L1_error)
+  __pyx_t_3 = PyList_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1072, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_5);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_t_5) != (0)) __PYX_ERR(0, 822, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_t_5) != (0)) __PYX_ERR(0, 1072, __pyx_L1_error);
   __Pyx_GIVEREF(__pyx_t_6);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_t_6) != (0)) __PYX_ERR(0, 822, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_t_6) != (0)) __PYX_ERR(0, 1072, __pyx_L1_error);
   __pyx_t_5 = 0;
   __pyx_t_6 = 0;
   __Pyx_GIVEREF(__pyx_t_3);
@@ -28071,19 +30389,19 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
   __pyx_v_pair_node->children = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "scalecodec/_value_decode.pyx":826
+  /* "scalecodec/_value_decode.pyx":1076
  *         _build_node(rc, sub_type_parts[1], node_cache),
  *     ]
  *     vec_node = _Node.__new__(_Node)             # <<<<<<<<<<<<<<
  *     vec_node.op = OP_VEC
  *     vec_node.children = [pair_node]
 */
-  __pyx_t_3 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode__Node(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 826, __pyx_L1_error)
+  __pyx_t_3 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode__Node(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1076, __pyx_L1_error)
   __Pyx_GOTREF((PyObject *)__pyx_t_3);
   __pyx_v_vec_node = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "scalecodec/_value_decode.pyx":827
+  /* "scalecodec/_value_decode.pyx":1077
  *     ]
  *     vec_node = _Node.__new__(_Node)
  *     vec_node.op = OP_VEC             # <<<<<<<<<<<<<<
@@ -28092,25 +30410,25 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
 */
   __pyx_v_vec_node->op = 15;
 
-  /* "scalecodec/_value_decode.pyx":828
+  /* "scalecodec/_value_decode.pyx":1078
  *     vec_node = _Node.__new__(_Node)
  *     vec_node.op = OP_VEC
  *     vec_node.children = [pair_node]             # <<<<<<<<<<<<<<
  *     return vec_node
  * 
 */
-  __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 828, __pyx_L1_error)
+  __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1078, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF((PyObject *)__pyx_v_pair_node);
   __Pyx_GIVEREF((PyObject *)__pyx_v_pair_node);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, ((PyObject *)__pyx_v_pair_node)) != (0)) __PYX_ERR(0, 828, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, ((PyObject *)__pyx_v_pair_node)) != (0)) __PYX_ERR(0, 1078, __pyx_L1_error);
   __Pyx_GIVEREF(__pyx_t_3);
   __Pyx_GOTREF(__pyx_v_vec_node->children);
   __Pyx_DECREF(__pyx_v_vec_node->children);
   __pyx_v_vec_node->children = ((PyObject*)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "scalecodec/_value_decode.pyx":829
+  /* "scalecodec/_value_decode.pyx":1079
  *     vec_node.op = OP_VEC
  *     vec_node.children = [pair_node]
  *     return vec_node             # <<<<<<<<<<<<<<
@@ -28122,7 +30440,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
   __pyx_r = __pyx_v_vec_node;
   goto __pyx_L0;
 
-  /* "scalecodec/_value_decode.pyx":807
+  /* "scalecodec/_value_decode.pyx":1057
  * 
  * 
  * cdef _Node _build_map_pairs_node(rc, cls, dict node_cache):             # <<<<<<<<<<<<<<
@@ -28151,7 +30469,7 @@ static struct __pyx_obj_10scalecodec_13_value_decode__Node *__pyx_f_10scalecodec
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":832
+/* "scalecodec/_value_decode.pyx":1082
  * 
  * 
  * cdef dict _build_call_table(rc, cls, dict node_cache):             # <<<<<<<<<<<<<<
@@ -28205,7 +30523,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_build_call_table", 0);
 
-  /* "scalecodec/_value_decode.pyx":838
+  /* "scalecodec/_value_decode.pyx":1088
  *     compile time, so decoding a call is two table lookups plus its args.
  *     """
  *     from scalecodec.base import RuntimeConfigurationObject             # <<<<<<<<<<<<<<
@@ -28214,14 +30532,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
 */
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_RuntimeConfigurationObject};
-    __pyx_t_2 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec_base, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 838, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec_base, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1088, __pyx_L1_error)
   }
   __pyx_t_1 = __pyx_t_2;
   __Pyx_GOTREF(__pyx_t_1);
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_RuntimeConfigurationObject};
     __pyx_t_3 = 0; {
-      __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_1, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 838, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_1, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1088, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       switch (__pyx_t_3) {
         case 0:
@@ -28235,31 +30553,31 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":839
+  /* "scalecodec/_value_decode.pyx":1089
  *     """
  *     from scalecodec.base import RuntimeConfigurationObject
  *     convert = RuntimeConfigurationObject.convert_type_string             # <<<<<<<<<<<<<<
  * 
  *     sit = getattr(cls, 'scale_info_type', None)
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_RuntimeConfigurationObject, __pyx_mstate_global->__pyx_n_u_convert_type_string); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 839, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_RuntimeConfigurationObject, __pyx_mstate_global->__pyx_n_u_convert_type_string); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1089, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_convert = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":841
+  /* "scalecodec/_value_decode.pyx":1091
  *     convert = RuntimeConfigurationObject.convert_type_string
  * 
  *     sit = getattr(cls, 'scale_info_type', None)             # <<<<<<<<<<<<<<
  *     if sit is None:
  *         raise UnsupportedType(f'Call class without scale_info_type: {cls}')
 */
-  __pyx_t_1 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_scale_info_type, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 841, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_scale_info_type, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1091, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_sit = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":842
+  /* "scalecodec/_value_decode.pyx":1092
  * 
  *     sit = getattr(cls, 'scale_info_type', None)
  *     if sit is None:             # <<<<<<<<<<<<<<
@@ -28269,7 +30587,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
   __pyx_t_5 = (__pyx_v_sit == Py_None);
   if (unlikely(__pyx_t_5)) {
 
-    /* "scalecodec/_value_decode.pyx":843
+    /* "scalecodec/_value_decode.pyx":1093
  *     sit = getattr(cls, 'scale_info_type', None)
  *     if sit is None:
  *         raise UnsupportedType(f'Call class without scale_info_type: {cls}')             # <<<<<<<<<<<<<<
@@ -28277,11 +30595,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
  *     if d[0] != 'variant':
 */
     __pyx_t_4 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 843, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1093, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 843, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1093, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_8 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Call_class_without_scale_info_ty, __pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 843, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Call_class_without_scale_info_ty, __pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1093, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __pyx_t_9 = 1;
@@ -28302,14 +30620,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 843, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1093, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 843, __pyx_L1_error)
+    __PYX_ERR(0, 1093, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":842
+    /* "scalecodec/_value_decode.pyx":1092
  * 
  *     sit = getattr(cls, 'scale_info_type', None)
  *     if sit is None:             # <<<<<<<<<<<<<<
@@ -28318,32 +30636,32 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":844
+  /* "scalecodec/_value_decode.pyx":1094
  *     if sit is None:
  *         raise UnsupportedType(f'Call class without scale_info_type: {cls}')
  *     d = sit['def']             # <<<<<<<<<<<<<<
  *     if d[0] != 'variant':
  *         raise UnsupportedType(f'Call registry def is not a variant: {cls}')
 */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 844, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1094, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_d = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":845
+  /* "scalecodec/_value_decode.pyx":1095
  *         raise UnsupportedType(f'Call class without scale_info_type: {cls}')
  *     d = sit['def']
  *     if d[0] != 'variant':             # <<<<<<<<<<<<<<
  *         raise UnsupportedType(f'Call registry def is not a variant: {cls}')
  * 
 */
-  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_d, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 845, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_d, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1095, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_variant, Py_NE)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 845, __pyx_L1_error)
+  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_variant, Py_NE)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 1095, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (unlikely(__pyx_t_5)) {
 
-    /* "scalecodec/_value_decode.pyx":846
+    /* "scalecodec/_value_decode.pyx":1096
  *     d = sit['def']
  *     if d[0] != 'variant':
  *         raise UnsupportedType(f'Call registry def is not a variant: {cls}')             # <<<<<<<<<<<<<<
@@ -28351,11 +30669,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
  *     cdef dict table = {}
 */
     __pyx_t_6 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 846, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1096, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_4 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 846, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1096, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Call_registry_def_is_not_a_varia, __pyx_t_4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 846, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Call_registry_def_is_not_a_varia, __pyx_t_4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1096, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_t_9 = 1;
@@ -28376,14 +30694,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 846, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1096, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 846, __pyx_L1_error)
+    __PYX_ERR(0, 1096, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":845
+    /* "scalecodec/_value_decode.pyx":1095
  *         raise UnsupportedType(f'Call class without scale_info_type: {cls}')
  *     d = sit['def']
  *     if d[0] != 'variant':             # <<<<<<<<<<<<<<
@@ -28392,34 +30710,34 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":848
+  /* "scalecodec/_value_decode.pyx":1098
  *         raise UnsupportedType(f'Call registry def is not a variant: {cls}')
  * 
  *     cdef dict table = {}             # <<<<<<<<<<<<<<
  *     for variant in d[1].value_object['variants'].value_object:
  *         vv = variant.value
 */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 848, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1098, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_table = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":849
+  /* "scalecodec/_value_decode.pyx":1099
  * 
  *     cdef dict table = {}
  *     for variant in d[1].value_object['variants'].value_object:             # <<<<<<<<<<<<<<
  *         vv = variant.value
  *         fields = vv.get('fields') or []
 */
-  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_d, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 849, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_d, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1099, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 849, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1099, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_variants); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 849, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_variants); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1099, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 849, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1099, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (likely(PyList_CheckExact(__pyx_t_8)) || PyTuple_CheckExact(__pyx_t_8)) {
@@ -28427,9 +30745,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
     __pyx_t_3 = 0;
     __pyx_t_10 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 849, __pyx_L1_error)
+    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1099, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_10 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 849, __pyx_L1_error)
+    __pyx_t_10 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 1099, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   for (;;) {
@@ -28438,7 +30756,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
         {
           Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
           #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 849, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1099, __pyx_L1_error)
           #endif
           if (__pyx_t_3 >= __pyx_temp) break;
         }
@@ -28448,7 +30766,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
         {
           Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_1);
           #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 849, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1099, __pyx_L1_error)
           #endif
           if (__pyx_t_3 >= __pyx_temp) break;
         }
@@ -28459,13 +30777,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
         #endif
         ++__pyx_t_3;
       }
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 849, __pyx_L1_error)
+      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1099, __pyx_L1_error)
     } else {
       __pyx_t_8 = __pyx_t_10(__pyx_t_1);
       if (unlikely(!__pyx_t_8)) {
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
-          if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 849, __pyx_L1_error)
+          if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 1099, __pyx_L1_error)
           PyErr_Clear();
         }
         break;
@@ -28475,19 +30793,19 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
     __Pyx_XDECREF_SET(__pyx_v_variant, __pyx_t_8);
     __pyx_t_8 = 0;
 
-    /* "scalecodec/_value_decode.pyx":850
+    /* "scalecodec/_value_decode.pyx":1100
  *     cdef dict table = {}
  *     for variant in d[1].value_object['variants'].value_object:
  *         vv = variant.value             # <<<<<<<<<<<<<<
  *         fields = vv.get('fields') or []
  *         if len(fields) != 1:
 */
-    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_variant, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 850, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_variant, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1100, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_XDECREF_SET(__pyx_v_vv, __pyx_t_8);
     __pyx_t_8 = 0;
 
-    /* "scalecodec/_value_decode.pyx":851
+    /* "scalecodec/_value_decode.pyx":1101
  *     for variant in d[1].value_object['variants'].value_object:
  *         vv = variant.value
  *         fields = vv.get('fields') or []             # <<<<<<<<<<<<<<
@@ -28501,10 +30819,10 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
       PyObject *__pyx_callargs[2] = {__pyx_t_6, __pyx_mstate_global->__pyx_n_u_fields};
       __pyx_t_7 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_9, (2-__pyx_t_9) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 851, __pyx_L1_error)
+      if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1101, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
     }
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 851, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 1101, __pyx_L1_error)
     if (!__pyx_t_5) {
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     } else {
@@ -28513,7 +30831,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       goto __pyx_L7_bool_binop_done;
     }
-    __pyx_t_7 = PyList_New(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 851, __pyx_L1_error)
+    __pyx_t_7 = PyList_New(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1101, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_INCREF(__pyx_t_7);
     __pyx_t_8 = __pyx_t_7;
@@ -28522,18 +30840,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
     __Pyx_XDECREF_SET(__pyx_v_fields, __pyx_t_8);
     __pyx_t_8 = 0;
 
-    /* "scalecodec/_value_decode.pyx":852
+    /* "scalecodec/_value_decode.pyx":1102
  *         vv = variant.value
  *         fields = vv.get('fields') or []
  *         if len(fields) != 1:             # <<<<<<<<<<<<<<
  *             raise UnsupportedType(f'Call pallet variant {vv.get("name")!r} has unexpected shape')
  *         inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")
 */
-    __pyx_t_11 = PyObject_Length(__pyx_v_fields); if (unlikely(__pyx_t_11 == ((Py_ssize_t)-1))) __PYX_ERR(0, 852, __pyx_L1_error)
+    __pyx_t_11 = PyObject_Length(__pyx_v_fields); if (unlikely(__pyx_t_11 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1102, __pyx_L1_error)
     __pyx_t_5 = (__pyx_t_11 != 1);
     if (unlikely(__pyx_t_5)) {
 
-      /* "scalecodec/_value_decode.pyx":853
+      /* "scalecodec/_value_decode.pyx":1103
  *         fields = vv.get('fields') or []
  *         if len(fields) != 1:
  *             raise UnsupportedType(f'Call pallet variant {vv.get("name")!r} has unexpected shape')             # <<<<<<<<<<<<<<
@@ -28541,21 +30859,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
  *         inner_sit = getattr(inner_cls, 'scale_info_type', None)
 */
       __pyx_t_7 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 853, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1103, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 853, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1103, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_12 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 853, __pyx_L1_error)
+      __pyx_t_12 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 1103, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_12);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_12), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 853, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_12), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1103, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
       __pyx_t_13[0] = __pyx_mstate_global->__pyx_kp_u_Call_pallet_variant;
       __pyx_t_13[1] = __pyx_t_4;
       __pyx_t_13[2] = __pyx_mstate_global->__pyx_kp_u_has_unexpected_shape;
       __pyx_t_12 = __Pyx_PyUnicode_Join(__pyx_t_13, 3, 20 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_4) + 21, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4));
-      if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 853, __pyx_L1_error)
+      if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 1103, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_12);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_9 = 1;
@@ -28576,14 +30894,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
         __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 853, __pyx_L1_error)
+        if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1103, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_8);
       }
       __Pyx_Raise(__pyx_t_8, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      __PYX_ERR(0, 853, __pyx_L1_error)
+      __PYX_ERR(0, 1103, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":852
+      /* "scalecodec/_value_decode.pyx":1102
  *         vv = variant.value
  *         fields = vv.get('fields') or []
  *         if len(fields) != 1:             # <<<<<<<<<<<<<<
@@ -28592,7 +30910,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":854
+    /* "scalecodec/_value_decode.pyx":1104
  *         if len(fields) != 1:
  *             raise UnsupportedType(f'Call pallet variant {vv.get("name")!r} has unexpected shape')
  *         inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")             # <<<<<<<<<<<<<<
@@ -28601,15 +30919,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
 */
     __pyx_t_6 = __pyx_v_rc;
     __Pyx_INCREF(__pyx_t_6);
-    __pyx_t_12 = __Pyx_GetItemInt(__pyx_v_fields, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 854, __pyx_L1_error)
+    __pyx_t_12 = __Pyx_GetItemInt(__pyx_v_fields, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 1104, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
-    __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 854, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1104, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-    __pyx_t_12 = __Pyx_PyObject_FormatSimple(__pyx_t_7, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 854, __pyx_L1_error)
+    __pyx_t_12 = __Pyx_PyObject_FormatSimple(__pyx_t_7, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 1104, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_12);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_12); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 854, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_12); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1104, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
     __pyx_t_9 = 0;
@@ -28618,25 +30936,25 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
       __pyx_t_8 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get_decoder_class, __pyx_callargs+__pyx_t_9, (2-__pyx_t_9) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 854, __pyx_L1_error)
+      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1104, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
     }
     __Pyx_XDECREF_SET(__pyx_v_inner_cls, __pyx_t_8);
     __pyx_t_8 = 0;
 
-    /* "scalecodec/_value_decode.pyx":855
+    /* "scalecodec/_value_decode.pyx":1105
  *             raise UnsupportedType(f'Call pallet variant {vv.get("name")!r} has unexpected shape')
  *         inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")
  *         inner_sit = getattr(inner_cls, 'scale_info_type', None)             # <<<<<<<<<<<<<<
  *         if inner_sit is None or inner_sit['def'][0] != 'variant':
  *             raise UnsupportedType(f'Pallet call enum for {vv.get("name")!r} is not a variant')
 */
-    __pyx_t_8 = __Pyx_GetAttr3(__pyx_v_inner_cls, __pyx_mstate_global->__pyx_n_u_scale_info_type, Py_None); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 855, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_GetAttr3(__pyx_v_inner_cls, __pyx_mstate_global->__pyx_n_u_scale_info_type, Py_None); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1105, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_XDECREF_SET(__pyx_v_inner_sit, __pyx_t_8);
     __pyx_t_8 = 0;
 
-    /* "scalecodec/_value_decode.pyx":856
+    /* "scalecodec/_value_decode.pyx":1106
  *         inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")
  *         inner_sit = getattr(inner_cls, 'scale_info_type', None)
  *         if inner_sit is None or inner_sit['def'][0] != 'variant':             # <<<<<<<<<<<<<<
@@ -28649,18 +30967,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
       __pyx_t_5 = __pyx_t_14;
       goto __pyx_L11_bool_binop_done;
     }
-    __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_v_inner_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 856, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_v_inner_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1106, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_7 = __Pyx_GetItemInt(__pyx_t_8, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 856, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_GetItemInt(__pyx_t_8, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1106, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_14 = (__Pyx_PyUnicode_Equals(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_variant, Py_NE)); if (unlikely((__pyx_t_14 < 0))) __PYX_ERR(0, 856, __pyx_L1_error)
+    __pyx_t_14 = (__Pyx_PyUnicode_Equals(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_variant, Py_NE)); if (unlikely((__pyx_t_14 < 0))) __PYX_ERR(0, 1106, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __pyx_t_5 = __pyx_t_14;
     __pyx_L11_bool_binop_done:;
     if (unlikely(__pyx_t_5)) {
 
-      /* "scalecodec/_value_decode.pyx":857
+      /* "scalecodec/_value_decode.pyx":1107
  *         inner_sit = getattr(inner_cls, 'scale_info_type', None)
  *         if inner_sit is None or inner_sit['def'][0] != 'variant':
  *             raise UnsupportedType(f'Pallet call enum for {vv.get("name")!r} is not a variant')             # <<<<<<<<<<<<<<
@@ -28668,21 +30986,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
  *         inner_table = {}
 */
       __pyx_t_8 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 857, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1107, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 857, __pyx_L1_error)
+      __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 1107, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_12);
-      __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_12, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 857, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_12, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1107, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-      __pyx_t_12 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_4), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 857, __pyx_L1_error)
+      __pyx_t_12 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_4), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 1107, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_12);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_13[0] = __pyx_mstate_global->__pyx_kp_u_Pallet_call_enum_for;
       __pyx_t_13[1] = __pyx_t_12;
       __pyx_t_13[2] = __pyx_mstate_global->__pyx_kp_u_is_not_a_variant;
       __pyx_t_4 = __Pyx_PyUnicode_Join(__pyx_t_13, 3, 21 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_12) + 17, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_12));
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 857, __pyx_L1_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1107, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
       __pyx_t_9 = 1;
@@ -28703,14 +31021,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
         __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 857, __pyx_L1_error)
+        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1107, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
       }
       __Pyx_Raise(__pyx_t_7, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __PYX_ERR(0, 857, __pyx_L1_error)
+      __PYX_ERR(0, 1107, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":856
+      /* "scalecodec/_value_decode.pyx":1106
  *         inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")
  *         inner_sit = getattr(inner_cls, 'scale_info_type', None)
  *         if inner_sit is None or inner_sit['def'][0] != 'variant':             # <<<<<<<<<<<<<<
@@ -28719,37 +31037,37 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":859
+    /* "scalecodec/_value_decode.pyx":1109
  *             raise UnsupportedType(f'Pallet call enum for {vv.get("name")!r} is not a variant')
  * 
  *         inner_table = {}             # <<<<<<<<<<<<<<
  *         for call_variant in inner_sit['def'][1].value_object['variants'].value_object:
  *             cv = call_variant.value
 */
-    __pyx_t_7 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 859, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1109, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_XDECREF_SET(__pyx_v_inner_table, ((PyObject*)__pyx_t_7));
     __pyx_t_7 = 0;
 
-    /* "scalecodec/_value_decode.pyx":860
+    /* "scalecodec/_value_decode.pyx":1110
  * 
  *         inner_table = {}
  *         for call_variant in inner_sit['def'][1].value_object['variants'].value_object:             # <<<<<<<<<<<<<<
  *             cv = call_variant.value
  *             args = []
 */
-    __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_v_inner_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 860, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_v_inner_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1110, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_6 = __Pyx_GetItemInt(__pyx_t_7, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 860, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_GetItemInt(__pyx_t_7, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1110, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 860, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1110, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_variants); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 860, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_variants); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1110, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 860, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1110, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     if (likely(PyList_CheckExact(__pyx_t_7)) || PyTuple_CheckExact(__pyx_t_7)) {
@@ -28757,9 +31075,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
       __pyx_t_11 = 0;
       __pyx_t_15 = NULL;
     } else {
-      __pyx_t_11 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 860, __pyx_L1_error)
+      __pyx_t_11 = -1; __pyx_t_6 = PyObject_GetIter(__pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1110, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_15 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_6); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 860, __pyx_L1_error)
+      __pyx_t_15 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_6); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 1110, __pyx_L1_error)
     }
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     for (;;) {
@@ -28768,7 +31086,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
           {
             Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_6);
             #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 860, __pyx_L1_error)
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1110, __pyx_L1_error)
             #endif
             if (__pyx_t_11 >= __pyx_temp) break;
           }
@@ -28778,7 +31096,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
           {
             Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_6);
             #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 860, __pyx_L1_error)
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1110, __pyx_L1_error)
             #endif
             if (__pyx_t_11 >= __pyx_temp) break;
           }
@@ -28789,13 +31107,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
           #endif
           ++__pyx_t_11;
         }
-        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 860, __pyx_L1_error)
+        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1110, __pyx_L1_error)
       } else {
         __pyx_t_7 = __pyx_t_15(__pyx_t_6);
         if (unlikely(!__pyx_t_7)) {
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
-            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 860, __pyx_L1_error)
+            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 1110, __pyx_L1_error)
             PyErr_Clear();
           }
           break;
@@ -28805,31 +31123,31 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
       __Pyx_XDECREF_SET(__pyx_v_call_variant, __pyx_t_7);
       __pyx_t_7 = 0;
 
-      /* "scalecodec/_value_decode.pyx":861
+      /* "scalecodec/_value_decode.pyx":1111
  *         inner_table = {}
  *         for call_variant in inner_sit['def'][1].value_object['variants'].value_object:
  *             cv = call_variant.value             # <<<<<<<<<<<<<<
  *             args = []
  *             for f in cv.get('fields') or []:
 */
-      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_call_variant, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 861, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_call_variant, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1111, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_XDECREF_SET(__pyx_v_cv, __pyx_t_7);
       __pyx_t_7 = 0;
 
-      /* "scalecodec/_value_decode.pyx":862
+      /* "scalecodec/_value_decode.pyx":1112
  *         for call_variant in inner_sit['def'][1].value_object['variants'].value_object:
  *             cv = call_variant.value
  *             args = []             # <<<<<<<<<<<<<<
  *             for f in cv.get('fields') or []:
  *                 if f.get('name') is None:
 */
-      __pyx_t_7 = PyList_New(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 862, __pyx_L1_error)
+      __pyx_t_7 = PyList_New(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1112, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_XDECREF_SET(__pyx_v_args, ((PyObject*)__pyx_t_7));
       __pyx_t_7 = 0;
 
-      /* "scalecodec/_value_decode.pyx":863
+      /* "scalecodec/_value_decode.pyx":1113
  *             cv = call_variant.value
  *             args = []
  *             for f in cv.get('fields') or []:             # <<<<<<<<<<<<<<
@@ -28843,10 +31161,10 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
         PyObject *__pyx_callargs[2] = {__pyx_t_8, __pyx_mstate_global->__pyx_n_u_fields};
         __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_9, (2-__pyx_t_9) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 863, __pyx_L1_error)
+        if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1113, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
       }
-      __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 863, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 1113, __pyx_L1_error)
       if (!__pyx_t_5) {
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       } else {
@@ -28855,7 +31173,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         goto __pyx_L17_bool_binop_done;
       }
-      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 863, __pyx_L1_error)
+      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1113, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_INCREF(__pyx_t_4);
       __pyx_t_7 = __pyx_t_4;
@@ -28866,9 +31184,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
         __pyx_t_16 = 0;
         __pyx_t_17 = NULL;
       } else {
-        __pyx_t_16 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 863, __pyx_L1_error)
+        __pyx_t_16 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1113, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
-        __pyx_t_17 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_4); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 863, __pyx_L1_error)
+        __pyx_t_17 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_4); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 1113, __pyx_L1_error)
       }
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       for (;;) {
@@ -28877,7 +31195,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
             {
               Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_4);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 863, __pyx_L1_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1113, __pyx_L1_error)
               #endif
               if (__pyx_t_16 >= __pyx_temp) break;
             }
@@ -28887,7 +31205,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
             {
               Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_4);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 863, __pyx_L1_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1113, __pyx_L1_error)
               #endif
               if (__pyx_t_16 >= __pyx_temp) break;
             }
@@ -28898,13 +31216,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
             #endif
             ++__pyx_t_16;
           }
-          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 863, __pyx_L1_error)
+          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1113, __pyx_L1_error)
         } else {
           __pyx_t_7 = __pyx_t_17(__pyx_t_4);
           if (unlikely(!__pyx_t_7)) {
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
-              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 863, __pyx_L1_error)
+              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 1113, __pyx_L1_error)
               PyErr_Clear();
             }
             break;
@@ -28914,7 +31232,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
         __Pyx_XDECREF_SET(__pyx_v_f, __pyx_t_7);
         __pyx_t_7 = 0;
 
-        /* "scalecodec/_value_decode.pyx":864
+        /* "scalecodec/_value_decode.pyx":1114
  *             args = []
  *             for f in cv.get('fields') or []:
  *                 if f.get('name') is None:             # <<<<<<<<<<<<<<
@@ -28928,14 +31246,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
           PyObject *__pyx_callargs[2] = {__pyx_t_8, __pyx_mstate_global->__pyx_n_u_name};
           __pyx_t_7 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_9, (2-__pyx_t_9) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 864, __pyx_L1_error)
+          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1114, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_7);
         }
         __pyx_t_5 = (__pyx_t_7 == Py_None);
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
         if (unlikely(__pyx_t_5)) {
 
-          /* "scalecodec/_value_decode.pyx":865
+          /* "scalecodec/_value_decode.pyx":1115
  *             for f in cv.get('fields') or []:
  *                 if f.get('name') is None:
  *                     raise UnsupportedType(             # <<<<<<<<<<<<<<
@@ -28943,30 +31261,30 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
  *                     )
 */
           __pyx_t_8 = NULL;
-          __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 865, __pyx_L1_error)
+          __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 1115, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_12);
 
-          /* "scalecodec/_value_decode.pyx":866
+          /* "scalecodec/_value_decode.pyx":1116
  *                 if f.get('name') is None:
  *                     raise UnsupportedType(
  *                         f'Unnamed call arg in {vv.get("name")}.{cv.get("name")}'             # <<<<<<<<<<<<<<
  *                     )
  *                 type_name = f.get('typeName')
 */
-          __pyx_t_18 = __Pyx_PyObject_GetAttrStr(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 866, __pyx_L1_error)
+          __pyx_t_18 = __Pyx_PyObject_GetAttrStr(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 1116, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_18);
-          __pyx_t_19 = __Pyx_PyObject_Call(__pyx_t_18, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 866, __pyx_L1_error)
+          __pyx_t_19 = __Pyx_PyObject_Call(__pyx_t_18, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 1116, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_19);
           __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-          __pyx_t_18 = __Pyx_PyObject_FormatSimple(__pyx_t_19, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 866, __pyx_L1_error)
+          __pyx_t_18 = __Pyx_PyObject_FormatSimple(__pyx_t_19, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 1116, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_18);
           __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-          __pyx_t_19 = __Pyx_PyObject_GetAttrStr(__pyx_v_cv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 866, __pyx_L1_error)
+          __pyx_t_19 = __Pyx_PyObject_GetAttrStr(__pyx_v_cv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 1116, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_19);
-          __pyx_t_20 = __Pyx_PyObject_Call(__pyx_t_19, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 866, __pyx_L1_error)
+          __pyx_t_20 = __Pyx_PyObject_Call(__pyx_t_19, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 1116, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_20);
           __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-          __pyx_t_19 = __Pyx_PyObject_FormatSimple(__pyx_t_20, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 866, __pyx_L1_error)
+          __pyx_t_19 = __Pyx_PyObject_FormatSimple(__pyx_t_20, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 1116, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_19);
           __Pyx_DECREF(__pyx_t_20); __pyx_t_20 = 0;
           __pyx_t_21[0] = __pyx_mstate_global->__pyx_kp_u_Unnamed_call_arg_in;
@@ -28974,7 +31292,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
           __pyx_t_21[2] = __pyx_mstate_global->__pyx_kp_u__2;
           __pyx_t_21[3] = __pyx_t_19;
           __pyx_t_20 = __Pyx_PyUnicode_Join(__pyx_t_21, 4, 20 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_18) + 1 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_19), 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_18) | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_19));
-          if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 866, __pyx_L1_error)
+          if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 1116, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_20);
           __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
           __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
@@ -28996,14 +31314,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
             __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
             __Pyx_DECREF(__pyx_t_20); __pyx_t_20 = 0;
             __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-            if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 865, __pyx_L1_error)
+            if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1115, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_7);
           }
           __Pyx_Raise(__pyx_t_7, 0, 0, 0);
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-          __PYX_ERR(0, 865, __pyx_L1_error)
+          __PYX_ERR(0, 1115, __pyx_L1_error)
 
-          /* "scalecodec/_value_decode.pyx":864
+          /* "scalecodec/_value_decode.pyx":1114
  *             args = []
  *             for f in cv.get('fields') or []:
  *                 if f.get('name') is None:             # <<<<<<<<<<<<<<
@@ -29012,7 +31330,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
 */
         }
 
-        /* "scalecodec/_value_decode.pyx":868
+        /* "scalecodec/_value_decode.pyx":1118
  *                         f'Unnamed call arg in {vv.get("name")}.{cv.get("name")}'
  *                     )
  *                 type_name = f.get('typeName')             # <<<<<<<<<<<<<<
@@ -29026,23 +31344,23 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
           PyObject *__pyx_callargs[2] = {__pyx_t_12, __pyx_mstate_global->__pyx_n_u_typeName};
           __pyx_t_7 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_9, (2-__pyx_t_9) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 868, __pyx_L1_error)
+          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1118, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_7);
         }
         __Pyx_XDECREF_SET(__pyx_v_type_name, __pyx_t_7);
         __pyx_t_7 = 0;
 
-        /* "scalecodec/_value_decode.pyx":870
+        /* "scalecodec/_value_decode.pyx":1120
  *                 type_name = f.get('typeName')
  *                 args.append((
  *                     f['name'],             # <<<<<<<<<<<<<<
  *                     convert(type_name) if type_name is not None else None,
  *                     _build_node(rc, f"scale_info::{f['type']}", node_cache),
 */
-        __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_v_f, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 870, __pyx_L1_error)
+        __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_v_f, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1120, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
 
-        /* "scalecodec/_value_decode.pyx":871
+        /* "scalecodec/_value_decode.pyx":1121
  *                 args.append((
  *                     f['name'],
  *                     convert(type_name) if type_name is not None else None,             # <<<<<<<<<<<<<<
@@ -29071,7 +31389,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
             __pyx_t_20 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_19, __pyx_callargs+__pyx_t_9, (2-__pyx_t_9) | (__pyx_t_9*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
             __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
             __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-            if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 871, __pyx_L1_error)
+            if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 1121, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_20);
           }
           __pyx_t_12 = __pyx_t_20;
@@ -29081,55 +31399,55 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
           __pyx_t_12 = Py_None;
         }
 
-        /* "scalecodec/_value_decode.pyx":872
+        /* "scalecodec/_value_decode.pyx":1122
  *                     f['name'],
  *                     convert(type_name) if type_name is not None else None,
  *                     _build_node(rc, f"scale_info::{f['type']}", node_cache),             # <<<<<<<<<<<<<<
  *                 ))
  *             inner_table[cv['index']] = (cv['name'], args)
 */
-        __pyx_t_20 = __Pyx_PyObject_Dict_GetItem(__pyx_v_f, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 872, __pyx_L1_error)
+        __pyx_t_20 = __Pyx_PyObject_Dict_GetItem(__pyx_v_f, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 1122, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_20);
-        __pyx_t_19 = __Pyx_PyObject_FormatSimple(__pyx_t_20, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 872, __pyx_L1_error)
+        __pyx_t_19 = __Pyx_PyObject_FormatSimple(__pyx_t_20, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 1122, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_19);
         __Pyx_DECREF(__pyx_t_20); __pyx_t_20 = 0;
-        __pyx_t_20 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_19); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 872, __pyx_L1_error)
+        __pyx_t_20 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_19); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 1122, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_20);
         __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-        __pyx_t_19 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_20, __pyx_v_node_cache)); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 872, __pyx_L1_error)
+        __pyx_t_19 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_20, __pyx_v_node_cache)); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 1122, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_19);
         __Pyx_DECREF(__pyx_t_20); __pyx_t_20 = 0;
 
-        /* "scalecodec/_value_decode.pyx":870
+        /* "scalecodec/_value_decode.pyx":1120
  *                 type_name = f.get('typeName')
  *                 args.append((
  *                     f['name'],             # <<<<<<<<<<<<<<
  *                     convert(type_name) if type_name is not None else None,
  *                     _build_node(rc, f"scale_info::{f['type']}", node_cache),
 */
-        __pyx_t_20 = PyTuple_New(3); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 870, __pyx_L1_error)
+        __pyx_t_20 = PyTuple_New(3); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 1120, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_20);
         __Pyx_GIVEREF(__pyx_t_7);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 0, __pyx_t_7) != (0)) __PYX_ERR(0, 870, __pyx_L1_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 0, __pyx_t_7) != (0)) __PYX_ERR(0, 1120, __pyx_L1_error);
         __Pyx_GIVEREF(__pyx_t_12);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 1, __pyx_t_12) != (0)) __PYX_ERR(0, 870, __pyx_L1_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 1, __pyx_t_12) != (0)) __PYX_ERR(0, 1120, __pyx_L1_error);
         __Pyx_GIVEREF(__pyx_t_19);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 2, __pyx_t_19) != (0)) __PYX_ERR(0, 870, __pyx_L1_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 2, __pyx_t_19) != (0)) __PYX_ERR(0, 1120, __pyx_L1_error);
         __pyx_t_7 = 0;
         __pyx_t_12 = 0;
         __pyx_t_19 = 0;
 
-        /* "scalecodec/_value_decode.pyx":869
+        /* "scalecodec/_value_decode.pyx":1119
  *                     )
  *                 type_name = f.get('typeName')
  *                 args.append((             # <<<<<<<<<<<<<<
  *                     f['name'],
  *                     convert(type_name) if type_name is not None else None,
 */
-        __pyx_t_22 = __Pyx_PyList_Append(__pyx_v_args, __pyx_t_20); if (unlikely(__pyx_t_22 == ((int)-1))) __PYX_ERR(0, 869, __pyx_L1_error)
+        __pyx_t_22 = __Pyx_PyList_Append(__pyx_v_args, __pyx_t_20); if (unlikely(__pyx_t_22 == ((int)-1))) __PYX_ERR(0, 1119, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_20); __pyx_t_20 = 0;
 
-        /* "scalecodec/_value_decode.pyx":863
+        /* "scalecodec/_value_decode.pyx":1113
  *             cv = call_variant.value
  *             args = []
  *             for f in cv.get('fields') or []:             # <<<<<<<<<<<<<<
@@ -29139,30 +31457,30 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
       }
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "scalecodec/_value_decode.pyx":874
+      /* "scalecodec/_value_decode.pyx":1124
  *                     _build_node(rc, f"scale_info::{f['type']}", node_cache),
  *                 ))
  *             inner_table[cv['index']] = (cv['name'], args)             # <<<<<<<<<<<<<<
  * 
  *         table[vv['index']] = (vv['name'], inner_table)
 */
-      __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_cv, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 874, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_cv, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1124, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_20 = PyTuple_New(2); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 874, __pyx_L1_error)
+      __pyx_t_20 = PyTuple_New(2); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 1124, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_20);
       __Pyx_GIVEREF(__pyx_t_4);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 0, __pyx_t_4) != (0)) __PYX_ERR(0, 874, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 0, __pyx_t_4) != (0)) __PYX_ERR(0, 1124, __pyx_L1_error);
       __Pyx_INCREF(__pyx_v_args);
       __Pyx_GIVEREF(__pyx_v_args);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 1, __pyx_v_args) != (0)) __PYX_ERR(0, 874, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 1, __pyx_v_args) != (0)) __PYX_ERR(0, 1124, __pyx_L1_error);
       __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_cv, __pyx_mstate_global->__pyx_n_u_index); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 874, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_cv, __pyx_mstate_global->__pyx_n_u_index); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1124, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      if (unlikely((PyDict_SetItem(__pyx_v_inner_table, __pyx_t_4, __pyx_t_20) < 0))) __PYX_ERR(0, 874, __pyx_L1_error)
+      if (unlikely((PyDict_SetItem(__pyx_v_inner_table, __pyx_t_4, __pyx_t_20) < 0))) __PYX_ERR(0, 1124, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_20); __pyx_t_20 = 0;
 
-      /* "scalecodec/_value_decode.pyx":860
+      /* "scalecodec/_value_decode.pyx":1110
  * 
  *         inner_table = {}
  *         for call_variant in inner_sit['def'][1].value_object['variants'].value_object:             # <<<<<<<<<<<<<<
@@ -29172,30 +31490,30 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
     }
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-    /* "scalecodec/_value_decode.pyx":876
+    /* "scalecodec/_value_decode.pyx":1126
  *             inner_table[cv['index']] = (cv['name'], args)
  * 
  *         table[vv['index']] = (vv['name'], inner_table)             # <<<<<<<<<<<<<<
  * 
  *     return table
 */
-    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 876, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1126, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_20 = PyTuple_New(2); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 876, __pyx_L1_error)
+    __pyx_t_20 = PyTuple_New(2); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 1126, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_20);
     __Pyx_GIVEREF(__pyx_t_6);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 0, __pyx_t_6) != (0)) __PYX_ERR(0, 876, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 0, __pyx_t_6) != (0)) __PYX_ERR(0, 1126, __pyx_L1_error);
     __Pyx_INCREF(__pyx_v_inner_table);
     __Pyx_GIVEREF(__pyx_v_inner_table);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 1, __pyx_v_inner_table) != (0)) __PYX_ERR(0, 876, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_20, 1, __pyx_v_inner_table) != (0)) __PYX_ERR(0, 1126, __pyx_L1_error);
     __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_index); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 876, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_index); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1126, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    if (unlikely((PyDict_SetItem(__pyx_v_table, __pyx_t_6, __pyx_t_20) < 0))) __PYX_ERR(0, 876, __pyx_L1_error)
+    if (unlikely((PyDict_SetItem(__pyx_v_table, __pyx_t_6, __pyx_t_20) < 0))) __PYX_ERR(0, 1126, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_20); __pyx_t_20 = 0;
 
-    /* "scalecodec/_value_decode.pyx":849
+    /* "scalecodec/_value_decode.pyx":1099
  * 
  *     cdef dict table = {}
  *     for variant in d[1].value_object['variants'].value_object:             # <<<<<<<<<<<<<<
@@ -29205,7 +31523,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":878
+  /* "scalecodec/_value_decode.pyx":1128
  *         table[vv['index']] = (vv['name'], inner_table)
  * 
  *     return table             # <<<<<<<<<<<<<<
@@ -29217,7 +31535,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
   __pyx_r = __pyx_v_table;
   goto __pyx_L0;
 
-  /* "scalecodec/_value_decode.pyx":832
+  /* "scalecodec/_value_decode.pyx":1082
  * 
  * 
  * cdef dict _build_call_table(rc, cls, dict node_cache):             # <<<<<<<<<<<<<<
@@ -29261,7 +31579,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_call_table(PyObject
 }
 static PyObject *__pyx_gb_10scalecodec_13_value_decode_21_variant_payload_node_2generator(__pyx_CoroutineObject *__pyx_generator, CYTHON_UNUSED PyThreadState *__pyx_tstate, PyObject *__pyx_sent_value); /* proto */
 
-/* "scalecodec/_value_decode.pyx":887
+/* "scalecodec/_value_decode.pyx":1137
  *     if not fields:
  *         return None
  *     if all(f.get('name') for f in fields):             # <<<<<<<<<<<<<<
@@ -29281,7 +31599,7 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_21_variant_payload_node_g
   if (unlikely(!__pyx_cur_scope)) {
     __pyx_cur_scope = ((struct __pyx_obj_10scalecodec_13_value_decode___pyx_scope_struct__genexpr *)Py_None);
     __Pyx_INCREF(Py_None);
-    __PYX_ERR(0, 887, __pyx_L1_error)
+    __PYX_ERR(0, 1137, __pyx_L1_error)
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
@@ -29289,7 +31607,7 @@ static PyObject *__pyx_pf_10scalecodec_13_value_decode_21_variant_payload_node_g
   __Pyx_INCREF(__pyx_cur_scope->__pyx_genexpr_arg_0);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_genexpr_arg_0);
   {
-    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_10scalecodec_13_value_decode_21_variant_payload_node_2generator, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0]), (PyObject *) __pyx_cur_scope, __pyx_mstate_global->__pyx_n_u_genexpr, __pyx_mstate_global->__pyx_n_u_variant_payload_node_locals_gen, __pyx_mstate_global->__pyx_n_u_scalecodec__value_decode); if (unlikely(!gen)) __PYX_ERR(0, 887, __pyx_L1_error)
+    __pyx_CoroutineObject *gen = __Pyx_Generator_New((__pyx_coroutine_body_t) __pyx_gb_10scalecodec_13_value_decode_21_variant_payload_node_2generator, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0]), (PyObject *) __pyx_cur_scope, __pyx_mstate_global->__pyx_n_u_genexpr, __pyx_mstate_global->__pyx_n_u_variant_payload_node_locals_gen, __pyx_mstate_global->__pyx_n_u_scalecodec__value_decode); if (unlikely(!gen)) __PYX_ERR(0, 1137, __pyx_L1_error)
     __Pyx_DECREF(__pyx_cur_scope);
     __Pyx_RefNannyFinishContext();
     return (PyObject *) gen;
@@ -29329,16 +31647,16 @@ static PyObject *__pyx_gb_10scalecodec_13_value_decode_21_variant_payload_node_2
     return NULL;
   }
   __pyx_L3_first_run:;
-  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 887, __pyx_L1_error)
-  if (unlikely(!__pyx_cur_scope->__pyx_genexpr_arg_0)) { __Pyx_RaiseUnboundLocalError(".0"); __PYX_ERR(0, 887, __pyx_L1_error) }
+  if (unlikely(!__pyx_sent_value)) __PYX_ERR(0, 1137, __pyx_L1_error)
+  if (unlikely(!__pyx_cur_scope->__pyx_genexpr_arg_0)) { __Pyx_RaiseUnboundLocalError(".0"); __PYX_ERR(0, 1137, __pyx_L1_error) }
   if (likely(PyList_CheckExact(__pyx_cur_scope->__pyx_genexpr_arg_0)) || PyTuple_CheckExact(__pyx_cur_scope->__pyx_genexpr_arg_0)) {
     __pyx_t_1 = __pyx_cur_scope->__pyx_genexpr_arg_0; __Pyx_INCREF(__pyx_t_1);
     __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_cur_scope->__pyx_genexpr_arg_0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 887, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_cur_scope->__pyx_genexpr_arg_0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1137, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 887, __pyx_L1_error)
+    __pyx_t_3 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1137, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
@@ -29346,7 +31664,7 @@ static PyObject *__pyx_gb_10scalecodec_13_value_decode_21_variant_payload_node_2
         {
           Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
           #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 887, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1137, __pyx_L1_error)
           #endif
           if (__pyx_t_2 >= __pyx_temp) break;
         }
@@ -29356,7 +31674,7 @@ static PyObject *__pyx_gb_10scalecodec_13_value_decode_21_variant_payload_node_2
         {
           Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_1);
           #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 887, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1137, __pyx_L1_error)
           #endif
           if (__pyx_t_2 >= __pyx_temp) break;
         }
@@ -29367,13 +31685,13 @@ static PyObject *__pyx_gb_10scalecodec_13_value_decode_21_variant_payload_node_2
         #endif
         ++__pyx_t_2;
       }
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 887, __pyx_L1_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1137, __pyx_L1_error)
     } else {
       __pyx_t_4 = __pyx_t_3(__pyx_t_1);
       if (unlikely(!__pyx_t_4)) {
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
-          if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 887, __pyx_L1_error)
+          if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 1137, __pyx_L1_error)
           PyErr_Clear();
         }
         break;
@@ -29391,10 +31709,10 @@ static PyObject *__pyx_gb_10scalecodec_13_value_decode_21_variant_payload_node_2
       PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_mstate_global->__pyx_n_u_name};
       __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_6, (2-__pyx_t_6) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 887, __pyx_L1_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1137, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
     }
-    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 887, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 1137, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_t_8 = (!__pyx_t_7);
     if (__pyx_t_8) {
@@ -29435,7 +31753,7 @@ static PyObject *__pyx_gb_10scalecodec_13_value_decode_21_variant_payload_node_2
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":881
+/* "scalecodec/_value_decode.pyx":1131
  * 
  * 
  * cdef object _variant_payload_node(rc, fields, dict node_cache):             # <<<<<<<<<<<<<<
@@ -29464,18 +31782,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_variant_payload_node", 0);
 
-  /* "scalecodec/_value_decode.pyx":885
+  /* "scalecodec/_value_decode.pyx":1135
  *     fields, a single unnamed value, or a tuple  matching Enum's shapes."""
  *     cdef _Node payload
  *     if not fields:             # <<<<<<<<<<<<<<
  *         return None
  *     if all(f.get('name') for f in fields):
 */
-  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_fields); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 885, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_fields); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 1135, __pyx_L1_error)
   __pyx_t_2 = (!__pyx_t_1);
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":886
+    /* "scalecodec/_value_decode.pyx":1136
  *     cdef _Node payload
  *     if not fields:
  *         return None             # <<<<<<<<<<<<<<
@@ -29486,7 +31804,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":885
+    /* "scalecodec/_value_decode.pyx":1135
  *     fields, a single unnamed value, or a tuple  matching Enum's shapes."""
  *     cdef _Node payload
  *     if not fields:             # <<<<<<<<<<<<<<
@@ -29495,35 +31813,35 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":887
+  /* "scalecodec/_value_decode.pyx":1137
  *     if not fields:
  *         return None
  *     if all(f.get('name') for f in fields):             # <<<<<<<<<<<<<<
  *         payload = _Node.__new__(_Node)
  *         payload.op = OP_STRUCT
 */
-  __pyx_t_3 = __pyx_pf_10scalecodec_13_value_decode_21_variant_payload_node_genexpr(NULL, __pyx_v_fields); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 887, __pyx_L1_error)
+  __pyx_t_3 = __pyx_pf_10scalecodec_13_value_decode_21_variant_payload_node_genexpr(NULL, __pyx_v_fields); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1137, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_Generator_GetInlinedResult(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 887, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_Generator_GetInlinedResult(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1137, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 887, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 1137, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":888
+    /* "scalecodec/_value_decode.pyx":1138
  *         return None
  *     if all(f.get('name') for f in fields):
  *         payload = _Node.__new__(_Node)             # <<<<<<<<<<<<<<
  *         payload.op = OP_STRUCT
  *         payload.keys = [f['name'] for f in fields]
 */
-    __pyx_t_4 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode__Node(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 888, __pyx_L1_error)
+    __pyx_t_4 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode__Node(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1138, __pyx_L1_error)
     __Pyx_GOTREF((PyObject *)__pyx_t_4);
     __pyx_v_payload = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":889
+    /* "scalecodec/_value_decode.pyx":1139
  *     if all(f.get('name') for f in fields):
  *         payload = _Node.__new__(_Node)
  *         payload.op = OP_STRUCT             # <<<<<<<<<<<<<<
@@ -29532,7 +31850,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
 */
     __pyx_v_payload->op = 18;
 
-    /* "scalecodec/_value_decode.pyx":890
+    /* "scalecodec/_value_decode.pyx":1140
  *         payload = _Node.__new__(_Node)
  *         payload.op = OP_STRUCT
  *         payload.keys = [f['name'] for f in fields]             # <<<<<<<<<<<<<<
@@ -29540,16 +31858,16 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
  *             _build_node(rc, f"scale_info::{f['type']}", node_cache) for f in fields
 */
     { /* enter inner scope */
-      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 890, __pyx_L7_error)
+      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1140, __pyx_L7_error)
       __Pyx_GOTREF(__pyx_t_4);
       if (likely(PyList_CheckExact(__pyx_v_fields)) || PyTuple_CheckExact(__pyx_v_fields)) {
         __pyx_t_3 = __pyx_v_fields; __Pyx_INCREF(__pyx_t_3);
         __pyx_t_5 = 0;
         __pyx_t_6 = NULL;
       } else {
-        __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_v_fields); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 890, __pyx_L7_error)
+        __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_v_fields); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1140, __pyx_L7_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_6 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 890, __pyx_L7_error)
+        __pyx_t_6 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1140, __pyx_L7_error)
       }
       for (;;) {
         if (likely(!__pyx_t_6)) {
@@ -29557,7 +31875,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
             {
               Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_3);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 890, __pyx_L7_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1140, __pyx_L7_error)
               #endif
               if (__pyx_t_5 >= __pyx_temp) break;
             }
@@ -29567,7 +31885,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
             {
               Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_3);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 890, __pyx_L7_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1140, __pyx_L7_error)
               #endif
               if (__pyx_t_5 >= __pyx_temp) break;
             }
@@ -29578,13 +31896,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
             #endif
             ++__pyx_t_5;
           }
-          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 890, __pyx_L7_error)
+          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1140, __pyx_L7_error)
         } else {
           __pyx_t_7 = __pyx_t_6(__pyx_t_3);
           if (unlikely(!__pyx_t_7)) {
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
-              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 890, __pyx_L7_error)
+              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 1140, __pyx_L7_error)
               PyErr_Clear();
             }
             break;
@@ -29593,9 +31911,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
         __Pyx_GOTREF(__pyx_t_7);
         __Pyx_XDECREF_SET(__pyx_8genexpr7__pyx_v_f, __pyx_t_7);
         __pyx_t_7 = 0;
-        __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr7__pyx_v_f, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 890, __pyx_L7_error)
+        __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr7__pyx_v_f, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1140, __pyx_L7_error)
         __Pyx_GOTREF(__pyx_t_7);
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_7))) __PYX_ERR(0, 890, __pyx_L7_error)
+        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_7))) __PYX_ERR(0, 1140, __pyx_L7_error)
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       }
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -29612,7 +31930,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
     __pyx_v_payload->keys = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":891
+    /* "scalecodec/_value_decode.pyx":1141
  *         payload.op = OP_STRUCT
  *         payload.keys = [f['name'] for f in fields]
  *         payload.children = [             # <<<<<<<<<<<<<<
@@ -29620,10 +31938,10 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
  *         ]
 */
     { /* enter inner scope */
-      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 891, __pyx_L14_error)
+      __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1141, __pyx_L14_error)
       __Pyx_GOTREF(__pyx_t_4);
 
-      /* "scalecodec/_value_decode.pyx":892
+      /* "scalecodec/_value_decode.pyx":1142
  *         payload.keys = [f['name'] for f in fields]
  *         payload.children = [
  *             _build_node(rc, f"scale_info::{f['type']}", node_cache) for f in fields             # <<<<<<<<<<<<<<
@@ -29635,9 +31953,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
         __pyx_t_5 = 0;
         __pyx_t_6 = NULL;
       } else {
-        __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_v_fields); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 892, __pyx_L14_error)
+        __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_v_fields); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1142, __pyx_L14_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_6 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 892, __pyx_L14_error)
+        __pyx_t_6 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1142, __pyx_L14_error)
       }
       for (;;) {
         if (likely(!__pyx_t_6)) {
@@ -29645,7 +31963,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
             {
               Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_3);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 892, __pyx_L14_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1142, __pyx_L14_error)
               #endif
               if (__pyx_t_5 >= __pyx_temp) break;
             }
@@ -29655,7 +31973,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
             {
               Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_3);
               #if !CYTHON_ASSUME_SAFE_SIZE
-              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 892, __pyx_L14_error)
+              if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1142, __pyx_L14_error)
               #endif
               if (__pyx_t_5 >= __pyx_temp) break;
             }
@@ -29666,13 +31984,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
             #endif
             ++__pyx_t_5;
           }
-          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 892, __pyx_L14_error)
+          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1142, __pyx_L14_error)
         } else {
           __pyx_t_7 = __pyx_t_6(__pyx_t_3);
           if (unlikely(!__pyx_t_7)) {
             PyObject* exc_type = PyErr_Occurred();
             if (exc_type) {
-              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 892, __pyx_L14_error)
+              if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 1142, __pyx_L14_error)
               PyErr_Clear();
             }
             break;
@@ -29681,18 +31999,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
         __Pyx_GOTREF(__pyx_t_7);
         __Pyx_XDECREF_SET(__pyx_8genexpr8__pyx_v_f, __pyx_t_7);
         __pyx_t_7 = 0;
-        __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr8__pyx_v_f, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 892, __pyx_L14_error)
+        __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr8__pyx_v_f, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1142, __pyx_L14_error)
         __Pyx_GOTREF(__pyx_t_7);
-        __pyx_t_8 = __Pyx_PyObject_FormatSimple(__pyx_t_7, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 892, __pyx_L14_error)
+        __pyx_t_8 = __Pyx_PyObject_FormatSimple(__pyx_t_7, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1142, __pyx_L14_error)
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_8); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 892, __pyx_L14_error)
+        __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_8); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1142, __pyx_L14_error)
         __Pyx_GOTREF(__pyx_t_7);
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-        __pyx_t_8 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_7, __pyx_v_node_cache)); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 892, __pyx_L14_error)
+        __pyx_t_8 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_7, __pyx_v_node_cache)); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1142, __pyx_L14_error)
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_8))) __PYX_ERR(0, 891, __pyx_L14_error)
+        if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_8))) __PYX_ERR(0, 1141, __pyx_L14_error)
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       }
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -29704,7 +32022,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
       __pyx_L18_exit_scope:;
     } /* exit inner scope */
 
-    /* "scalecodec/_value_decode.pyx":891
+    /* "scalecodec/_value_decode.pyx":1141
  *         payload.op = OP_STRUCT
  *         payload.keys = [f['name'] for f in fields]
  *         payload.children = [             # <<<<<<<<<<<<<<
@@ -29717,7 +32035,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
     __pyx_v_payload->children = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":894
+    /* "scalecodec/_value_decode.pyx":1144
  *             _build_node(rc, f"scale_info::{f['type']}", node_cache) for f in fields
  *         ]
  *         return payload             # <<<<<<<<<<<<<<
@@ -29729,7 +32047,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
     __pyx_r = ((PyObject *)__pyx_v_payload);
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":887
+    /* "scalecodec/_value_decode.pyx":1137
  *     if not fields:
  *         return None
  *     if all(f.get('name') for f in fields):             # <<<<<<<<<<<<<<
@@ -29738,18 +32056,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":895
+  /* "scalecodec/_value_decode.pyx":1145
  *         ]
  *         return payload
  *     if len(fields) == 1:             # <<<<<<<<<<<<<<
  *         return _build_node(rc, f"scale_info::{fields[0]['type']}", node_cache)
  *     payload = _Node.__new__(_Node)
 */
-  __pyx_t_5 = PyObject_Length(__pyx_v_fields); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 895, __pyx_L1_error)
+  __pyx_t_5 = PyObject_Length(__pyx_v_fields); if (unlikely(__pyx_t_5 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1145, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_5 == 1);
   if (__pyx_t_2) {
 
-    /* "scalecodec/_value_decode.pyx":896
+    /* "scalecodec/_value_decode.pyx":1146
  *         return payload
  *     if len(fields) == 1:
  *         return _build_node(rc, f"scale_info::{fields[0]['type']}", node_cache)             # <<<<<<<<<<<<<<
@@ -29757,25 +32075,25 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
  *     payload.op = OP_TUPLE
 */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_fields, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 896, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_fields, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1146, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 896, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1146, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_FormatSimple(__pyx_t_3, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 896, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_FormatSimple(__pyx_t_3, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1146, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 896, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1146, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 896, __pyx_L1_error)
+    __pyx_t_4 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1146, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_r = __pyx_t_4;
     __pyx_t_4 = 0;
     goto __pyx_L0;
 
-    /* "scalecodec/_value_decode.pyx":895
+    /* "scalecodec/_value_decode.pyx":1145
  *         ]
  *         return payload
  *     if len(fields) == 1:             # <<<<<<<<<<<<<<
@@ -29784,19 +32102,19 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":897
+  /* "scalecodec/_value_decode.pyx":1147
  *     if len(fields) == 1:
  *         return _build_node(rc, f"scale_info::{fields[0]['type']}", node_cache)
  *     payload = _Node.__new__(_Node)             # <<<<<<<<<<<<<<
  *     payload.op = OP_TUPLE
  *     payload.children = [
 */
-  __pyx_t_4 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode__Node(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 897, __pyx_L1_error)
+  __pyx_t_4 = ((PyObject *)__pyx_tp_new_10scalecodec_13_value_decode__Node(((PyTypeObject *)__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode__Node), __pyx_mstate_global->__pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1147, __pyx_L1_error)
   __Pyx_GOTREF((PyObject *)__pyx_t_4);
   __pyx_v_payload = ((struct __pyx_obj_10scalecodec_13_value_decode__Node *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":898
+  /* "scalecodec/_value_decode.pyx":1148
  *         return _build_node(rc, f"scale_info::{fields[0]['type']}", node_cache)
  *     payload = _Node.__new__(_Node)
  *     payload.op = OP_TUPLE             # <<<<<<<<<<<<<<
@@ -29805,7 +32123,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
 */
   __pyx_v_payload->op = 19;
 
-  /* "scalecodec/_value_decode.pyx":899
+  /* "scalecodec/_value_decode.pyx":1149
  *     payload = _Node.__new__(_Node)
  *     payload.op = OP_TUPLE
  *     payload.children = [             # <<<<<<<<<<<<<<
@@ -29813,10 +32131,10 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
  *     ]
 */
   { /* enter inner scope */
-    __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 899, __pyx_L22_error)
+    __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1149, __pyx_L22_error)
     __Pyx_GOTREF(__pyx_t_4);
 
-    /* "scalecodec/_value_decode.pyx":900
+    /* "scalecodec/_value_decode.pyx":1150
  *     payload.op = OP_TUPLE
  *     payload.children = [
  *         _build_node(rc, f"scale_info::{f['type']}", node_cache) for f in fields             # <<<<<<<<<<<<<<
@@ -29828,9 +32146,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
       __pyx_t_5 = 0;
       __pyx_t_6 = NULL;
     } else {
-      __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_v_fields); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 900, __pyx_L22_error)
+      __pyx_t_5 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_v_fields); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1150, __pyx_L22_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_6 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 900, __pyx_L22_error)
+      __pyx_t_6 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1150, __pyx_L22_error)
     }
     for (;;) {
       if (likely(!__pyx_t_6)) {
@@ -29838,7 +32156,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
           {
             Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_3);
             #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 900, __pyx_L22_error)
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1150, __pyx_L22_error)
             #endif
             if (__pyx_t_5 >= __pyx_temp) break;
           }
@@ -29848,7 +32166,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
           {
             Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_3);
             #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 900, __pyx_L22_error)
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1150, __pyx_L22_error)
             #endif
             if (__pyx_t_5 >= __pyx_temp) break;
           }
@@ -29859,13 +32177,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
           #endif
           ++__pyx_t_5;
         }
-        if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 900, __pyx_L22_error)
+        if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1150, __pyx_L22_error)
       } else {
         __pyx_t_8 = __pyx_t_6(__pyx_t_3);
         if (unlikely(!__pyx_t_8)) {
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
-            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 900, __pyx_L22_error)
+            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 1150, __pyx_L22_error)
             PyErr_Clear();
           }
           break;
@@ -29874,18 +32192,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_XDECREF_SET(__pyx_8genexpr9__pyx_v_f, __pyx_t_8);
       __pyx_t_8 = 0;
-      __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr9__pyx_v_f, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 900, __pyx_L22_error)
+      __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr9__pyx_v_f, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1150, __pyx_L22_error)
       __Pyx_GOTREF(__pyx_t_8);
-      __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_8, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 900, __pyx_L22_error)
+      __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_8, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1150, __pyx_L22_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      __pyx_t_8 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 900, __pyx_L22_error)
+      __pyx_t_8 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1150, __pyx_L22_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __pyx_t_7 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_8, __pyx_v_node_cache)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 900, __pyx_L22_error)
+      __pyx_t_7 = ((PyObject *)__pyx_f_10scalecodec_13_value_decode__build_node(__pyx_v_rc, __pyx_t_8, __pyx_v_node_cache)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1150, __pyx_L22_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_7))) __PYX_ERR(0, 899, __pyx_L22_error)
+      if (unlikely(__Pyx_ListComp_Append(__pyx_t_4, (PyObject*)__pyx_t_7))) __PYX_ERR(0, 1149, __pyx_L22_error)
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     }
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -29897,7 +32215,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
     __pyx_L26_exit_scope:;
   } /* exit inner scope */
 
-  /* "scalecodec/_value_decode.pyx":899
+  /* "scalecodec/_value_decode.pyx":1149
  *     payload = _Node.__new__(_Node)
  *     payload.op = OP_TUPLE
  *     payload.children = [             # <<<<<<<<<<<<<<
@@ -29910,7 +32228,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
   __pyx_v_payload->children = ((PyObject*)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":902
+  /* "scalecodec/_value_decode.pyx":1152
  *         _build_node(rc, f"scale_info::{f['type']}", node_cache) for f in fields
  *     ]
  *     return payload             # <<<<<<<<<<<<<<
@@ -29922,7 +32240,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
   __pyx_r = ((PyObject *)__pyx_v_payload);
   goto __pyx_L0;
 
-  /* "scalecodec/_value_decode.pyx":881
+  /* "scalecodec/_value_decode.pyx":1131
  * 
  * 
  * cdef object _variant_payload_node(rc, fields, dict node_cache):             # <<<<<<<<<<<<<<
@@ -29949,7 +32267,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__variant_payload_node(PyOb
   return __pyx_r;
 }
 
-/* "scalecodec/_value_decode.pyx":905
+/* "scalecodec/_value_decode.pyx":1155
  * 
  * 
  * cdef dict _build_event_table(rc, cls, dict node_cache):             # <<<<<<<<<<<<<<
@@ -29990,19 +32308,19 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_build_event_table", 0);
 
-  /* "scalecodec/_value_decode.pyx":908
+  /* "scalecodec/_value_decode.pyx":1158
  *     """Compile the runtime event decode table from the registry's RuntimeEvent
  *     enum: {pallet_index: (pallet_name, {event_index: (event_name, payload)})}."""
  *     sit = getattr(cls, 'scale_info_type', None)             # <<<<<<<<<<<<<<
  *     if sit is None:
  *         raise UnsupportedType(f'Event class without scale_info_type: {cls}')
 */
-  __pyx_t_1 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_scale_info_type, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 908, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetAttr3(__pyx_v_cls, __pyx_mstate_global->__pyx_n_u_scale_info_type, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_sit = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":909
+  /* "scalecodec/_value_decode.pyx":1159
  *     enum: {pallet_index: (pallet_name, {event_index: (event_name, payload)})}."""
  *     sit = getattr(cls, 'scale_info_type', None)
  *     if sit is None:             # <<<<<<<<<<<<<<
@@ -30012,7 +32330,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
   __pyx_t_2 = (__pyx_v_sit == Py_None);
   if (unlikely(__pyx_t_2)) {
 
-    /* "scalecodec/_value_decode.pyx":910
+    /* "scalecodec/_value_decode.pyx":1160
  *     sit = getattr(cls, 'scale_info_type', None)
  *     if sit is None:
  *         raise UnsupportedType(f'Event class without scale_info_type: {cls}')             # <<<<<<<<<<<<<<
@@ -30020,11 +32338,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
  *     if d[0] != 'variant':
 */
     __pyx_t_3 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 910, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1160, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 910, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1160, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Event_class_without_scale_info_t, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 910, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Event_class_without_scale_info_t, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1160, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_7 = 1;
@@ -30045,14 +32363,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 910, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1160, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 910, __pyx_L1_error)
+    __PYX_ERR(0, 1160, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":909
+    /* "scalecodec/_value_decode.pyx":1159
  *     enum: {pallet_index: (pallet_name, {event_index: (event_name, payload)})}."""
  *     sit = getattr(cls, 'scale_info_type', None)
  *     if sit is None:             # <<<<<<<<<<<<<<
@@ -30061,32 +32379,32 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":911
+  /* "scalecodec/_value_decode.pyx":1161
  *     if sit is None:
  *         raise UnsupportedType(f'Event class without scale_info_type: {cls}')
  *     d = sit['def']             # <<<<<<<<<<<<<<
  *     if d[0] != 'variant':
  *         raise UnsupportedType(f'Event registry def is not a variant: {cls}')
 */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 911, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1161, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_d = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":912
+  /* "scalecodec/_value_decode.pyx":1162
  *         raise UnsupportedType(f'Event class without scale_info_type: {cls}')
  *     d = sit['def']
  *     if d[0] != 'variant':             # <<<<<<<<<<<<<<
  *         raise UnsupportedType(f'Event registry def is not a variant: {cls}')
  * 
 */
-  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_d, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 912, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_d, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1162, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_variant, Py_NE)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 912, __pyx_L1_error)
+  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_variant, Py_NE)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 1162, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (unlikely(__pyx_t_2)) {
 
-    /* "scalecodec/_value_decode.pyx":913
+    /* "scalecodec/_value_decode.pyx":1163
  *     d = sit['def']
  *     if d[0] != 'variant':
  *         raise UnsupportedType(f'Event registry def is not a variant: {cls}')             # <<<<<<<<<<<<<<
@@ -30094,11 +32412,11 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
  *     cdef dict table = {}
 */
     __pyx_t_4 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 913, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1163, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 913, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_FormatSimple(__pyx_v_cls, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1163, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Event_registry_def_is_not_a_vari, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 913, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_Event_registry_def_is_not_a_vari, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1163, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_7 = 1;
@@ -30119,14 +32437,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 913, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1163, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 913, __pyx_L1_error)
+    __PYX_ERR(0, 1163, __pyx_L1_error)
 
-    /* "scalecodec/_value_decode.pyx":912
+    /* "scalecodec/_value_decode.pyx":1162
  *         raise UnsupportedType(f'Event class without scale_info_type: {cls}')
  *     d = sit['def']
  *     if d[0] != 'variant':             # <<<<<<<<<<<<<<
@@ -30135,34 +32453,34 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
 */
   }
 
-  /* "scalecodec/_value_decode.pyx":915
+  /* "scalecodec/_value_decode.pyx":1165
  *         raise UnsupportedType(f'Event registry def is not a variant: {cls}')
  * 
  *     cdef dict table = {}             # <<<<<<<<<<<<<<
  *     for variant in d[1].value_object['variants'].value_object:
  *         vv = variant.value
 */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 915, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_table = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":916
+  /* "scalecodec/_value_decode.pyx":1166
  * 
  *     cdef dict table = {}
  *     for variant in d[1].value_object['variants'].value_object:             # <<<<<<<<<<<<<<
  *         vv = variant.value
  *         fields = vv.get('fields') or []
 */
-  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_d, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 916, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt(__pyx_v_d, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 916, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_variants); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 916, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_variants); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 916, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (likely(PyList_CheckExact(__pyx_t_6)) || PyTuple_CheckExact(__pyx_t_6)) {
@@ -30170,9 +32488,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
     __pyx_t_8 = 0;
     __pyx_t_9 = NULL;
   } else {
-    __pyx_t_8 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 916, __pyx_L1_error)
+    __pyx_t_8 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1166, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_9 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 916, __pyx_L1_error)
+    __pyx_t_9 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1166, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   for (;;) {
@@ -30181,7 +32499,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
         {
           Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
           #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 916, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1166, __pyx_L1_error)
           #endif
           if (__pyx_t_8 >= __pyx_temp) break;
         }
@@ -30191,7 +32509,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
         {
           Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_1);
           #if !CYTHON_ASSUME_SAFE_SIZE
-          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 916, __pyx_L1_error)
+          if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1166, __pyx_L1_error)
           #endif
           if (__pyx_t_8 >= __pyx_temp) break;
         }
@@ -30202,13 +32520,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
         #endif
         ++__pyx_t_8;
       }
-      if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 916, __pyx_L1_error)
+      if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1166, __pyx_L1_error)
     } else {
       __pyx_t_6 = __pyx_t_9(__pyx_t_1);
       if (unlikely(!__pyx_t_6)) {
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
-          if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 916, __pyx_L1_error)
+          if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 1166, __pyx_L1_error)
           PyErr_Clear();
         }
         break;
@@ -30218,19 +32536,19 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
     __Pyx_XDECREF_SET(__pyx_v_variant, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "scalecodec/_value_decode.pyx":917
+    /* "scalecodec/_value_decode.pyx":1167
  *     cdef dict table = {}
  *     for variant in d[1].value_object['variants'].value_object:
  *         vv = variant.value             # <<<<<<<<<<<<<<
  *         fields = vv.get('fields') or []
  *         if len(fields) != 1:
 */
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_variant, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 917, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_variant, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1167, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_XDECREF_SET(__pyx_v_vv, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "scalecodec/_value_decode.pyx":918
+    /* "scalecodec/_value_decode.pyx":1168
  *     for variant in d[1].value_object['variants'].value_object:
  *         vv = variant.value
  *         fields = vv.get('fields') or []             # <<<<<<<<<<<<<<
@@ -30244,10 +32562,10 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
       PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_n_u_fields};
       __pyx_t_5 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 918, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1168, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
     }
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 918, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 1168, __pyx_L1_error)
     if (!__pyx_t_2) {
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else {
@@ -30256,7 +32574,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       goto __pyx_L7_bool_binop_done;
     }
-    __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 918, __pyx_L1_error)
+    __pyx_t_5 = PyList_New(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1168, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_INCREF(__pyx_t_5);
     __pyx_t_6 = __pyx_t_5;
@@ -30265,18 +32583,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
     __Pyx_XDECREF_SET(__pyx_v_fields, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "scalecodec/_value_decode.pyx":919
+    /* "scalecodec/_value_decode.pyx":1169
  *         vv = variant.value
  *         fields = vv.get('fields') or []
  *         if len(fields) != 1:             # <<<<<<<<<<<<<<
  *             raise UnsupportedType(f'Event pallet variant {vv.get("name")!r} has unexpected shape')
  *         inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")
 */
-    __pyx_t_10 = PyObject_Length(__pyx_v_fields); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 919, __pyx_L1_error)
+    __pyx_t_10 = PyObject_Length(__pyx_v_fields); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1169, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_10 != 1);
     if (unlikely(__pyx_t_2)) {
 
-      /* "scalecodec/_value_decode.pyx":920
+      /* "scalecodec/_value_decode.pyx":1170
  *         fields = vv.get('fields') or []
  *         if len(fields) != 1:
  *             raise UnsupportedType(f'Event pallet variant {vv.get("name")!r} has unexpected shape')             # <<<<<<<<<<<<<<
@@ -30284,21 +32602,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
  *         inner_sit = getattr(inner_cls, 'scale_info_type', None)
 */
       __pyx_t_5 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 920, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1170, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 920, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1170, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 920, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1170, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_11), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 920, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_11), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1170, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
       __pyx_t_12[0] = __pyx_mstate_global->__pyx_kp_u_Event_pallet_variant;
       __pyx_t_12[1] = __pyx_t_3;
       __pyx_t_12[2] = __pyx_mstate_global->__pyx_kp_u_has_unexpected_shape;
       __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_12, 3, 21 * 2 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_3), 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3));
-      if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 920, __pyx_L1_error)
+      if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1170, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __pyx_t_7 = 1;
@@ -30319,14 +32637,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 920, __pyx_L1_error)
+        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1170, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
       }
       __Pyx_Raise(__pyx_t_6, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __PYX_ERR(0, 920, __pyx_L1_error)
+      __PYX_ERR(0, 1170, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":919
+      /* "scalecodec/_value_decode.pyx":1169
  *         vv = variant.value
  *         fields = vv.get('fields') or []
  *         if len(fields) != 1:             # <<<<<<<<<<<<<<
@@ -30335,7 +32653,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":921
+    /* "scalecodec/_value_decode.pyx":1171
  *         if len(fields) != 1:
  *             raise UnsupportedType(f'Event pallet variant {vv.get("name")!r} has unexpected shape')
  *         inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")             # <<<<<<<<<<<<<<
@@ -30344,15 +32662,15 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
 */
     __pyx_t_4 = __pyx_v_rc;
     __Pyx_INCREF(__pyx_t_4);
-    __pyx_t_11 = __Pyx_GetItemInt(__pyx_v_fields, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 921, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_GetItemInt(__pyx_v_fields, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1171, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
-    __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 921, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_type); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1171, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-    __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_t_5, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 921, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_t_5, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1171, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_11); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 921, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_scale_info, __pyx_t_11); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1171, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     __pyx_t_7 = 0;
@@ -30361,25 +32679,25 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
       __pyx_t_6 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get_decoder_class, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 921, __pyx_L1_error)
+      if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1171, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
     }
     __Pyx_XDECREF_SET(__pyx_v_inner_cls, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "scalecodec/_value_decode.pyx":922
+    /* "scalecodec/_value_decode.pyx":1172
  *             raise UnsupportedType(f'Event pallet variant {vv.get("name")!r} has unexpected shape')
  *         inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")
  *         inner_sit = getattr(inner_cls, 'scale_info_type', None)             # <<<<<<<<<<<<<<
  *         if inner_sit is None or inner_sit['def'][0] != 'variant':
  *             raise UnsupportedType(f'Pallet event enum for {vv.get("name")!r} is not a variant')
 */
-    __pyx_t_6 = __Pyx_GetAttr3(__pyx_v_inner_cls, __pyx_mstate_global->__pyx_n_u_scale_info_type, Py_None); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 922, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_GetAttr3(__pyx_v_inner_cls, __pyx_mstate_global->__pyx_n_u_scale_info_type, Py_None); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1172, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_XDECREF_SET(__pyx_v_inner_sit, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "scalecodec/_value_decode.pyx":923
+    /* "scalecodec/_value_decode.pyx":1173
  *         inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")
  *         inner_sit = getattr(inner_cls, 'scale_info_type', None)
  *         if inner_sit is None or inner_sit['def'][0] != 'variant':             # <<<<<<<<<<<<<<
@@ -30392,18 +32710,18 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
       __pyx_t_2 = __pyx_t_13;
       goto __pyx_L11_bool_binop_done;
     }
-    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_inner_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 923, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_inner_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1173, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_6, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 923, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_GetItemInt(__pyx_t_6, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1173, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_13 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_variant, Py_NE)); if (unlikely((__pyx_t_13 < 0))) __PYX_ERR(0, 923, __pyx_L1_error)
+    __pyx_t_13 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_variant, Py_NE)); if (unlikely((__pyx_t_13 < 0))) __PYX_ERR(0, 1173, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_t_2 = __pyx_t_13;
     __pyx_L11_bool_binop_done:;
     if (unlikely(__pyx_t_2)) {
 
-      /* "scalecodec/_value_decode.pyx":924
+      /* "scalecodec/_value_decode.pyx":1174
  *         inner_sit = getattr(inner_cls, 'scale_info_type', None)
  *         if inner_sit is None or inner_sit['def'][0] != 'variant':
  *             raise UnsupportedType(f'Pallet event enum for {vv.get("name")!r} is not a variant')             # <<<<<<<<<<<<<<
@@ -30411,21 +32729,21 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
  *         inner_table = {}
 */
       __pyx_t_6 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 924, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_UnsupportedType); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1174, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 924, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_get); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1174, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
-      __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_11, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 924, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_11, __pyx_mstate_global->__pyx_tuple[1], NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1174, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-      __pyx_t_11 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_3), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 924, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_3), __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1174, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __pyx_t_12[0] = __pyx_mstate_global->__pyx_kp_u_Pallet_event_enum_for;
       __pyx_t_12[1] = __pyx_t_11;
       __pyx_t_12[2] = __pyx_mstate_global->__pyx_kp_u_is_not_a_variant;
       __pyx_t_3 = __Pyx_PyUnicode_Join(__pyx_t_12, 3, 22 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_11) + 17, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11));
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 924, __pyx_L1_error)
+      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1174, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
       __pyx_t_7 = 1;
@@ -30446,14 +32764,14 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 924, __pyx_L1_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1174, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
       }
       __Pyx_Raise(__pyx_t_5, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __PYX_ERR(0, 924, __pyx_L1_error)
+      __PYX_ERR(0, 1174, __pyx_L1_error)
 
-      /* "scalecodec/_value_decode.pyx":923
+      /* "scalecodec/_value_decode.pyx":1173
  *         inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")
  *         inner_sit = getattr(inner_cls, 'scale_info_type', None)
  *         if inner_sit is None or inner_sit['def'][0] != 'variant':             # <<<<<<<<<<<<<<
@@ -30462,37 +32780,37 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
 */
     }
 
-    /* "scalecodec/_value_decode.pyx":926
+    /* "scalecodec/_value_decode.pyx":1176
  *             raise UnsupportedType(f'Pallet event enum for {vv.get("name")!r} is not a variant')
  * 
  *         inner_table = {}             # <<<<<<<<<<<<<<
  *         for event_variant in inner_sit['def'][1].value_object['variants'].value_object:
  *             ev = event_variant.value
 */
-    __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 926, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1176, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_XDECREF_SET(__pyx_v_inner_table, ((PyObject*)__pyx_t_5));
     __pyx_t_5 = 0;
 
-    /* "scalecodec/_value_decode.pyx":927
+    /* "scalecodec/_value_decode.pyx":1177
  * 
  *         inner_table = {}
  *         for event_variant in inner_sit['def'][1].value_object['variants'].value_object:             # <<<<<<<<<<<<<<
  *             ev = event_variant.value
  *             inner_table[ev['index']] = (
 */
-    __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_v_inner_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 927, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_v_inner_sit, __pyx_mstate_global->__pyx_n_u_def); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1177, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_4 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 927, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1177, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 927, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1177, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_variants); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 927, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_variants); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1177, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 927, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_value_object); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1177, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (likely(PyList_CheckExact(__pyx_t_5)) || PyTuple_CheckExact(__pyx_t_5)) {
@@ -30500,9 +32818,9 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
       __pyx_t_10 = 0;
       __pyx_t_14 = NULL;
     } else {
-      __pyx_t_10 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 927, __pyx_L1_error)
+      __pyx_t_10 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1177, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_14 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_4); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 927, __pyx_L1_error)
+      __pyx_t_14 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_4); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 1177, __pyx_L1_error)
     }
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     for (;;) {
@@ -30511,7 +32829,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
           {
             Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_4);
             #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 927, __pyx_L1_error)
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1177, __pyx_L1_error)
             #endif
             if (__pyx_t_10 >= __pyx_temp) break;
           }
@@ -30521,7 +32839,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
           {
             Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_4);
             #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 927, __pyx_L1_error)
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 1177, __pyx_L1_error)
             #endif
             if (__pyx_t_10 >= __pyx_temp) break;
           }
@@ -30532,13 +32850,13 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
           #endif
           ++__pyx_t_10;
         }
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 927, __pyx_L1_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1177, __pyx_L1_error)
       } else {
         __pyx_t_5 = __pyx_t_14(__pyx_t_4);
         if (unlikely(!__pyx_t_5)) {
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
-            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 927, __pyx_L1_error)
+            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 1177, __pyx_L1_error)
             PyErr_Clear();
           }
           break;
@@ -30548,29 +32866,29 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
       __Pyx_XDECREF_SET(__pyx_v_event_variant, __pyx_t_5);
       __pyx_t_5 = 0;
 
-      /* "scalecodec/_value_decode.pyx":928
+      /* "scalecodec/_value_decode.pyx":1178
  *         inner_table = {}
  *         for event_variant in inner_sit['def'][1].value_object['variants'].value_object:
  *             ev = event_variant.value             # <<<<<<<<<<<<<<
  *             inner_table[ev['index']] = (
  *                 ev['name'],
 */
-      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_event_variant, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 928, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_event_variant, __pyx_mstate_global->__pyx_n_u_value); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1178, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_XDECREF_SET(__pyx_v_ev, __pyx_t_5);
       __pyx_t_5 = 0;
 
-      /* "scalecodec/_value_decode.pyx":930
+      /* "scalecodec/_value_decode.pyx":1180
  *             ev = event_variant.value
  *             inner_table[ev['index']] = (
  *                 ev['name'],             # <<<<<<<<<<<<<<
  *                 _variant_payload_node(rc, ev.get('fields') or [], node_cache),
  *             )
 */
-      __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_v_ev, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 930, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_v_ev, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1180, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
 
-      /* "scalecodec/_value_decode.pyx":931
+      /* "scalecodec/_value_decode.pyx":1181
  *             inner_table[ev['index']] = (
  *                 ev['name'],
  *                 _variant_payload_node(rc, ev.get('fields') or [], node_cache),             # <<<<<<<<<<<<<<
@@ -30584,10 +32902,10 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
         PyObject *__pyx_callargs[2] = {__pyx_t_11, __pyx_mstate_global->__pyx_n_u_fields};
         __pyx_t_6 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
-        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 931, __pyx_L1_error)
+        if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1181, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
       }
-      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 931, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 1181, __pyx_L1_error)
       if (!__pyx_t_2) {
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       } else {
@@ -30596,46 +32914,46 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         goto __pyx_L15_bool_binop_done;
       }
-      __pyx_t_6 = PyList_New(0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 931, __pyx_L1_error)
+      __pyx_t_6 = PyList_New(0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1181, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_INCREF(__pyx_t_6);
       __pyx_t_3 = __pyx_t_6;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __pyx_L15_bool_binop_done:;
-      __pyx_t_6 = __pyx_f_10scalecodec_13_value_decode__variant_payload_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 931, __pyx_L1_error)
+      __pyx_t_6 = __pyx_f_10scalecodec_13_value_decode__variant_payload_node(__pyx_v_rc, __pyx_t_3, __pyx_v_node_cache); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1181, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "scalecodec/_value_decode.pyx":930
+      /* "scalecodec/_value_decode.pyx":1180
  *             ev = event_variant.value
  *             inner_table[ev['index']] = (
  *                 ev['name'],             # <<<<<<<<<<<<<<
  *                 _variant_payload_node(rc, ev.get('fields') or [], node_cache),
  *             )
 */
-      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 930, __pyx_L1_error)
+      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1180, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_GIVEREF(__pyx_t_5);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5) != (0)) __PYX_ERR(0, 930, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5) != (0)) __PYX_ERR(0, 1180, __pyx_L1_error);
       __Pyx_GIVEREF(__pyx_t_6);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_6) != (0)) __PYX_ERR(0, 930, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_6) != (0)) __PYX_ERR(0, 1180, __pyx_L1_error);
       __pyx_t_5 = 0;
       __pyx_t_6 = 0;
 
-      /* "scalecodec/_value_decode.pyx":929
+      /* "scalecodec/_value_decode.pyx":1179
  *         for event_variant in inner_sit['def'][1].value_object['variants'].value_object:
  *             ev = event_variant.value
  *             inner_table[ev['index']] = (             # <<<<<<<<<<<<<<
  *                 ev['name'],
  *                 _variant_payload_node(rc, ev.get('fields') or [], node_cache),
 */
-      __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_ev, __pyx_mstate_global->__pyx_n_u_index); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 929, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_v_ev, __pyx_mstate_global->__pyx_n_u_index); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1179, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      if (unlikely((PyDict_SetItem(__pyx_v_inner_table, __pyx_t_6, __pyx_t_3) < 0))) __PYX_ERR(0, 929, __pyx_L1_error)
+      if (unlikely((PyDict_SetItem(__pyx_v_inner_table, __pyx_t_6, __pyx_t_3) < 0))) __PYX_ERR(0, 1179, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "scalecodec/_value_decode.pyx":927
+      /* "scalecodec/_value_decode.pyx":1177
  * 
  *         inner_table = {}
  *         for event_variant in inner_sit['def'][1].value_object['variants'].value_object:             # <<<<<<<<<<<<<<
@@ -30645,30 +32963,30 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "scalecodec/_value_decode.pyx":934
+    /* "scalecodec/_value_decode.pyx":1184
  *             )
  * 
  *         table[vv['index']] = (vv['name'], inner_table)             # <<<<<<<<<<<<<<
  * 
  *     return table
 */
-    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 934, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1184, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 934, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1184, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_GIVEREF(__pyx_t_4);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4) != (0)) __PYX_ERR(0, 934, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4) != (0)) __PYX_ERR(0, 1184, __pyx_L1_error);
     __Pyx_INCREF(__pyx_v_inner_table);
     __Pyx_GIVEREF(__pyx_v_inner_table);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_v_inner_table) != (0)) __PYX_ERR(0, 934, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_v_inner_table) != (0)) __PYX_ERR(0, 1184, __pyx_L1_error);
     __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_index); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 934, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vv, __pyx_mstate_global->__pyx_n_u_index); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1184, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    if (unlikely((PyDict_SetItem(__pyx_v_table, __pyx_t_4, __pyx_t_3) < 0))) __PYX_ERR(0, 934, __pyx_L1_error)
+    if (unlikely((PyDict_SetItem(__pyx_v_table, __pyx_t_4, __pyx_t_3) < 0))) __PYX_ERR(0, 1184, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-    /* "scalecodec/_value_decode.pyx":916
+    /* "scalecodec/_value_decode.pyx":1166
  * 
  *     cdef dict table = {}
  *     for variant in d[1].value_object['variants'].value_object:             # <<<<<<<<<<<<<<
@@ -30678,7 +32996,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "scalecodec/_value_decode.pyx":936
+  /* "scalecodec/_value_decode.pyx":1186
  *         table[vv['index']] = (vv['name'], inner_table)
  * 
  *     return table             # <<<<<<<<<<<<<<
@@ -30688,7 +33006,7 @@ static PyObject *__pyx_f_10scalecodec_13_value_decode__build_event_table(PyObjec
   __pyx_r = __pyx_v_table;
   goto __pyx_L0;
 
-  /* "scalecodec/_value_decode.pyx":905
+  /* "scalecodec/_value_decode.pyx":1155
  * 
  * 
  * cdef dict _build_event_table(rc, cls, dict node_cache):             # <<<<<<<<<<<<<<
@@ -32416,15 +34734,15 @@ static int __Pyx_modinit_type_init_code(__pyx_mstatetype *__pyx_mstate) {
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_init_code", 0);
   /*--- Type init code ---*/
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_10scalecodec_13_value_decode__Node_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node)) __PYX_ERR(0, 91, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_10scalecodec_13_value_decode__Node_spec, __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node) < (0)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_10scalecodec_13_value_decode__Node_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node)) __PYX_ERR(0, 108, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_10scalecodec_13_value_decode__Node_spec, __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node) < (0)) __PYX_ERR(0, 108, __pyx_L1_error)
   #else
   __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node = &__pyx_type_10scalecodec_13_value_decode__Node;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node) < (0)) __PYX_ERR(0, 91, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node) < (0)) __PYX_ERR(0, 108, __pyx_L1_error)
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount((PyObject*)__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node);
@@ -32434,18 +34752,18 @@ static int __Pyx_modinit_type_init_code(__pyx_mstatetype *__pyx_mstate) {
     __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node->tp_getattro = PyObject_GenericGetAttr;
   }
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_Node, (PyObject *) __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node) < (0)) __PYX_ERR(0, 91, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node) < (0)) __PYX_ERR(0, 91, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_Node, (PyObject *) __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node) < (0)) __PYX_ERR(0, 108, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode__Node) < (0)) __PYX_ERR(0, 108, __pyx_L1_error)
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_10scalecodec_13_value_decode_ValueDecoder_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder)) __PYX_ERR(0, 463, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_10scalecodec_13_value_decode_ValueDecoder_spec, __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder) < (0)) __PYX_ERR(0, 463, __pyx_L1_error)
+  __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_10scalecodec_13_value_decode_ValueDecoder_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder)) __PYX_ERR(0, 698, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_10scalecodec_13_value_decode_ValueDecoder_spec, __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder) < (0)) __PYX_ERR(0, 698, __pyx_L1_error)
   #else
   __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder = &__pyx_type_10scalecodec_13_value_decode_ValueDecoder;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder) < (0)) __PYX_ERR(0, 463, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder) < (0)) __PYX_ERR(0, 698, __pyx_L1_error)
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount((PyObject*)__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder);
@@ -32455,18 +34773,18 @@ static int __Pyx_modinit_type_init_code(__pyx_mstatetype *__pyx_mstate) {
     __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder->tp_getattro = PyObject_GenericGetAttr;
   }
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_ValueDecoder, (PyObject *) __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder) < (0)) __PYX_ERR(0, 463, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder) < (0)) __PYX_ERR(0, 463, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_mstate_global->__pyx_n_u_ValueDecoder, (PyObject *) __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder) < (0)) __PYX_ERR(0, 698, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder) < (0)) __PYX_ERR(0, 698, __pyx_L1_error)
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode___pyx_scope_struct__genexpr = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_10scalecodec_13_value_decode___pyx_scope_struct__genexpr_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode___pyx_scope_struct__genexpr)) __PYX_ERR(0, 887, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_10scalecodec_13_value_decode___pyx_scope_struct__genexpr_spec, __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode___pyx_scope_struct__genexpr) < (0)) __PYX_ERR(0, 887, __pyx_L1_error)
+  __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode___pyx_scope_struct__genexpr = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_10scalecodec_13_value_decode___pyx_scope_struct__genexpr_spec, NULL); if (unlikely(!__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode___pyx_scope_struct__genexpr)) __PYX_ERR(0, 1137, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_10scalecodec_13_value_decode___pyx_scope_struct__genexpr_spec, __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode___pyx_scope_struct__genexpr) < (0)) __PYX_ERR(0, 1137, __pyx_L1_error)
   #else
   __pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode___pyx_scope_struct__genexpr = &__pyx_type_10scalecodec_13_value_decode___pyx_scope_struct__genexpr;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode___pyx_scope_struct__genexpr) < (0)) __PYX_ERR(0, 887, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode___pyx_scope_struct__genexpr) < (0)) __PYX_ERR(0, 1137, __pyx_L1_error)
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount((PyObject*)__pyx_mstate->__pyx_ptype_10scalecodec_13_value_decode___pyx_scope_struct__genexpr);
@@ -33423,8 +35741,8 @@ __Pyx_RefNannySetupContext("PyInit__value_decode", 0);
   if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_pyx_unpickle_Enum, __pyx_t_4) < (0)) __PYX_ERR(1, 4, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":32
- * from libc.string cimport memcpy
+  /* "scalecodec/_value_decode.pyx":49
+ *                                  int little_endian, int is_signed)
  * 
  * from hashlib import blake2b             # <<<<<<<<<<<<<<
  * 
@@ -33432,22 +35750,22 @@ __Pyx_RefNannySetupContext("PyInit__value_decode", 0);
 */
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_blake2b};
-    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_hashlib, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_hashlib, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 49, __pyx_L1_error)
   }
   __pyx_t_4 = __pyx_t_1;
   __Pyx_GOTREF(__pyx_t_4);
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_blake2b};
     __pyx_t_9 = 0; {
-      __pyx_t_5 = __Pyx_ImportFrom(__pyx_t_4, __pyx_imported_names[__pyx_t_9]); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 32, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_ImportFrom(__pyx_t_4, __pyx_imported_names[__pyx_t_9]); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 49, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_imported_names[__pyx_t_9], __pyx_t_5) < (0)) __PYX_ERR(0, 32, __pyx_L1_error)
+      if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_imported_names[__pyx_t_9], __pyx_t_5) < (0)) __PYX_ERR(0, 49, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
   }
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":34
+  /* "scalecodec/_value_decode.pyx":51
  * from hashlib import blake2b
  * 
  * from scalecodec.exceptions import (             # <<<<<<<<<<<<<<
@@ -33456,22 +35774,22 @@ __Pyx_RefNannySetupContext("PyInit__value_decode", 0);
 */
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_InvalidScaleTypeValueException,__pyx_mstate_global->__pyx_n_u_RemainingScaleBytesNotEmptyExcep};
-    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec_exceptions, __pyx_imported_names, 2, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 34, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec_exceptions, __pyx_imported_names, 2, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 51, __pyx_L1_error)
   }
   __pyx_t_4 = __pyx_t_1;
   __Pyx_GOTREF(__pyx_t_4);
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_InvalidScaleTypeValueException,__pyx_mstate_global->__pyx_n_u_RemainingScaleBytesNotEmptyExcep};
     for (__pyx_t_9=0; __pyx_t_9 < 2; __pyx_t_9++) {
-      __pyx_t_5 = __Pyx_ImportFrom(__pyx_t_4, __pyx_imported_names[__pyx_t_9]); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 34, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_ImportFrom(__pyx_t_4, __pyx_imported_names[__pyx_t_9]); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 51, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_imported_names[__pyx_t_9], __pyx_t_5) < (0)) __PYX_ERR(0, 34, __pyx_L1_error)
+      if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_imported_names[__pyx_t_9], __pyx_t_5) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
   }
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":38
+  /* "scalecodec/_value_decode.pyx":55
  *     RemainingScaleBytesNotEmptyException,
  * )
  * from scalecodec.utils._ss58 import ss58_encode_fast             # <<<<<<<<<<<<<<
@@ -33480,46 +35798,46 @@ __Pyx_RefNannySetupContext("PyInit__value_decode", 0);
 */
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_ss58_encode_fast};
-    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec_utils__ss58, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 38, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_scalecodec_utils__ss58, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 55, __pyx_L1_error)
   }
   __pyx_t_4 = __pyx_t_1;
   __Pyx_GOTREF(__pyx_t_4);
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_ss58_encode_fast};
     __pyx_t_9 = 0; {
-      __pyx_t_5 = __Pyx_ImportFrom(__pyx_t_4, __pyx_imported_names[__pyx_t_9]); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 38, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_ImportFrom(__pyx_t_4, __pyx_imported_names[__pyx_t_9]); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 55, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_imported_names[__pyx_t_9], __pyx_t_5) < (0)) __PYX_ERR(0, 38, __pyx_L1_error)
+      if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_imported_names[__pyx_t_9], __pyx_t_5) < (0)) __PYX_ERR(0, 55, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
   }
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "scalecodec/_value_decode.pyx":41
+  /* "scalecodec/_value_decode.pyx":58
  * 
  * 
  * class UnsupportedType(TypeError):             # <<<<<<<<<<<<<<
  *     """Raised at compile time for types the value decoder cannot handle."""
  * 
 */
-  __pyx_t_4 = PyTuple_Pack(1, ((PyObject *)(((PyTypeObject*)PyExc_TypeError)))); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_Pack(1, ((PyObject *)(((PyTypeObject*)PyExc_TypeError)))); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PEP560_update_bases(__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PEP560_update_bases(__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_10 = __Pyx_CalculateMetaclass(NULL, __pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_CalculateMetaclass(NULL, __pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_11 = __Pyx_Py3MetaclassPrepare(__pyx_t_10, __pyx_t_5, __pyx_mstate_global->__pyx_n_u_UnsupportedType, __pyx_mstate_global->__pyx_n_u_UnsupportedType, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_scalecodec__value_decode, __pyx_mstate_global->__pyx_kp_u_Raised_at_compile_time_for_types); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_Py3MetaclassPrepare(__pyx_t_10, __pyx_t_5, __pyx_mstate_global->__pyx_n_u_UnsupportedType, __pyx_mstate_global->__pyx_n_u_UnsupportedType, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_scalecodec__value_decode, __pyx_mstate_global->__pyx_kp_u_Raised_at_compile_time_for_types); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
   if (__pyx_t_5 != __pyx_t_4) {
-    if (unlikely((PyDict_SetItemString(__pyx_t_11, "__orig_bases__", __pyx_t_4) < 0))) __PYX_ERR(0, 41, __pyx_L1_error)
+    if (unlikely((PyDict_SetItemString(__pyx_t_11, "__orig_bases__", __pyx_t_4) < 0))) __PYX_ERR(0, 58, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_Py3ClassCreate(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_UnsupportedType, __pyx_t_5, __pyx_t_11, NULL, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_Py3ClassCreate(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_UnsupportedType, __pyx_t_5, __pyx_t_11, NULL, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_4);
   #endif
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_UnsupportedType, __pyx_t_4) < (0)) __PYX_ERR(0, 41, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_UnsupportedType, __pyx_t_4) < (0)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
@@ -33552,19 +35870,28 @@ __Pyx_RefNannySetupContext("PyInit__value_decode", 0);
   if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_setstate_cython, __pyx_t_5) < (0)) __PYX_ERR(1, 3, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "scalecodec/_value_decode.pyx":483
+  /* "scalecodec/_value_decode.pyx":140
+ * 
+ * 
+ * cdef const char* _HEXCHARS = b"0123456789abcdef"             # <<<<<<<<<<<<<<
+ * 
+ * 
+*/
+  __pyx_v_10scalecodec_13_value_decode__HEXCHARS = __pyx_k_0123456789abcdef;
+
+  /* "scalecodec/_value_decode.pyx":727
  *         return result
  * 
  *     def decode_at(self, data, Py_ssize_t offset):             # <<<<<<<<<<<<<<
  *         """Decode one value starting at `offset` inside `data`.
  * 
 */
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10scalecodec_13_value_decode_12ValueDecoder_3decode_at, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_ValueDecoder_decode_at, NULL, __pyx_mstate_global->__pyx_n_u_scalecodec__value_decode, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 483, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10scalecodec_13_value_decode_12ValueDecoder_3decode_at, __Pyx_CYFUNCTION_CCLASS, __pyx_mstate_global->__pyx_n_u_ValueDecoder_decode_at, NULL, __pyx_mstate_global->__pyx_n_u_scalecodec__value_decode, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 727, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
   #endif
-  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder, __pyx_mstate_global->__pyx_n_u_decode_at, __pyx_t_5) < (0)) __PYX_ERR(0, 483, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder, __pyx_mstate_global->__pyx_n_u_decode_at, __pyx_t_5) < (0)) __PYX_ERR(0, 727, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
   /* "(tree fragment)":1
@@ -33594,43 +35921,43 @@ __Pyx_RefNannySetupContext("PyInit__value_decode", 0);
   if (__Pyx_SetItemOnTypeDict(__pyx_mstate_global->__pyx_ptype_10scalecodec_13_value_decode_ValueDecoder, __pyx_mstate_global->__pyx_n_u_setstate_cython, __pyx_t_5) < (0)) __PYX_ERR(1, 16, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "scalecodec/_value_decode.pyx":506
+  /* "scalecodec/_value_decode.pyx":756
  * 
  * 
  * def build_decoder(runtime_config, type_string):             # <<<<<<<<<<<<<<
  *     """Compile `type_string` into a :class:`ValueDecoder` for `runtime_config`.
  * 
 */
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10scalecodec_13_value_decode_1build_decoder, 0, __pyx_mstate_global->__pyx_n_u_build_decoder, NULL, __pyx_mstate_global->__pyx_n_u_scalecodec__value_decode, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 506, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_10scalecodec_13_value_decode_1build_decoder, 0, __pyx_mstate_global->__pyx_n_u_build_decoder, NULL, __pyx_mstate_global->__pyx_n_u_scalecodec__value_decode, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 756, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
   #endif
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_build_decoder, __pyx_t_5) < (0)) __PYX_ERR(0, 506, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_build_decoder, __pyx_t_5) < (0)) __PYX_ERR(0, 756, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "scalecodec/_value_decode.pyx":518
+  /* "scalecodec/_value_decode.pyx":768
  * 
  * 
  * cdef dict _PRIM_OPS = {}             # <<<<<<<<<<<<<<
  * cdef dict _KNOWN = {}
  * 
 */
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 518, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 768, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_XGOTREF(__pyx_v_10scalecodec_13_value_decode__PRIM_OPS);
   __Pyx_DECREF_SET(__pyx_v_10scalecodec_13_value_decode__PRIM_OPS, ((PyObject*)__pyx_t_5));
   __Pyx_GIVEREF(__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "scalecodec/_value_decode.pyx":519
+  /* "scalecodec/_value_decode.pyx":769
  * 
  * cdef dict _PRIM_OPS = {}
  * cdef dict _KNOWN = {}             # <<<<<<<<<<<<<<
  * 
  * 
 */
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 769, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_XGOTREF(__pyx_v_10scalecodec_13_value_decode__KNOWN);
   __Pyx_DECREF_SET(__pyx_v_10scalecodec_13_value_decode__KNOWN, ((PyObject*)__pyx_t_5));
@@ -33715,8 +36042,6 @@ static int __Pyx_InitCachedBuiltins(__pyx_mstatetype *__pyx_mstate) {
   __pyx_mstate->__pyx_umethod_PyDict_Type_pop.method_name = &__pyx_mstate->__pyx_n_u_pop;
   __pyx_mstate->__pyx_umethod_PyDict_Type_values.type = (PyObject*)&PyDict_Type;
   __pyx_mstate->__pyx_umethod_PyDict_Type_values.method_name = &__pyx_mstate->__pyx_n_u_values;
-  __pyx_mstate->__pyx_umethod_PyBytes_Type__hex.type = (PyObject*)(&PyBytes_Type);
-  __pyx_mstate->__pyx_umethod_PyBytes_Type__hex.method_name = &__pyx_mstate->__pyx_n_u_hex;
   __pyx_mstate->__pyx_umethod_PyDict_Type__update.type = (PyObject*)(&PyDict_Type);
   __pyx_mstate->__pyx_umethod_PyDict_Type__update.method_name = &__pyx_mstate->__pyx_n_u_update;
   return 0;
@@ -33755,14 +36080,14 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_slice[0]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_slice[0]);
 
-  /* "scalecodec/_value_decode.pyx":853
+  /* "scalecodec/_value_decode.pyx":1103
  *         fields = vv.get('fields') or []
  *         if len(fields) != 1:
  *             raise UnsupportedType(f'Call pallet variant {vv.get("name")!r} has unexpected shape')             # <<<<<<<<<<<<<<
  *         inner_cls = rc.get_decoder_class(f"scale_info::{fields[0]['type']}")
  *         inner_sit = getattr(inner_cls, 'scale_info_type', None)
 */
-  __pyx_mstate_global->__pyx_tuple[1] = PyTuple_Pack(1, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_mstate_global->__pyx_tuple[1])) __PYX_ERR(0, 853, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[1] = PyTuple_Pack(1, __pyx_mstate_global->__pyx_n_u_name); if (unlikely(!__pyx_mstate_global->__pyx_tuple[1])) __PYX_ERR(0, 1103, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[1]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[1]);
   #if CYTHON_IMMORTAL_CONSTANTS
@@ -33822,25 +36147,25 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
 static int __Pyx_InitConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   {
-    const struct { const unsigned int length: 8; } index[] = {{2},{2},{12},{2},{2},{14},{31},{35},{36},{20},{36},{54},{37},{60},{24},{52},{19},{41},{26},{34},{48},{35},{37},{21},{37},{7},{43},{41},{33},{45},{32},{22},{33},{35},{38},{15},{35},{31},{28},{179},{37},{21},{22},{18},{65},{24},{41},{28},{32},{24},{20},{22},{1},{1},{1},{1},{1},{1},{8},{5},{6},{11},{15},{23},{25},{7},{6},{2},{6},{35},{22},{21},{17},{9},{30},{9},{11},{50},{11},{24},{34},{8},{15},{12},{28},{20},{32},{22},{14},{30},{37},{5},{14},{8},{8},{6},{4},{5},{7},{8},{4},{3},{3},{3},{16},{16},{11},{18},{19},{21},{4},{4},{4},{8},{4},{3},{4},{3},{3},{2},{30},{3},{5},{23},{25},{4},{6},{11},{20},{36},{26},{8},{3},{6},{5},{4},{3},{4},{3},{3},{2},{15},{12},{30},{32},{22},{3},{15},{3},{10},{15},{12},{5},{18},{10},{4},{6},{7},{8},{8},{3},{6},{13},{5},{1},{9},{13},{9},{10},{11},{9},{17},{18},{5},{19},{5},{4},{3},{9},{3},{8},{5},{6},{11},{7},{15},{13},{6},{4},{9},{3},{5},{5},{8},{11},{12},{13},{1},{6},{5},{6},{7},{10},{8},{12},{7},{3},{17},{12},{4},{7},{3},{8},{2},{10},{5},{13},{5},{8},{6},{8},{3},{7},{13},{4},{10},{9},{15},{12},{2},{4},{8},{4},{7},{4},{10},{4},{3},{6},{6},{12},{4},{5},{3},{3},{11},{11},{7},{14},{12},{11},{10},{19},{27},{14},{12},{10},{17},{13},{8},{6},{14},{16},{15},{10},{19},{24},{15},{21},{22},{4},{4},{3},{12},{10},{12},{19},{5},{6},{4},{5},{16},{11},{5},{5},{4},{4},{5},{6},{8},{8},{5},{6},{5},{4},{8},{12},{11},{5},{3},{8},{6},{6},{12},{5},{10},{17},{12},{10},{6},{7},{38},{8},{3},{1},{5},{11},{76},{52},{9},{97},{2},{55},{1}};
-    #if (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (2432 bytes) */
-const char* const cstring = "BZh91AY&SY@_?`\000\001$\177\377\346\375\374\217\372\377\377\337\277\347\377\200\277\377\377\376\300@@@@@@@@@@@@\000@\000`\t\226\355\216\001\331\367\226\367w\275\246rp\266\241\241\246\242\215\275u\276\276\032!\000jd\030\246\006\246!\247\242i=&d\324\323h\020\006M\032\000\006& h\r2\014\2204\010\231M\004\321\243F\203@\032h\032h4\006\200\000\000\000\000z\200\320jz\010&\242i\247\250\312\033H\000h4\000\000\032\r\000\000\006\200\032\006\200\365\0035\0214\32155=5Oi'\244\321\243\324\3104m@\000\320\036\240\000\000\000\001\240\000\n\240\001\240\000\320\000\000\000\000\000\000\003@\000\000\0004\320$I\244\004M\251\246)\350i\023\321\250\320\320h4\003@\032\000\000\000\000\0004\007\312\275@~\270\261}\203\020\377A\037\344\230\250\032\315\016@\020 W\274\326N\224c\025\267XR\021\222<\324\037\366:\263d\310\343\234q\270\230\255\305x\351\371\375\372\232huK2\217\247\255\372\257\313\324\364c\363\331is\252<y\211b\203\255\325\211\322>\3025Z!k\243\374\253\326\307P\325\263S\2154\010\315TT[\341U\235\211\356da\032\211\260\010\327\023^\030\212\300\347\276h\"S\227\370\317\253\007\263\244\272\206\303\366\032Q\202\213\036J-\240HRQ\031\314o\304-\344\312\022F\266\272N\004\216X\254\362\365u\254\261A\007\321\303\005\277\033o1\006\345$\3100$\254\t\004\030\031Z\373(\234\234^$\246\271\305B\2452\324\253\005\020\244\250\355\230\342L&R3\214\246\333\017\300\341,\235Z`\246\352V \313Jg \344\245%\253s\"\342\021b\2753I\347\306\377@\207:\243DM^\010\001v0\315\322\372\253/\300\336\343\274\215\225Z\342\034\201*e\017e\250Y0q0f\330E\265\"6m\246\273\310y\002P8)'\2376\362x\276\336~4\246\270\267Z\3166\232j\377\230z\014\304\223\200{\211\266\375z\261\014f\027\352\002\311Nu\327qD\301\231\215\014\022C&5\274o<\351R\346\300\021\204\0301\234\224\030\251{\240\t\2636-\013\227u\3178\304\236\371\314XA\t\370\324\347\344S\241\3257y\233\371\037M\016\315\0304\371\3502M\034\374#Y\206\330\010A\r\254*\354N$\023;\033I)ZB\335H\255\25537T\306df\275\n\320\342\323}\234I\t~\317#p\014\253\251\243\003\031f\373\252\301U\206\245\271*\252i3a@\312$#M""\301Q\316f@dj\330(\rT\200\334w\357\313\225B&\250@a\324\363\022\020\302\254\304\021NQ-W\034657,B\225\\z\315X$\260\251\0353\2469\023)\034\034\361BdQ\301C33\271\326Mn\320\224\266\211f\351\324: \243,\312\311\302V\270\005\330\304\250\252\2555\345aGAvn,\312K#r\251\010\034\204p#\236\024\"\3352!\032B\254\245\231`*\324\214L\226\211j\371v\304\312\006\302\306\212:a2I\233\312Y\212\302\266\017x\325\214\003n\005\230\035}\256\211@\226\"\340\212\0130\205A`\267\341\242\370\327\371\220%\367r\324\223\002\023x\210\002\021\240\024#0\014\256Ku\"N P\201\216G\343J\267\320\205\"\205\354\335\337N@~\341\252\3414\032p\2738\021\270\246\313W\023l\331s@H\354vj\344\231\341\201\305h5\001\014/\202\346\362\242g%E\007\3120\031\033\215\035\r\016,\240B\270\356\343\014\n\241\234\335\263\0026A\014TkP\215\"\234\226\222\263T\223#\0046\214\023\355\206 \tt\332\034\243L\344\200j1\230\271\266,\325\r\027\016\2126\351\344\202\351\232\310\321\301\331\032\007{\314\025#\336\310\241\331\261\0274\233\005l\267\342\220Q\024\343\314k\245Uu\017X\236\202\202X\221\224:R\025V\t\326S\0373\\>\217\343\224\240\"\020\244l\022\345\253\207$N;u\256i\304\370A\250\020\007H^\266\325\233B6@\250\301\267\002(7\220\032,+a0\254\202\023L\363r\245\223\241L\231EX\236P\263i|b\237\366\350\316t\275\207>H\216\020\205\212d\226\2232>\354\301\343b\271\213\300\311R\030\244\006cY!\004\276\344:\205\006ELR\227\013]D\211\210Y!`\245LX\021u\024\303h\325\252\204\305\252\024d\225\251\311\212b\327\032\306\256\330\277d\306a\337\273\320\177\330\230\2652\323\n\373\330<u\312\330q\227\235\2314\204L^\326\n\241sK\322y\001h\270Ze9\324h\004/)|\241\014|\265\177\344\214\343\001\372\230\027\030\033\330KP\tI\225\314\026Ab\271g?\016\351\003\230\030\002 \214s\333\224\013\370\255\307\255GCJ\206*\215q^&\265\235oH\223\213.c\301\0057#\t\\\336\034\200{T\010\261\264Q\004 J\323\\m\301Y\247\003\215|\355\\;R[J\265\353\3223|\3160\264l\353DOGj\332t\331\2034\361\241\206\366V\254k\211\305\262\352\n\240S\016\246\251\n\353\275XS[\021\274\351]Z\013\355\251j\222\363\300\212\362`*\005\310""\271\253s\211\233I\362jU\234\215\232\272\023)#\241\234\r\361\222\320\360]\257\0215Es\024C5\021q\3336\323\265XW\004\364\363\263Rid\003\314\3141\337\002\267\231C\022\322\212Z\256V\033\333*\014vB\r\026- \013\315qMl\024%h\034\370\304\354\316\245\224\2342\245NA\007:\203%D\270\352\003\200\222\013\360U\202\304^\204\342+z\004%\307\267\013\222,\227M\216\215C\323z\247)<:YPX\312\277\034\001\304K|\366\246\332$Z\354\270\244V\004\321\010\271\001\347\265\206\364\323\236\212\032\275\342\000\303\201#Z\303\033jbL\003\266\nf\221\347hoib\300\033\224_@\262\342\332\331X\240:\245r\235\342\262\233\347T\250Z\310m\304\356\247\034\325\n\214o\003\327\264\336\345\304\312l\2668\031L\001\261\265\323X\242\350\200\244\326\231\362\346\244\211\335aB0&\366\027\264*\246\033\325NR\274\267\211\305Z3\214\030$9\347f\352\356\262J\363\224)i\000TH\024\004(\243\2072\306\270\020\314\310\251\352g\014\335\304(q\216\343k\r{\346\371\034\366\025[\255\3439sbQ\322\n\r\010\205v\010\352\350+\202\353\301\201f82\210bjk^\320\224J9y\253\247\225\340\370%\211\216\320\313=\n\026\204\022\224-<\227\244\3306\227\003O\237i\236\360\345\334\270\020g/z\267\005\223\240\311q\276\0330\336!0ll\223\267/aj\026f\310Rx\360Bd\005Y*\262\010]G\2008jee\206\014\3326\351\341\315lx\224n\203\316u0K\303\236\267\221\327\353\372S\201cM0c\030fa\333\362\303L\340\342DE\210\331\250\334e\200\207\223\031\331X\224\261c\302\03554\307\032\264\225\264Lnb\032\016\350\252\335W\331\274h\272\027|\363\1775P\004\247'\274d\022\226\3559;\313\340\222\311\213\345\025\350;m\262\205\220\020sYE\024)l\3216\"\361 \245g\332\212\373\212,=h\300\316\353=&s\3456\331\327$N\206\275\330\022>iM0jl\266,nB[\373\226\005\360\275\225\205\210\206\033\353\031\226\024\034\032(E]F\245NY\3621a\004\252+u\326\263\304P\272:\245gJ\331Kzu1V\232\242\262`:\314F\330\010N\264\262&\307T\344\"\307\001\nE@YJr*\321P|t\250\264\306 \276U1\306F\n(E\255\253\222\324\301f6D\332\"\231MD\r(wQ\005\332\266v\251\322OA\354\305\330\317nI\013y9\263J\215+kx\273\226\024\312\337Y\014\325\001\\\246\3737\262@f`[.\017\317\021""\2004C \233\275 \313\320>\324K[u\244X\217\204\037b\275\327\n\325hE\314\333DR\232\250DR\016\216\314{\037\344\n\361hY\0040\tf\265|\300Q_\243\013\207\220J\225\0023-\233\366\304%\020f\210H\023\366N2\265b`m\222\232\322k\211\365X\0334A\253J2]\206\267\307|<\354\240S<e\317\262l\356\330\306\3045uUe\322|+.\245\223Ui\357\004%\312\026\200\0011d\213\235\203\310h%\364\255\363\303\321\357\374\036\225\372\3105\270\243\303\261J\326*3f\232\210\344\030\201S0\003\002\274\360\003\205\236\371\221eC\030\027\267Dh\333\020\206\267\311@\314c\336\217\207{G\227\214\000\333\270v\255\361\362\315j\264\3008\016\370'\221\272\014\217\353\276\342\206\005\036@\374\334\013\351\236{\013\340\266H\"\020 \367\035\341\315\341\227\341\243\376\026V\357\000\356\277\261\365^\243\367\007Y\361W~\020\216\256\221\325\361\277\273\200hB~5\3218\006\222!\335V2M\346lJ=\"\301D\377\342\356H\247\n\022\010\013\347\354\000";
-    PyObject *data = __Pyx_DecompressString(cstring, 2432, 2);
+    const struct { const unsigned int length: 8; } index[] = {{2},{2},{12},{2},{2},{14},{31},{35},{36},{20},{36},{54},{37},{60},{24},{52},{19},{41},{26},{34},{48},{35},{37},{21},{37},{7},{43},{41},{33},{45},{32},{22},{33},{35},{38},{15},{35},{31},{28},{179},{37},{21},{22},{18},{65},{24},{41},{28},{32},{24},{20},{22},{1},{1},{1},{1},{1},{1},{8},{5},{6},{11},{15},{23},{25},{7},{6},{2},{6},{35},{22},{21},{17},{9},{30},{9},{11},{50},{11},{24},{34},{8},{15},{12},{28},{20},{32},{22},{14},{30},{37},{3},{5},{14},{8},{8},{6},{4},{5},{7},{8},{4},{3},{3},{3},{16},{16},{11},{18},{19},{21},{4},{4},{4},{8},{4},{3},{4},{3},{3},{2},{30},{3},{5},{23},{25},{4},{6},{11},{20},{36},{26},{8},{3},{6},{5},{4},{3},{4},{3},{3},{2},{15},{12},{30},{32},{22},{3},{15},{3},{10},{15},{12},{5},{18},{10},{4},{6},{7},{8},{8},{3},{6},{13},{5},{1},{9},{13},{9},{10},{11},{9},{17},{18},{5},{19},{5},{4},{3},{9},{3},{8},{5},{6},{11},{7},{15},{13},{6},{4},{9},{3},{5},{5},{8},{11},{12},{13},{1},{6},{5},{6},{7},{10},{8},{12},{7},{3},{17},{12},{4},{7},{3},{8},{2},{10},{5},{13},{5},{8},{6},{8},{3},{7},{13},{4},{10},{9},{15},{12},{2},{4},{8},{4},{7},{4},{10},{4},{3},{6},{6},{12},{4},{5},{3},{3},{11},{11},{7},{14},{12},{11},{10},{19},{27},{14},{12},{10},{17},{13},{8},{6},{14},{16},{15},{10},{19},{24},{15},{21},{22},{4},{4},{3},{12},{10},{12},{19},{5},{4},{5},{16},{11},{5},{5},{4},{4},{5},{6},{8},{8},{5},{6},{5},{4},{8},{12},{11},{5},{3},{8},{6},{6},{12},{5},{10},{17},{12},{10},{6},{7},{38},{8},{3},{1},{5},{11},{128},{52},{9},{97},{2},{55},{1}};
+    #if (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (2476 bytes) */
+const char* const cstring = "BZh91AY&SY-\273k\030\000\001.\377\377\346\377\277\217\362\377\377\377\277\347\377\200\277\377\377\376\300@@@@@@@@@@@@\000@\000`\t\277n\203\200{S\316\267{\246q{\307\007d\214\255\355\262\315\307_>\360\324\310 &I\215\032\2316\223\320\2312OS\324\361M\224\362\217Q\246\232\000\006\214\200\014\2154\r\001\246A\210\200\"jz\2324j\021\264ji\3522z\203M\r\032h\320\3654\365\000\000\003@\320\3202\032\032\r2\021)\3511\250\236\246\201\240\031\000\000\003M\000\032\000\000\000\000\000\000\031\250I\246\210\246\223\332\243\324\3650\232\0004\032\r24\000\320\310\000\000\000\000\000\030E\020\000\000i\030\230\000\003B`\023\000\004`\000\232\030\032OQ\350#\000\022( \324jm\032\n\236eO\325?%1=!\3522\0002z\200\320\000\000\000\000\006\324\032\023\2677\252/\333\367\347\347\376\010B\013\264#\375x\213\203\376\211&\r\3259\253\251+l\262\301V\262\357\n\231\344\322\254\007\372\335\346\302\0315Ej\205a\030\210\034d(!}\312m\333\261\364\366{]\204~\246!\307\307\317:\023\315\334\350/\226M^\322#\035g:v!\037\206z|\013\324U\372\244+\003\372\307\364\246\010\211\334>\315\220M\327SS\316XN\330\256\313RT\300Y\200\246\035\307\210e6\020\214l\205\n\364;\234\373\300F\334O\332V_\270\343\221qh\315\306\232\2065\234\207}\005\234\203\344\333\"m\r7\343\210\023[B\364\332\355\353\203\311\201\217\026\341|\345\247( \260\254\340\303SN\301\213\rPxg\007\024\234FI&\344D\\;Wi\323\30085\235c\r\270\211\300Q4\251)\322\221\303*\234M\261|\265\331\361\031o;\350e\312\335\333\335\337\341]\017\t\371rS!\237\22288\304\353zM\241\r_\026\302@\2078\2572\357$\n\255\017q\315\247\270\033D\232bv\300HS\036\260\221d\201Ra\023`\355(\343e\244\342x\3361\\\r\272\t\342\271};\377m\317\202ST\\\322\261\322i\246\260yF\351\020\245\000\017o\266\337\2434B\351\t\236p%D\016\272\356X\226DC\004\021t^p\234q\264n\317\341\302\017( B\322L\206\216\267\030\027,\344\256-\335\314V\210G\355\267>kR\032\004\374\317\277\371\025(r\334\356\262\367Q\364\273\236(1qh1\r\024\355q\231m\254\031\240l\353\253,\01043ce(\225\243\230\352D\231\265\231\314R\355Q)\222\351M\307\211\366cHK\362\3607""\010\217Y3\341^\231>\352\260\n\213j\266\255eS\302\311\024\t\021\031\342pSs\205\2000d\221\020\365\257\233(\201\264\373_\177\225:\024\233\241\240A\344\360\240\315j\261H\035ID\265\\p\227\2160\331\022\2265!'\330\000b\310\357\025\342BD\312\216\016P\2412)\301F\246\247/\260\316v\340#v#N\366\322\255\020\261S\232y\3045\357\250c)'\027w\256\362sX\260\306\221\026\331kK\013\261+CD\tt\024\250\235\245\305\025u\255IU-j:Bb\241\252\036(\274U4\222\002H\207Oh@@a\3268\010\264\336Q\210\343\244\203\354\002\331C=\020\241Ab\247\225\020\307H\232\030\215\037\237J4\303\374\333\025\355\302x\022dB\341H\004GDL&\310\325\345G\313\261.q4\031\321\331\3621\345\304\2020\211k6x2\274\016\310g\260M\006jYp\020\330GMk\211\266i\261\240\255\356\343\214\333vjOf\003\304\020k(%\224)3\252o\007\006v A{V\371\213\347\222\260\023fQ\273\224,T\014\324\352\220\024X\020x\270l\315\246'\016\2568\334\345\253\247\016\245\374lX\354 \301\337H\222\254\362V\220X\314\320\257\227\214\3554o==\024\373\026\324\014,p\251\274\002\223d\025V\000D7\313\260\034wdFc`\223\275\007AB\226\247\217\261u\323em\203\336\023\332(%\211\032C\210BE\003K\206-v\024\331\276\373\\\022h\021T\264W=\344I\"\312l\036\366\241\354\236\241\342\004?H\311\206\021\262J\252'\022\215\270\010\210\335\340d\250\235D\223Q\004\305\210\345\334\364\214-\020.\227\r5ks\262\006]\237\313\343S+\016\223iT\244\"\036\212\343\025\210S\266-4\265\344\322X\325\323e\324\r\034[P\313\"H\227\016\013\222e\030\330V\330\214\214\224\336\nR)\213\2020\242\262\3345{!1l\205\032%z\3603L[\321\2745\206\305\374&3.k\305\017\375\023\026\306]\330WD\2152q\232\337Uz\2203\t\351\027a\2020s\025m\261;\317K\232\332\330\017 #\022\263\254\245\265\256q\376\210\346\231\017\356\300l\031\034\330\227@V\255\207(c)\322z\317\006\237\r\0100`\022\024\247\003\356\003\036D\367\362\r\275\214R\240\201\034\212\263\306/\221\333\022q\264\342\274\220W\0022\225\303\327\350\003\334\240E\315\302\210!\002W\233f\324KJ\242A\303Q\372S\300\023\311h\035\365\033\305d\215\326\201\020\306f\252\361\2421l\203\2443kC\016\013\353X\247\210\342\323dE0""#N\363<\202z-U\035\031ib29U\242\362\225\314\255J\207\205\t\355\240\242\026\"\306\253\340\0238IsL\2336\266h\335)$\215\327\001\224d\232\035\027KY)\242x\310\241\232\010XwM\264\353UN\305l\356\340\360y0\013\004-|\300\021\253\270E\001\214\003\221\033M\023\245\303*f\301,E\010\t%W\215\001\031\213\223;\210F\224<\303\326\306\366\226\345o\347\220w\3565LW\316\230\020\002\250g\226\0141G\257\013\203=\340\304\362wmBD\240\237RtYl\324\2774C^\312\021\000\336\006\267\310@\212\360\305\327:\204h\206\272*ND\335\021\260\201\342v9\256\245\272(\341\030\211\002\311\201#l\332\363\210\270\203\000\246\301\360\244m\032\016\025\223\321 \246\261)e\232\275\262\264JE\233\315\327\021Z\230j\2310\255\220m\302[#\256SB\213\033\241\353\326po\304_*\253\206\014\215\001\261\265\310\261\"\310@#)\306\376\204\"'\\\310\220\264\225\214,hSL.\263)\274+\361\210\260\326\304$!!\317\037Wg\205\242X\235!KH\002\302@\240!E8s,\036\346\205\261\253.\206\324\266r\341\301\032\362\027\013\014\371L\2446\260\232\331^\263~<D\\`DhD\025\224GW!:.\274\n\025b\243\"\206&\2459\356$\211#\177By\267\272<$\304\307X_tH\225\204\t%\005\233u\2516\r\245\203Ome\326\206\375\213\004\027\026\274\373\002P\310l\036J\327+h\014P\t\004\211<\343\026.\213r\352/m\251\"j\006\r\\\032H\302\361\000t\246k\216&M\314zC^\023n\233\244\341b:\026'\314\207\017S\253\325\343R\241SM0c\030ca\311\276\r3\016$B\025#Nsa}\004;\320C\272n\036F\372\300\3400{\336(\201<AD\2731\tx\212#TO0\322\227e\207\3117\365V\000Jt|CAS|\215\376)\205\210T\262\250\3055nQz\321\305\020\010fQ\3318z\303\261$\034d\344\207\027\263\010\306\3120)\323T7\252/\213\275\370\226\231\230\330'\305e\252I\321\335P\306D<\306b\225`6u\t(\3078Y\n\342\030o\253\314\260\241\301\265B,\3545*q\2471\213($@\256*\325\254!\014\334w\027\242j\034\234\234D4\276%0-\006a-*\0011\227\242\212\031c\000*\024\002h\"\t\026\270g\"`Am|I\027\354PcK\031\347#\005\024E\357\263\231z\311j6D\336\"\264\233\010\032P\360\031\225H\235\347\025\340\203\2129\320\315_M\200C@/2\004\010\023\310\320\325M\007q\262,\212\301\222\215\236\271\350\260\003\225\224\361""\330\021\340\024\2207F\241s\372a\263Bp\023\201\356\300\302\371\232Ro\326b\3412\330XXF\231\330;\342p\223\241\256\312\275\316\355@V\213\"\274 \300$\315\013\225\204\227.\027\332\372\347q\031\t\265\315\313\334\227\255\005X\021\014\274\317J\343\333\323\035\212U\365Z\342}F\006\234\2203\346E\353\260\326Q\333\007s\"\021\272\027\355\252Ur\261\215\203E\244\312\316\222\324S\277\335`\212\220\2622\034\035\020\316\000\004\305\25249'X\206\225\035\255\372)z^\0277\266\307\002\205\300B.\235\210\316p\230\315Yf#h\304\032\372 \303nP-\\\230\332\\7\351\007~\3001i\300\220\r\331\020\300\n(F\2566\232\343\222@\006\277\2615\023'$\347,O\t\230.\177u+\252\236[\207\326\250\026o\td\255\205\316&\017(3\370.K\307\222QcY1y\026b\016\014]\326pjT\036m\332\237\272\036\250\023\024\207&\365\341+\342O\366\336\200R\254\322\345\344\034\273\330|x\306\270\2760\305`\036\344\335\022\210d4`J\211\262\235\254\021I.\342q\246\034Y\377\027rE8P\220-\273k\030";
+    PyObject *data = __Pyx_DecompressString(cstring, 2476, 2);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (2277 bytes) */
-const char* const cstring = "x\332\205W\317s\023\311\025^W\261\025'P\331x\263U9$\3314\244\266D6\266\260\2151.\305q\312\030\003\252Z\014\030L\216]\255\231\226\334\361\250g<=c\244%T8\372\250\243\216>\352\350#\307=r\344\350#\177\302\376\t\371\336\353\036I\266I\250\222zz\372\307\353\367\276\367\336\367z\032bq\361ucq\271\367\306\267\213\255\305\336boz\344\336\213\\\353\347\272\020\257L\261\237\226\205(\372\231\226]\225e\306v\032\342^\331n\353\\\034\031\375J\304\251v\302\246\205\320\275,uZ\270\"7\261v[*ID\224(\347\3062\\\244\022-\215m\247\222\3045\004\257\311\320\340\240#\225\033e\013?\226\353\216\201\234\276\210u[\030/^UKh\237\025\251M\372\"\312\265*4\246Z^\241b_\025\264>Jma:eZ:a\254\350\352n\232\367\353\330\305r\2343\035+\212\024\247\250x\201\345\370\025dNX\024\004\277\312M\241Z\211\016\013\274\301\355<\355\376\277\275\306\306\272\307F3j\242\026\306\213\\Y\307\020M\266\370e\330ar\035\025\"6]m\235I\255\273\257\2434\206E\036\301v\232\213\033<\004\370\201CR\352\2058\254X\020[e\236k@\227\266\333N\003\236\373\225\024\361]\\\241\347\017\330\356fE_\270}\005\265\2122\203a$9\352\303?\266\256\362\\\365\267\217 i\027\242\363Xh\352\213\266\321I<qB^\002\332\256\366\223\r1\275\236m)-\342\000G\351\330\237\023\226|.\024\374\242\013\261\340\007?\023\014M\206\273\026\036\257\337\324xA\226kG\233\341\376m[v\275'B\374~f)\303+\022\234\331\274\354\027\336\341\312,Ks\230\330\264Xlb\321\205'\346\305\330\360ZT\023\300\265\006p\311\351\265y\321\301\256jq\266\257\020\003\312\242\247s\223\306\r\361\372\315<\376\325\274w\017\264Q=X[\215z\255\310]\261*\024\233s\243\225\246\311\215\307*\203B-\3061`s\240\373\267\374\372L\231\274!h\311\030\371j)$\235O\352\365\307\034\226/),\323\266x\\&\205\331\214c\240\343\376\007\r\354\244\260<\327\242\325/\300\001\352H\231\204\263\345\246\325:v4=\035\252\025ll\304N\212\364\342t\335\342\350#\307\306:1-\235#\361\220VD#\000\223s\332\212\247\333O\027V\326V\030\265\\\377\0130;\262\204\203\nGC\335Vi\240\257e\r]]4\333\242\237\226\202\024\241T\317(\370\2466\024\373\332\n$\013uD\215\363S\025\360/A\003""\323j!_\314\221\246\335\017T\342t\375IY\360Aiia\034T\016\244\243\242\210 \272\311\356z\352#8\"\026\323\024Mdl\030\364\371tq\264b\000\204\344\2562\016\372\002\224(\355f\006Hr\252\265\203\253X\355\020\010U\366G\236[\200Q\234\350\3724c\363:Ia\334\020\317\213\274\214&S\214\302B\002}\222\013\036}\301\244\360io\357Yv.\360\000\275\036i8\322\024\272K\357i\213<\262g\017l\372\312\236\367y\232a\237U]\230\305\230\250\274C\241\375RG\227\"\262!\352\033\265\277\314\377C\305\261\264\024\036\344l\002c\261G\255g7\234\r\324\"\362\225\253\253V\264>E\365\264\336\373m\343\342p\305\260\033\261qd\205f[:\221\270I\231\331a\202$g\022\275\352^\001?q\345\030\347\275\000\302\224\373 \213\224\275\335\325P>\346\321\213\214w\211\243\340T>.&\274\234\371Q\213\365\277\213\305K\324;/\022m;\010\006q+\364\032t\"XO!\025\205\224\271\216\313HK)\342\222\335`S\273\200,92*\301ld\254)\244\274\301g\267)H\247z\260\205\013+W\263\3173d\360\350\206\270Y\331\313Eo\302\332\215\006\367\311\305\321-\351C\315{\274\236\365{\353\376\016\020\237\363\310\3451\242\240\261c\316\315\237\037\265\035\227\226y\2447\312q\004\302\2264\342\322O\3101%\326?1\353\375A\022\303\255\244\276\371|\253\331\334\314\262\244\277\335#\321\316D|\327\001EVw\236{\246@x\336\003\267\336#^\333B**\224\316$1\2313\216\260\332\316\325\203\333\313\017VW\036\230\236\216\177`_m\222\"\017\265E\014E\233Q\004\324\213f\034\336\t\372\320\235\252\227ad\232g\303\320s\302\266\t\230y\365\243\245\325\305G\313wV\037\335YZ~\244{\254Tsiy\255\271\264\332\304p\363\366rsu\245\271\026\n\005\357}\001_\276$\247l\367\"\235Q\262\300>\271\003\367pS\037\307\222\217?)\253ad\230\003\023N&v\312$y\302\022|\313\247K\371\264\337\303\377>\030Z\356 _vu{Ww\025\"\320vX\001^\006\216\347\013\307X\211]\177w\330Jm\033\271\2313\343>\341H{\256\017Km#\202\337s\025\023\321\036\254\334[Z\335\203\225{\267\227\367VW\366\326\366\354\270\370\216\215\014w\245\351\376e\013/\314^2\364\334\274\017e\251(\020\250\036\326'\245\021\234\243\274{\245\211\253@\223\276\024H\031*\t\222\224\003S\271\276\215LZ\207\273""\301t\306j\247\nD]\253\004:-\334\002Z\2468\322Q+Q\007z\271\325*\020\177H@~B?\310\304\017L@\245-\016\351\225s\255\215\210KqD\307q\247]ZfD~\001%\355s\207k\n\367p=)\221\270\222y\037\316\016\235\216.\210\221\350\025\252a\275\304m%\322-\025\035D\t\356\251\201\346\231\234\245OD6\234\262\r\332\214A\002CI\031S,\370Gl:\332\205V\022\337a8\215\320\260 \343\244g\027\235h\260k!Y&\234\017aT\033\371O\227\0004:\317q\277\240$\340\006\210\207'\231\346\2739\347\222\256\222\031Kzm\276\262\272v\242:\016$\333UE\270\210\021\211\311\226\217`\302L\002\002N8I0Q\277\227\345@\005\277\n\356\n\263N\025/r\037\321H\030\343\256\262\257{\370\261@\023Ki\272\024\230\322kGv\216\335\356\211?\260\177b\212\202\274A\371Bm\206\317\001\372\026@_\027*\234G7J9v\\x\322!\335<\225\260;7dD\227\270Cy\356\350\036Q\231\2252\264(]hI*\254*,\211C\340\342\332\203\204\006\376\276\232\246\234\226\276\365\300\200\352\016\370\202\232\245H3\034\2012\221\251\034\022\3213]CW\"\027\212\002\206@\003\220\031\035\270\262\353\337\240\tt\362\375\000\030u\331\363\334+mf\242\003\030CDzah:\007\375\324\021\027,\n\331\303R%\336\264I!\274Lc\325\000\360\227\376\273\001!\304*\205\357\026\370\204\310g\352\373\203\303\350\302\367\310\244\270Mzu\031\371J0=4]\371\246\306)\267\247^uE\200nj\020\201\221\270\272t\356\316\232\323\t\274\201[%\342\216\230)\370\020\275P\374\247\370J~\202\273\270\314\321W-n\335\0100\227!\304H\256\364Y%\333\312\371w\237\r\330\234{\t\200's\210\002Jnj@\274\325mLJ\232F\273\237\247\257\260\304D\216\277\030i\216\376;Pq\372~8E\022\214`\271\272R\256\371\354\201\177\021Ue\006\336\320\245\323c\375\031\274\31155\2009\tU\377\356\311\302\367I2\367\\\270Z\311\352\231\251~\222\252\230w\327\327\211\225\023\267Q\017)\035\0269pm\357\307\266I\222\2673gW\276\037]\037\255\236\316\275\335\374\3717_\374\362\373\321\334\331\354\365\223\257OVGs\243\353\037g\277\035\252\263\331\253\307w\007\177\036<;\273\366\365\340\372Gj\006\313\203g\003L\314\r\276A'\036\336<\371\356\2447:<\2359\233\375\352\27078|;\363\363\265/\276\374\343\360\207\321\354\351""\314\351\334\331\225\271\301\267\303\376\350\352\351\322\207\225\346{\274\377\342m\177pu\270\364\341\017\363\243\307\357\360~\365x\211T\371\325\361_\007\317\260y\366\213/\177}\374b\200\211k\307\017\007K\203\007\303\371\023E\273\216\216\3779\330\036~3|v6\0135\316f\17778\374\210\246\030\336=\251\215X\356!T\370\360\325\302\350\305\351\334i\355\335\357\177z\370~\351\343\371\221\315\301\314\333\231\217W\3764<\374 \026O\257\276\373\333O\007\037\236\355\236]\371\355`}\330;9\034\315\220\230\177\017\356\016!\277>R\243\377\274\263\3577Y\305'\377\005\263\276\3670";
-    PyObject *data = __Pyx_DecompressString(cstring, 2277, 1);
+    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (2316 bytes) */
+const char* const cstring = "x\332\205W\317S\033\311\025^\252\274\025\022\223l\341\254\223C\222\335\266\253\\b\023\220\001c\226(\230\024\306\330V\325\032\033l\234cWk\246%:\214z\206\351\031YZ\307\025\0379\352\250#G\0359r\334\243\217\0349\372O\330?!\337{=#\004x\343*\251\247\247\177\274~\357{\357}\257\247&\346\347\337\326\346\027\273\357|;\337\230\357\316w\307G\036\276J\265~\2513\361\306d{q\236\211\254\227h\331VIbl\253&\036\346\315\246NE\307\3507\"\214\265\0236\316\204\356&\261\323\302e\251\t\265\333PQ$\202H97\222\341\002\025iil3\226$\256&xM\202\006\007uTj\224\315\374X\252[\006rz\"\324Ma\274xU.\241}V\3046\352\211 \325*\323\230jx\205\262=\225\321\372 \266\231i\345q\356\204\261\242\255\333q\332\253b\027\313q\316\264\254\310b\234\242\3029\226\343W\2209\305\242B\360\233\324d\252\021\351b\2017\270\231\306\355\377\267\327\330Pw\331hFMT\212\361,U\3261D\347[\3742\3540\251\0162\021\232\266\266\316\304\326=\322A\034\302\"\217`3N\305m\036\002\374\300!\312\365\\X\254\230\023\033y\232j@\0277\233N\003\236G\245\024q',\321\363\007l\266\223\254'\334\236\202ZY\236\3000\222\034\364\340\037[Ui\252z\233\035H\332\201\3504\024\232\372\242it\024\236;!\315\001m[\373\311\232\030_\317\266\344\026q\200\243t\350\317)\226|.\024\374\242K\261\340\007?\023\014u\206\273R<\336\276\253\360\202$\325\2166\303\375\2336o{O\024\361\373\231\245\014\257\210pf\375\252_x\207\313\223$Nab\335b\261\tE\033\236\230\025#\303+AE\000\327\n\300%\247WfE\013\273\312\305\311\236B\014(\213\236NM\034\326\304\333w\263\370\227\363\336=\320Fuam9\352\265\"w\205*Sl\316\355F\034G\267\237\251\004\n5\030\307\002\233}\335\273\353\327'\312\2445AKF\310\227K!\351bR\257>\343\260|Ma\0317\305\263<\312\314z\030\002\035\367\0134\260\025\303\362T\213F/\003\007\250\2162\021g\313\214\325:t4=\036\252%ll\304V\214\364\342t\335\340\350#\307\206:2\r\235\"\361\220VD#\000\223s\332\212\027\233/\346\226V\226\030\265T\377\0330;\262\204\203\nGC\335Fn\240\257e\r]U\324\233\242\027\347\202\024\241TO(\370\3066d{\332\n$\013uD\205\363Se\360/A\003\323*E\276\230\216\246\335\217U\344t\365y\236""\361Aqna\034T.HG\005\001A4\303\356z\341#8 \026\323\024Mdl1\350\363\351\362h\311\000\010\311\035e\034\364\005(A\334N\014\220\344Tk\026\256b\265\213@(\263?\360\334\002\214\302HW\307\031\233\327I\n\343\232x\231\245yp>\305(\314E\320'\272\344\321WL\n\237\366\366\256e\347\002\017\320kG\303\221&\323mz\217\033\344\221]\273o\3437\366\242\317\343\004\373\254j\303,\306D\245-\n\355\327:\270\022\2215Q]\253|7\373O\025\206\322Rx\220\263\t\214\371.\265\236\335p6P\013\310W\256\252\032\301\352\030\325\323z\357\267\265\313\303%\303\256\205\306\221\025\232mi\005b\2062\263\305\004I\316$z\325\335\014~\342\3121\312{\001\204)\367A\0261{\273\255\241|\310\243\227\031\357\nG\301\251|\\Hx9\363\243\026\253\017\304\374\025\352\235\025\221\266-\004\203\270[\364jt\"XO!\025\205\224\251\016\363@K)\302\234\335`c;\207,\351\030\025a60\326dR\336\346\263\233\024\244c=\330\302\205\225\253\331\347\031\262\360\350\232\230)\355\345\242w\316\332\265\032\367\311\305\301]\351C\315{\274\232\364\272\253\376\016\020^\360\310\3251\242\240\221c.\314_\034\265-\027\347i\240\327\362Q\004\302\2268\340\322O\3101%V?1\353\375A\022\213[IUt\305\372\313\215z}=I\242\336f\227\244;\023\360u\007,Y^{\036\232\014\021\372\020\364\372\220\250m\003\331\250P=\243\310$\3168\202k3U\217\357->^^zl\272:\374\201\335\265N\272<\321\026a\024\254\007\001\200\317\352a\361N\350\027\335\261\222Y\214\214Sm1\364\222\340\255\003i^\375tay\376\351\342\375\345\247\367\027\026\237\352.+U_X\\\251/,\3271\\\277\267X_^\252\257\024\265\202\367\276\202;_\223_6\273\201N(_`\237\334\202\207\270\251\216\302\311\207\240\224\3450\222\314\201\014\317'\266\362(z\316\022|\313\247K\371\242\327\305\377\021HZn!evtsG\267\025\202\320\266X\001^\006\232\347;\307H\211\035\177}\330\210m\023\351\2312\351>\347`{\251\017rm\003\202\337\323\025s\321.\254\334]X\336\205\225\273\367\026w\227\227vWv\355\250\376\216\214,\256K\343\375\253\026^\232\275b\350\205y\037\315RQ PI\254\236WG\320\216\362\356\225&,cM\372j eQL\220\247\034\233\312\365l`\342*\334\r\2623V;\225!\352\0329\320i\340\"\3200Y""G\007\215H\355\353\305F#C\374!\007\371\t\375 \023?\220\001U\267\260\310\260\224\313m@t\212#Z\216;\315\3342)\362\013Xi\217;\\V\270\207\033J\216\334\225L\375pv\321i\351\214H\211^\241\032\326K\\X\002\335P\301~\020\341\252Z0=\363\263\364\271\310\206S\302A\233\021H ))C\212\005\377\010MK\273\242\225Dy\030\216\0034,\3108\351\tFG\032\004\233I\226\t\347C\030\225G\376\323=\000\215NS\\1(\t\270\001\342\305\223L\363\335\224sI\227\311\214%\335&\337Z]3R-\007\236m\253\254\270\213\021\217\311\206\217`\302L\002\002N8I0Q\277\233\244@\005\277\022\356\022\263V\031/r\017\321H\030\343\272\262\247\273\370\261@\023Ji\332\024\230\322kGv\216\334\356\271\277(\000\221\3112\362\006\345\013\265\t\276\010\350s\000}\235\251\342<\272T\312\221\343\212'\035\322Nc\t\273SCF\264\211;\224\347\216v\207*\255\224E\213\352\205\226\244\302\252\314\2228\004.n>Hh\340\357\013j\314i\351[\017\014\250n\237\357\250I\2144\303\021\250\024\211J!\021=\3236t+rE]\300\020h\0002\203}\227\267\375\0334\201N\276_\000F]\366<\367r\233\230`\037\306\020\221^\032\032\317A?\325\341\232E!{\220\253\310\233v^\013\257\322X9\000\374\245\377t@\010\261J\305\247\013|B\3443\366\t\302at\351\223\344\274\276\235\367\2522\360\225`|h\274\370\215\215Sn\217\275\352\222\000\335\330 \002#rU\351\334\375\025\247#x\003\027K\304\0351S\341C\364\212\372?\306W\362\023\334\305\225\216B\313%\010.\222(}>\311\246r\376\335\347\001\266\245~/\200I\034\374OiM\r(\267\274\212II\323h\367\322\370\r\226\230\300\361\347\"\315\321\177\013\312\215_\016\307\350\201\261\313\227\227\362\025\2377\360,\342)O\300\030:wz\2449\303v~G-`<\017R\377\356i\302\367I2\367\\q\257\222\3453Q\275(V!\357\256\256\022\037Gn\255Z$s\261\310\201e\273?6M\024\275\2378\273\366\327\341\255\341\362\361\364\373\365\237\377\360\305\257\277\035\250\263\311\353\207\017\006\023\203\351\263\251\033\2477fNg\376~2}r\353l\352\346\351\315;G\333G\352\354\267\337\014\324\340\240\234}p\262}\242x\366\273\341\364\360\326\307\251\351>v\336\354\357\364;\203mH\233\272\321\277\325_\354o\367\233\203\037\206\023g\223\323""\375\257\361\022\016f\216\356\034u\207\007\307\030\372\352\260\333?x?\361\363\324\027_\376\005\213&\217'\216\247\317\256M\367\277\031\364\206\327\217\027N\227\352\037\360\376\253\367\275\376\365\301\302\351\237g\207\317N\360~\375p\201\324\377\315\341\337\372\333\330<\371\305\227\277;|\205\263\257M\035>\351/\364\037\017f\241+vu\016\377\325\337\034|=\330>\233\204*g\223\177\354\037|D\223\r\276?\252\014Y\356\001T8\375jn\370\352x\372\270r\362\247\237\236|X\370xqd\275?\361~\342\343\265o\007\007\247b\376\370\372\311?~\332?\335\3369\273\366\373\376\352\240{t\000\273 \346?\375\357\007\220_\035\252\341\177O\354\207uV\361\371\377\000\020\345\nS";
+    PyObject *data = __Pyx_DecompressString(cstring, 2316, 1);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #else /* compression: none (4656 bytes) */
-const char* const bytes = ": 00{:02x}{:02x}0b0x0x{:02x}{:02x}BTreeSet without type_mapping: Buffer view does not expose stridesCall class without scale_info_type: Call pallet variant Call registry def is not a variant: Can only create a buffer that is contiguous in memory.Cannot assign to read-only memoryviewCannot create writable memory view from read-only memoryviewCannot index with type 'Cannot transpose memoryview with indirect dimensionsDecoder class for \"Decoding value-decoder - Current offset: Dimension %d is not directEmpty shape tuple for cython.arrayEventRecord event field is not a runtime event: EventRecord with unexpected shape: Event class without scale_info_type: Event pallet variant Event registry def is not a variant: Index 'Index '{}' not present in Enum type mappingIndex '{}' not present in Enum value listIndirect dimensions not supportedInvalid mode, expected 'c' or 'fortran', got Invalid phase and period: {}, {}Invalid shape in axis Invalid value for datatype \"bool\"Map sub_type not a key/value pair: Map without sub_type or type_mapping: <MemoryView of MultiAddress without type_mapping: No more bytes available (needs No value-decode support for Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.Out of bounds on buffer access (axis Pallet call enum for Pallet event enum for Pallet with index Raised at compile time for types the value decoder cannot handle.Set without value_list: Struct without class-level type_mapping: Tuple without type_mapping: Unable to convert item to objectUnknown value-decode op Unnamed call arg in Vec without sub_type: .>'),?add_note and  at 0x at offset collections.abc<contiguous and direct><contiguous and indirect>disableenablegc (got got differing extents in dimension  has no process method has unexpected shape is not a variantisenableditemsize <= 0 for cython.array, length  / length: no default __reduce__ due to non-tr""ivial __cinit__\" not found not found in Call table' not present in Enum type mapping object> (process from scale_info::scalecodec/_value_decode.pyx<strided and direct><strided and direct or indirect><strided and indirect><stringsource>unable to allocate array data.unable to allocate shape and strides.ASCIIApplyExtrinsicBTreeMapBTreeSetBitVecBoolBytesCompactEllipsisEnumEraF32F64FixedLengthArrayGenericAccountIdGenericCallGenericEventRecordGenericMultiAddressGenericScaleInfoEventH160H256H512HexBytesI128I16I256I32I64I8InvalidScaleTypeValueExceptionMap_Node_Node.__reduce_cython___Node.__setstate_cython__NullOptionOptionBytes__Pyx_PyDict_NextRefRemainingScaleBytesNotEmptyExceptionRuntimeConfigurationObjectSequenceSetStructTupleU128U16U256U32U64U8UnsupportedTypeValueDecoderValueDecoder.__reduce_cython__ValueDecoder.__setstate_cython__ValueDecoder.decode_atVecView.MemoryViewabcaccount_idallocate_buffer__annotate__arrayasyncio.coroutinesattributesbasebitvecblake2bbtreemapbtreesetbufbuflenbuild_decoderbytesccall_argscall_functioncall_hashcall_indexcall_module__class____class_getitem__cline_in_tracebackcloseconvert_type_stringcountdatadecdecode_atdef__dict___dictdigestdigest_size__doc__dtype_is_objectelement_countencodeenumenumerateeraerroreventevent_idevent_indexevent_recordextrinsic_idxffieldsflagsformatfortranfrom_bytes__func__generic_callgenexprgetget_decoder_class__getstate__h256hashlibhexhexbytesid__import__index_is_coroutineitemsitemsizelittle__main__mapmemview__metaclass__mode__module__module_id__mro_entries__multiaddressmvname__name__ndim__new__nextnode_cachenullobjoffsetoptionoption_bytespackphasepoppos__prepare___primitivesprocess__pyx_checksum__pyx_result__pyx_state__pyx_type__pyx_unpickle_Enum__pyx_unpickle_ValueDecoder__pyx_vtable____qualname____reduce____reduce_cython____reduce_ex__registerresultruntime_configscale_info_eventscale_info_typescalecodecscalecodec._compactscalecodec._value_decodescalecodec.basescalecodec.exceptionsscalecodec.utils._ss58selfsendset_""_set_name__setdefault__setstate____setstate_cython__shapesignedsizesplitss58_encode_fastss58_formatstartstatestepstopstripstructsub_type__test__throwtopicstupletypetypeNametype_mappingtype_stringtypesu64u8_classunpackupdateuse_setstatevaluevalue_list_value_node_cachevalue_objectvalue_typevaluesvariant_variant_payload_node.<locals>.genexprvariantsvecxzfill\200\001\330\004*\250!\2506\260\021\200A\360\020\000\t*\250\021\330\010!\240\022\2406\250\021\250!\340\010\036\230a\330\010\013\2107\220#\220Q\330\014\022\220!\340\014\022\220!\2202\220Q\220a\330\010\021\220\024\220Q\220d\230(\240%\240x\250q\260\001\330\010\017\210x\220q\200\001\360\014\000\005\035\230L\250\010\260\001\260\021\330\004\021\220\036\230y\250\013\2601\3204I\310\021\330\004\007\200y\220\013\2301\320\034,\250M\270\021\330\004\013\2101\200\001\330\004\n\210+\220Q\200\001\360\010\000\005\016\210T\220\021\330\004\014\210G\2201\220F\230,\240a\330\004\007\200v\210W\220E\230\024\230Q\330\010\022\220!\330\010\027\220q\340\010\027\220t\2307\240'\250\021\330\004\007\200q\330\010\017\320\017-\250T\260\021\260'\270\033\300G\3101\340\010\017\320\017-\250T\260\021\260'\270\033\300A\220\001\200\001\340\004\037\230q\320 0\260\013\270;\300k\320QR\330\004\023\220<\230x\240q\250\001\330\004\007\200|\2207\230!\330\010.\250a\250\177\270n\310A\330\004\013\2101O";
+    #else /* compression: none (4705 bytes) */
+const char* const bytes = ": 00{:02x}{:02x}0b0x0x{:02x}{:02x}BTreeSet without type_mapping: Buffer view does not expose stridesCall class without scale_info_type: Call pallet variant Call registry def is not a variant: Can only create a buffer that is contiguous in memory.Cannot assign to read-only memoryviewCannot create writable memory view from read-only memoryviewCannot index with type 'Cannot transpose memoryview with indirect dimensionsDecoder class for \"Decoding value-decoder - Current offset: Dimension %d is not directEmpty shape tuple for cython.arrayEventRecord event field is not a runtime event: EventRecord with unexpected shape: Event class without scale_info_type: Event pallet variant Event registry def is not a variant: Index 'Index '{}' not present in Enum type mappingIndex '{}' not present in Enum value listIndirect dimensions not supportedInvalid mode, expected 'c' or 'fortran', got Invalid phase and period: {}, {}Invalid shape in axis Invalid value for datatype \"bool\"Map sub_type not a key/value pair: Map without sub_type or type_mapping: <MemoryView of MultiAddress without type_mapping: No more bytes available (needs No value-decode support for Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.Out of bounds on buffer access (axis Pallet call enum for Pallet event enum for Pallet with index Raised at compile time for types the value decoder cannot handle.Set without value_list: Struct without class-level type_mapping: Tuple without type_mapping: Unable to convert item to objectUnknown value-decode op Unnamed call arg in Vec without sub_type: .>'),?add_note and  at 0x at offset collections.abc<contiguous and direct><contiguous and indirect>disableenablegc (got got differing extents in dimension  has no process method has unexpected shape is not a variantisenableditemsize <= 0 for cython.array, length  / length: no default __reduce__ due to non-tr""ivial __cinit__\" not found not found in Call table' not present in Enum type mapping object> (process from scale_info::scalecodec/_value_decode.pyx<strided and direct><strided and direct or indirect><strided and indirect><stringsource>unable to allocate array data.unable to allocate shape and strides. x ASCIIApplyExtrinsicBTreeMapBTreeSetBitVecBoolBytesCompactEllipsisEnumEraF32F64FixedLengthArrayGenericAccountIdGenericCallGenericEventRecordGenericMultiAddressGenericScaleInfoEventH160H256H512HexBytesI128I16I256I32I64I8InvalidScaleTypeValueExceptionMap_Node_Node.__reduce_cython___Node.__setstate_cython__NullOptionOptionBytes__Pyx_PyDict_NextRefRemainingScaleBytesNotEmptyExceptionRuntimeConfigurationObjectSequenceSetStructTupleU128U16U256U32U64U8UnsupportedTypeValueDecoderValueDecoder.__reduce_cython__ValueDecoder.__setstate_cython__ValueDecoder.decode_atVecView.MemoryViewabcaccount_idallocate_buffer__annotate__arrayasyncio.coroutinesattributesbasebitvecblake2bbtreemapbtreesetbufbuflenbuild_decoderbytesccall_argscall_functioncall_hashcall_indexcall_module__class____class_getitem__cline_in_tracebackcloseconvert_type_stringcountdatadecdecode_atdef__dict___dictdigestdigest_size__doc__dtype_is_objectelement_countencodeenumenumerateeraerroreventevent_idevent_indexevent_recordextrinsic_idxffieldsflagsformatfortranfrom_bytes__func__generic_callgenexprgetget_decoder_class__getstate__h256hashlibhexhexbytesid__import__index_is_coroutineitemsitemsizelittle__main__mapmemview__metaclass__mode__module__module_id__mro_entries__multiaddressmvname__name__ndim__new__nextnode_cachenullobjoffsetoptionoption_bytespackphasepoppos__prepare___primitivesprocess__pyx_checksum__pyx_result__pyx_state__pyx_type__pyx_unpickle_Enum__pyx_unpickle_ValueDecoder__pyx_vtable____qualname____reduce____reduce_cython____reduce_ex__registerresultruntime_configscale_info_eventscale_info_typescalecodecscalecodec._compactscalecodec._value_decodescalecodec.basescalecodec.exceptionsscalecodec.utils._ss58selfsends""et__set_name__setdefault__setstate____setstate_cython__shapesizesplitss58_encode_fastss58_formatstartstatestepstopstripstructsub_type__test__throwtopicstupletypetypeNametype_mappingtype_stringtypesu64u8_classunpackupdateuse_setstatevaluevalue_list_value_node_cachevalue_objectvalue_typevaluesvariant_variant_payload_node.<locals>.genexprvariantsvecxzfill\200\001\330\004*\250!\2506\260\021\200A\360\026\000\t\037\230a\330\010\013\210=\230\001\230\021\330\014\022\320\022(\320(9\270\021\270!\330\014\025\320\025%\240Q\240a\330\r\036\230a\230q\330\014\022\320\022(\320(=\270Q\270a\330\014\025\320\025)\250\021\250!\340\014\021\220\021\330\014\025\220R\220v\230Q\230a\330\014\022\220!\2202\220Q\220f\230L\250\001\330\010\021\220\024\220Q\220d\230(\240%\240x\250q\260\001\330\010\017\210x\220q\200\001\360\014\000\005\035\230L\250\010\260\001\260\021\330\004\021\220\036\230y\250\013\2601\3204I\310\021\330\004\007\200y\220\013\2301\320\034,\250M\270\021\330\004\013\2101\200\001\330\004\n\210+\220Q\200\001\360\010\000\005\016\210T\220\021\330\004\014\210G\2201\220F\230,\240a\330\004\007\200v\210W\220E\230\024\230Q\330\010\022\220!\330\010\027\220q\340\010\027\220t\2307\240'\250\021\330\004\007\200q\330\010\017\320\017-\250T\260\021\260'\270\033\300G\3101\340\010\017\320\017-\250T\260\021\260'\270\033\300A\220\001\200\001\340\004\037\230q\320 0\260\013\270;\300k\320QR\330\004\023\220<\230x\240q\250\001\330\004\007\200|\2207\230!\330\010.\250a\250\177\270n\310A\330\004\013\2101O";
     PyObject *data = NULL;
     CYTHON_UNUSED_VAR(__Pyx_DecompressString);
     #endif
@@ -33849,7 +36174,7 @@ const char* const bytes = ": 00{:02x}{:02x}0b0x0x{:02x}{:02x}BTreeSet without ty
     for (int i = 0; i < 316; i++) {
       Py_ssize_t bytes_length = index[i].length;
       PyObject *string = PyUnicode_DecodeUTF8(bytes + pos, bytes_length, NULL);
-      if (likely(string) && i >= 91) PyUnicode_InternInPlace(&string);
+      if (likely(string) && i >= 92) PyUnicode_InternInPlace(&string);
       if (unlikely(!string)) {
         Py_XDECREF(data);
         __PYX_ERR(0, 1, __pyx_L1_error)
@@ -33940,7 +36265,7 @@ typedef struct {
     unsigned int num_kwonly_args : 1;
     unsigned int nlocals : 4;
     unsigned int flags : 10;
-    unsigned int first_line : 10;
+    unsigned int first_line : 11;
 } __Pyx_PyCode_New_function_description;
 /* NewCodeObj.proto */
 static PyObject* __Pyx_PyCode_New(
@@ -33957,7 +36282,7 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
   PyObject* tuple_dedup_map = PyDict_New();
   if (unlikely(!tuple_dedup_map)) return -1;
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS|CO_GENERATOR), 887};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS|CO_GENERATOR), 1137};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_f};
     __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_scalecodec__value_decode_pyx, __pyx_mstate->__pyx_n_u_genexpr, __pyx_mstate->__pyx_kp_b_iso88591__8, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
   }
@@ -33972,9 +36297,9 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
     __pyx_mstate_global->__pyx_codeobj_tab[2] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_setstate_cython, __pyx_mstate->__pyx_kp_b_iso88591_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[2])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {3, 0, 0, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 483};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_data, __pyx_mstate->__pyx_n_u_offset, __pyx_mstate->__pyx_n_u_mv, __pyx_mstate->__pyx_n_u_buflen, __pyx_mstate->__pyx_n_u_buf, __pyx_mstate->__pyx_n_u_pos, __pyx_mstate->__pyx_n_u_result};
-    __pyx_mstate_global->__pyx_codeobj_tab[3] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_scalecodec__value_decode_pyx, __pyx_mstate->__pyx_n_u_decode_at, __pyx_mstate->__pyx_kp_b_iso88591_A_6_a_7_Q_2Qa_Qd_xq_xq, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[3])) goto bad;
+    const __Pyx_PyCode_New_function_description descr = {3, 0, 0, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 727};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_data, __pyx_mstate->__pyx_n_u_offset, __pyx_mstate->__pyx_n_u_mv, __pyx_mstate->__pyx_n_u_buf, __pyx_mstate->__pyx_n_u_buflen, __pyx_mstate->__pyx_n_u_pos, __pyx_mstate->__pyx_n_u_result};
+    __pyx_mstate_global->__pyx_codeobj_tab[3] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_scalecodec__value_decode_pyx, __pyx_mstate->__pyx_n_u_decode_at, __pyx_mstate->__pyx_kp_b_iso88591_A_a_9_Qa_aq_Qa_RvQa_2QfL_Qd_xq_x, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[3])) goto bad;
   }
   {
     const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 1};
@@ -33987,7 +36312,7 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
     __pyx_mstate_global->__pyx_codeobj_tab[5] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_stringsource, __pyx_mstate->__pyx_n_u_setstate_cython, __pyx_mstate->__pyx_kp_b_iso88591_6, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[5])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 506};
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 756};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_runtime_config, __pyx_mstate->__pyx_n_u_type_string, __pyx_mstate->__pyx_n_u_dec, __pyx_mstate->__pyx_n_u_node_cache};
     __pyx_mstate_global->__pyx_codeobj_tab[6] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_scalecodec__value_decode_pyx, __pyx_mstate->__pyx_n_u_build_decoder, __pyx_mstate->__pyx_kp_b_iso88591_L_y_14I_y_1_M_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[6])) goto bad;
   }
@@ -36830,76 +39155,97 @@ static CYTHON_INLINE long __Pyx_div_long(long a, long b, int b_is_constant) {
     return q - adapt_python;
 }
 
-/* PyObjectVectorCallKwBuilder (used by PyObjectVectorCallMethodKwBuilder) */
-#if CYTHON_VECTORCALL
-static int __Pyx_VectorcallBuilder_AddArg(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
-    (void)__Pyx_PyObject_FastCallDict;
-    Py_INCREF(key);
-    if (__Pyx_PyTuple_SET_ITEM(builder, n, key) != (0)) return -1;
-    args[n] = value;
-    return 0;
-}
-CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
-    (void)__Pyx_VectorcallBuilder_AddArgStr;
-    if (unlikely(!PyUnicode_Check(key))) {
-        PyErr_SetString(PyExc_TypeError, "keywords must be strings");
-        return -1;
-    }
-    return __Pyx_VectorcallBuilder_AddArg(key, value, builder, args, n);
-}
-static int __Pyx_VectorcallBuilder_AddArgStr(const char *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
-    PyObject *pyKey = PyUnicode_FromString(key);
-    if (!pyKey) return -1;
-    return __Pyx_VectorcallBuilder_AddArg(pyKey, value, builder, args, n);
-}
-#else // CYTHON_VECTORCALL
-CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, CYTHON_UNUSED PyObject **args, CYTHON_UNUSED int n) {
-    if (unlikely(!PyUnicode_Check(key))) {
-        PyErr_SetString(PyExc_TypeError, "keywords must be strings");
-        return -1;
-    }
-    return PyDict_SetItem(builder, key, value);
-}
+/* CIntToPyUnicode */
+static CYTHON_INLINE PyObject* __Pyx_uchar___Pyx_PyUnicode_From_uint64_t(uint64_t value, Py_ssize_t width, char padding_char) {
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
 #endif
-
-/* PyObjectVectorCallMethodKwBuilder */
-#if !CYTHON_VECTORCALL || PY_VERSION_HEX < 0x03090000
-static PyObject *__Pyx_Object_VectorcallMethod_CallFromBuilder(PyObject *name, PyObject *const *args, size_t nargsf, PyObject *kwnames) {
-    PyObject *result;
-    PyObject *obj = PyObject_GetAttr(args[0], name);
-    if (unlikely(!obj))
+    const uint64_t neg_one = (uint64_t) -1, const_zero = (uint64_t) 0;
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic pop
+#endif
+    const int is_unsigned = neg_one > const_zero;
+    if (unlikely(!(is_unsigned || value == 0 || value > 0) ||
+                    !(sizeof(value) <= 2 || value & ~ (uint64_t) 0x01fffff || __Pyx_CheckUnicodeValue((int) value)))) {
+        PyErr_SetString(PyExc_OverflowError, "%c arg not in range(0x110000)");
         return NULL;
-    result = __Pyx_Object_Vectorcall_CallFromBuilder(obj, args+1, nargsf-1, kwnames);
-    Py_DECREF(obj);
-    return result;
+    }
+    if (width <= 1) {
+        return PyUnicode_FromOrdinal((int) value);
+    }
+    return __Pyx_PyUnicode_FromOrdinal_Padded((int) value, width, padding_char);
 }
+static CYTHON_INLINE PyObject* __Pyx____Pyx_PyUnicode_From_uint64_t(uint64_t value, Py_ssize_t width, char padding_char, char format_char) {
+    char digits[sizeof(uint64_t)*3+2];
+    char *dpos, *end = digits + sizeof(uint64_t)*3+2;
+    const char *hex_digits = DIGITS_HEX;
+    Py_ssize_t length, ulength;
+    int prepend_sign, last_one_off;
+    uint64_t remaining;
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
 #endif
-
-/* decode_c_bytes (used by decode_bytes) */
-static CYTHON_INLINE PyObject* __Pyx_decode_c_bytes(
-         const char* cstring, Py_ssize_t length, Py_ssize_t start, Py_ssize_t stop,
-         const char* encoding, const char* errors,
-         PyObject* (*decode_func)(const char *s, Py_ssize_t size, const char *errors)) {
-    if (unlikely((start < 0) | (stop < 0))) {
-        if (start < 0) {
-            start += length;
-            if (start < 0)
-                start = 0;
+    const uint64_t neg_one = (uint64_t) -1, const_zero = (uint64_t) 0;
+#ifdef __Pyx_HAS_GCC_DIAGNOSTIC
+#pragma GCC diagnostic pop
+#endif
+    const int is_unsigned = neg_one > const_zero;
+    if (format_char == 'X') {
+        hex_digits += 16;
+        format_char = 'x';
+    }
+    remaining = value;
+    last_one_off = 0;
+    dpos = end;
+    do {
+        int digit_pos;
+        switch (format_char) {
+        case 'o':
+            digit_pos = abs((int)(remaining % (8*8)));
+            remaining = (uint64_t) (remaining / (8*8));
+            dpos -= 2;
+            memcpy(dpos, DIGIT_PAIRS_8 + digit_pos * 2, 2);
+            last_one_off = (digit_pos < 8);
+            break;
+        case 'd':
+            digit_pos = abs((int)(remaining % (10*10)));
+            remaining = (uint64_t) (remaining / (10*10));
+            dpos -= 2;
+            memcpy(dpos, DIGIT_PAIRS_10 + digit_pos * 2, 2);
+            last_one_off = (digit_pos < 10);
+            break;
+        case 'x':
+            *(--dpos) = hex_digits[abs((int)(remaining % 16))];
+            remaining = (uint64_t) (remaining / 16);
+            break;
+        default:
+            assert(0);
+            break;
         }
-        if (stop < 0)
-            stop += length;
+    } while (unlikely(remaining != 0));
+    assert(!last_one_off || *dpos == '0');
+    dpos += last_one_off;
+    length = end - dpos;
+    ulength = length;
+    prepend_sign = 0;
+    if (!is_unsigned && value <= neg_one) {
+        if (padding_char == ' ' || width <= length + 1) {
+            *(--dpos) = '-';
+            ++length;
+        } else {
+            prepend_sign = 1;
+        }
+        ++ulength;
     }
-    if (stop > length)
-        stop = length;
-    if (unlikely(stop <= start))
-        return __Pyx_NewRef(__pyx_mstate_global->__pyx_empty_unicode);
-    length = stop - start;
-    cstring += start;
-    if (decode_func) {
-        return decode_func(cstring, length, errors);
-    } else {
-        return PyUnicode_Decode(cstring, length, encoding, errors);
+    if (width > ulength) {
+        ulength = width;
     }
+    if (ulength == 1) {
+        return PyUnicode_FromOrdinal(*dpos);
+    }
+    return __Pyx_PyUnicode_BuildFromAscii(ulength, dpos, (int) length, prepend_sign, padding_char);
 }
 
 /* PyUnicode_Substring */
@@ -37047,6 +39393,38 @@ static PyObject* __Pyx_PyDict_GetItemDefault(PyObject* d, PyObject* key, PyObjec
     }
     return value;
 }
+
+/* PyObjectVectorCallKwBuilder */
+#if CYTHON_VECTORCALL
+static int __Pyx_VectorcallBuilder_AddArg(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
+    (void)__Pyx_PyObject_FastCallDict;
+    Py_INCREF(key);
+    if (__Pyx_PyTuple_SET_ITEM(builder, n, key) != (0)) return -1;
+    args[n] = value;
+    return 0;
+}
+CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
+    (void)__Pyx_VectorcallBuilder_AddArgStr;
+    if (unlikely(!PyUnicode_Check(key))) {
+        PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+        return -1;
+    }
+    return __Pyx_VectorcallBuilder_AddArg(key, value, builder, args, n);
+}
+static int __Pyx_VectorcallBuilder_AddArgStr(const char *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
+    PyObject *pyKey = PyUnicode_FromString(key);
+    if (!pyKey) return -1;
+    return __Pyx_VectorcallBuilder_AddArg(pyKey, value, builder, args, n);
+}
+#else // CYTHON_VECTORCALL
+CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, CYTHON_UNUSED PyObject **args, CYTHON_UNUSED int n) {
+    if (unlikely(!PyUnicode_Check(key))) {
+        PyErr_SetString(PyExc_TypeError, "keywords must be strings");
+        return -1;
+    }
+    return PyDict_SetItem(builder, key, value);
+}
+#endif
 
 /* IterNextPlain (used by IterNext) */
 #if CYTHON_COMPILING_IN_LIMITED_API && __PYX_LIMITED_VERSION_HEX < 0x030A0000

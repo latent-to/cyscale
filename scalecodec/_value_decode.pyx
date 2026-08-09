@@ -25,9 +25,26 @@ classic path, and a full decode enforces exact buffer consumption the same
 way ``decode(check_remaining=True)`` does.
 """
 
-from cpython.bytes cimport PyBytes_FromStringAndSize
+from cpython.bytearray cimport PyByteArray_AS_STRING, PyByteArray_Check, PyByteArray_GET_SIZE
+from cpython.bytes cimport (
+    PyBytes_AS_STRING,
+    PyBytes_Check,
+    PyBytes_FromStringAndSize,
+    PyBytes_GET_SIZE,
+)
+from cpython.list cimport PyList_New, PyList_SET_ITEM
+from cpython.ref cimport Py_INCREF
+from cpython.tuple cimport PyTuple_New, PyTuple_SET_ITEM
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, uint64_t
 from libc.string cimport memcpy
+
+cdef extern from "Python.h":
+    Py_ssize_t PY_SSIZE_T_MAX
+    unicode PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
+    void* PyUnicode_DATA(object o)
+    unicode PyUnicode_DecodeUTF8(const char* s, Py_ssize_t size, const char* errors)
+    object _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
+                                 int little_endian, int is_signed)
 
 from hashlib import blake2b
 
@@ -120,6 +137,124 @@ cdef inline uint64_t _read_uint(const unsigned char* buf, Py_ssize_t p, int nbyt
     return v
 
 
+cdef const char* _HEXCHARS = b"0123456789abcdef"
+
+
+cdef str _hex0x(const unsigned char* p, Py_ssize_t n):
+    """'0x' + lowercase hex of `n` bytes, built in a single allocation."""
+    cdef str out = PyUnicode_New(2 + 2 * n, 127)
+    cdef char* w = <char*>PyUnicode_DATA(out)
+    cdef Py_ssize_t i
+    w[0] = c'0'
+    w[1] = c'x'
+    for i in range(n):
+        w[2 + 2 * i] = _HEXCHARS[p[i] >> 4]
+        w[3 + 2 * i] = _HEXCHARS[p[i] & 0xF]
+    return out
+
+
+cdef bint _utf8_valid(const unsigned char* s, Py_ssize_t n) noexcept:
+    """Strict UTF-8 validity (RFC 3629: no overlongs, surrogates, > U+10FFFF)."""
+    cdef Py_ssize_t i = 0
+    cdef unsigned int c
+    cdef uint64_t w
+    while i < n:
+        c = s[i]
+        if c < 0x80:
+            i += 1
+            # all-ASCII runs a word at a time
+            while i + 8 <= n:
+                memcpy(&w, s + i, 8)
+                if w & <uint64_t>0x8080808080808080ULL:
+                    break
+                i += 8
+        elif c < 0xC2:
+            return False
+        elif c < 0xE0:
+            if i + 2 > n or (s[i + 1] & 0xC0) != 0x80:
+                return False
+            i += 2
+        elif c < 0xF0:
+            if i + 3 > n or (s[i + 1] & 0xC0) != 0x80 or (s[i + 2] & 0xC0) != 0x80:
+                return False
+            if c == 0xE0 and s[i + 1] < 0xA0:
+                return False
+            if c == 0xED and s[i + 1] > 0x9F:
+                return False
+            i += 3
+        elif c < 0xF5:
+            if (
+                i + 4 > n
+                or (s[i + 1] & 0xC0) != 0x80
+                or (s[i + 2] & 0xC0) != 0x80
+                or (s[i + 3] & 0xC0) != 0x80
+            ):
+                return False
+            if c == 0xF0 and s[i + 1] < 0x90:
+                return False
+            if c == 0xF4 and s[i + 1] > 0x8F:
+                return False
+            i += 4
+        else:
+            return False
+    return True
+
+
+cdef inline object _utf8_or_hex(const unsigned char* p, Py_ssize_t n):
+    """Bytes/Str payload semantics: utf-8 when valid, else 0x-hex.
+
+    Small payloads pre-validate so the (common) binary case never pays for a
+    raised-and-caught UnicodeDecodeError; large payloads decode in one pass,
+    where an exception on the fallback path is noise next to the hex encode.
+    """
+    if n <= 4096:
+        if _utf8_valid(p, n):
+            return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+        return _hex0x(p, n)
+    try:
+        return PyUnicode_DecodeUTF8(<const char*>p, n, NULL)
+    except UnicodeDecodeError:
+        return _hex0x(p, n)
+
+
+cdef Py_ssize_t _read_compact_len(
+    const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos
+) except -1:
+    """A compact used as a length/count, read straight to C (no int object)."""
+    cdef Py_ssize_t p = pos[0]
+    _need(p, 1, buflen)
+    cdef unsigned int b0 = buf[p]
+    cdef unsigned int mode = b0 & 3
+    cdef Py_ssize_t nb, i
+    cdef uint64_t v
+    if mode == 0:
+        pos[0] = p + 1
+        return <Py_ssize_t>(b0 >> 2)
+    if mode == 1:
+        _need(p, 2, buflen)
+        pos[0] = p + 2
+        return <Py_ssize_t>(_read_uint(buf, p, 2) >> 2)
+    if mode == 2:
+        _need(p, 4, buflen)
+        pos[0] = p + 4
+        return <Py_ssize_t>(_read_uint(buf, p, 4) >> 2)
+    # big-integer mode; a count with more than 8 significant bytes (or beyond
+    # Py_ssize_t) can never be satisfied by a real buffer
+    nb = 4 + (b0 >> 2)
+    _need(p + 1, nb, buflen)
+    v = _read_uint(buf, p + 1, <int>(nb if nb < 8 else 8))
+    for i in range(8, nb):
+        if buf[p + 1 + i] != 0:
+            v = <uint64_t>-1
+            break
+    if v > <uint64_t>PY_SSIZE_T_MAX:
+        raise RemainingScaleBytesNotEmptyException(
+            f'No more bytes available (needs {v} at offset {p + 1 + nb}, length {buflen})'
+        )
+    pos[0] = p + 1 + nb
+    return <Py_ssize_t>v
+
+
 cdef object _read_compact(const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):
     cdef Py_ssize_t p = pos[0]
     _need(p, 1, buflen)
@@ -147,12 +282,127 @@ cdef object _read_compact(const unsigned char* buf, Py_ssize_t buflen, Py_ssize_
         )
 
 
+cdef object _dec_list(
+    _Node child, Py_ssize_t count, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos
+):
+    """A list of `count` decoded elements, built presized (Vec / fixed arrays).
+
+    Fixed-size integer/bool elements are bounds-checked once for the whole run
+    and filled in a tight loop; everything else recurses per element.
+    """
+    cdef int cop = child.op
+    cdef Py_ssize_t p = pos[0]
+    cdef Py_ssize_t i
+    cdef Py_ssize_t size = 0
+    cdef object out, v
+    cdef list fallback
+
+    if cop == OP_U8 or cop == OP_I8 or cop == OP_BOOL:
+        size = 1
+    elif cop == OP_U16 or cop == OP_I16:
+        size = 2
+    elif cop == OP_U32 or cop == OP_I32:
+        size = 4
+    elif cop == OP_U64 or cop == OP_I64:
+        size = 8
+    elif cop == OP_U128 or cop == OP_I128:
+        size = 16
+    elif cop == OP_U256 or cop == OP_I256:
+        size = 32
+
+    if size > 0:
+        # division avoids count * size overflowing Py_ssize_t on bogus counts
+        if count > (buflen - p) // size:
+            raise RemainingScaleBytesNotEmptyException(
+                f'No more bytes available (needs {size} x {count} at offset {p}, length {buflen})'
+            )
+        out = PyList_New(count)
+        if cop == OP_U8:
+            for i in range(count):
+                v = <object>buf[p + i]
+                Py_INCREF(v)
+                PyList_SET_ITEM(out, i, v)
+        elif cop == OP_U16:
+            for i in range(count):
+                v = <object>_read_uint(buf, p + 2 * i, 2)
+                Py_INCREF(v)
+                PyList_SET_ITEM(out, i, v)
+        elif cop == OP_U32:
+            for i in range(count):
+                v = <object>_read_uint(buf, p + 4 * i, 4)
+                Py_INCREF(v)
+                PyList_SET_ITEM(out, i, v)
+        elif cop == OP_U64:
+            for i in range(count):
+                v = <object>_read_uint(buf, p + 8 * i, 8)
+                Py_INCREF(v)
+                PyList_SET_ITEM(out, i, v)
+        elif cop == OP_I8:
+            for i in range(count):
+                v = <object>(<int8_t>buf[p + i])
+                Py_INCREF(v)
+                PyList_SET_ITEM(out, i, v)
+        elif cop == OP_I16:
+            for i in range(count):
+                v = <object>(<int16_t>_read_uint(buf, p + 2 * i, 2))
+                Py_INCREF(v)
+                PyList_SET_ITEM(out, i, v)
+        elif cop == OP_I32:
+            for i in range(count):
+                v = <object>(<int32_t>_read_uint(buf, p + 4 * i, 4))
+                Py_INCREF(v)
+                PyList_SET_ITEM(out, i, v)
+        elif cop == OP_I64:
+            for i in range(count):
+                v = <object>(<int64_t>_read_uint(buf, p + 8 * i, 8))
+                Py_INCREF(v)
+                PyList_SET_ITEM(out, i, v)
+        elif cop == OP_BOOL:
+            for i in range(count):
+                if buf[p + i] == 0:
+                    v = False
+                elif buf[p + i] == 1:
+                    v = True
+                else:
+                    raise InvalidScaleTypeValueException('Invalid value for datatype "bool"')
+                Py_INCREF(v)
+                PyList_SET_ITEM(out, i, v)
+        elif cop == OP_U128 or cop == OP_U256:
+            for i in range(count):
+                v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 0)
+                Py_INCREF(v)
+                PyList_SET_ITEM(out, i, v)
+        else:  # OP_I128 / OP_I256
+            for i in range(count):
+                v = _PyLong_FromByteArray(buf + p + size * i, size, 1, 1)
+                Py_INCREF(v)
+                PyList_SET_ITEM(out, i, v)
+        pos[0] = p + count * size
+        return out
+
+    if count > buflen - p:
+        # more claimed elements than remaining bytes: only decodable if the
+        # element type consumes nothing, so grow lazily instead of presizing
+        # (a bogus huge count then fails on its first element, not on alloc)
+        fallback = []
+        for i in range(count):
+            fallback.append(_dec(child, buf, buflen, pos))
+        return fallback
+
+    out = PyList_New(count)
+    for i in range(count):
+        v = _dec(child, buf, buflen, pos)
+        Py_INCREF(v)
+        PyList_SET_ITEM(out, i, v)
+    return out
+
+
 cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize_t* pos):
     cdef int op = nd.op
     cdef Py_ssize_t p = pos[0]
     cdef Py_ssize_t i, count, total
     cdef int idx
-    cdef object v
+    cdef object v, item
     cdef list out
     cdef dict d
     cdef _Node child
@@ -180,7 +430,7 @@ cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize
         total = 16 if op == OP_U128 else 32
         _need(p, total, buflen)
         pos[0] = p + total
-        return int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')
+        return _PyLong_FromByteArray(buf + p, total, 1, 0)
     elif op == OP_I8:
         _need(p, 1, buflen)
         pos[0] = p + 1
@@ -201,9 +451,7 @@ cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize
         total = 16 if op == OP_I128 else 32
         _need(p, total, buflen)
         pos[0] = p + total
-        return int.from_bytes(
-            PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little', signed=True
-        )
+        return _PyLong_FromByteArray(buf + p, total, 1, 1)
     elif op == OP_BOOL:
         _need(p, 1, buflen)
         pos[0] = p + 1
@@ -215,45 +463,36 @@ cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize
     elif op == OP_COMPACT:
         return _read_compact(buf, buflen, pos)
     elif op == OP_BYTES:
-        count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+        count = _read_compact_len(buf, buflen, pos)
         p = pos[0]
         _need(p, count, buflen)
         pos[0] = p + count
-        raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
-        try:
-            return raw.decode()
-        except UnicodeDecodeError:
-            return '0x' + raw.hex()
+        return _utf8_or_hex(buf + p, count)
     elif op == OP_VEC:
-        count = <Py_ssize_t>_read_compact(buf, buflen, pos)
-        child = <_Node>nd.children[0]
-        out = []
-        for i in range(count):
-            out.append(_dec(child, buf, buflen, pos))
-        return out
+        count = _read_compact_len(buf, buflen, pos)
+        return _dec_list(<_Node>nd.children[0], count, buf, buflen, pos)
     elif op == OP_ARRAY_U8:
         count = nd.n
         if count == 0:
             return []
         _need(p, count, buflen)
         pos[0] = p + count
-        return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()
+        return _hex0x(buf + p, count)
     elif op == OP_ARRAY:
-        child = <_Node>nd.children[0]
-        out = []
-        for i in range(nd.n):
-            out.append(_dec(child, buf, buflen, pos))
-        return out
+        return _dec_list(<_Node>nd.children[0], nd.n, buf, buflen, pos)
     elif op == OP_STRUCT:
         d = {}
         for i in range(len(nd.children)):
             d[nd.keys[i]] = _dec(<_Node>nd.children[i], buf, buflen, pos)
         return d
     elif op == OP_TUPLE:
-        out = []
-        for i in range(len(nd.children)):
-            out.append(_dec(<_Node>nd.children[i], buf, buflen, pos))
-        return tuple(out)
+        count = len(nd.children)
+        v = PyTuple_New(count)
+        for i in range(count):
+            item = _dec(<_Node>nd.children[i], buf, buflen, pos)
+            Py_INCREF(item)
+            PyTuple_SET_ITEM(v, i, item)
+        return v
     elif op == OP_TUPLE1 or op == OP_WRAP:
         return _dec(<_Node>nd.children[0], buf, buflen, pos)
     elif op == OP_ENUM:
@@ -286,15 +525,11 @@ cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize
         _need(p, 1, buflen)
         pos[0] = p + 1
         if buf[p] != 0:
-            count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+            count = _read_compact_len(buf, buflen, pos)
             p = pos[0]
             _need(p, count, buflen)
             pos[0] = p + count
-            raw = PyBytes_FromStringAndSize(<const char*>(buf + p), count)
-            try:
-                return raw.decode()
-            except UnicodeDecodeError:
-                return '0x' + raw.hex()
+            return _utf8_or_hex(buf + p, count)
         return None
     elif op == OP_ACCOUNT_ID:
         _need(p, 32, buflen)
@@ -306,19 +541,19 @@ cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize
                 return ss58_encode_fast(raw, v)
             except ValueError:
                 pass
-        return '0x' + raw.hex()
+        return _hex0x(buf + p, 32)
     elif op == OP_H160 or op == OP_H256 or op == OP_H512:
         total = 20 if op == OP_H160 else (32 if op == OP_H256 else 64)
         _need(p, total, buflen)
         pos[0] = p + total
-        return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), total).hex()
+        return _hex0x(buf + p, total)
     elif op == OP_BITVEC:
-        count = <Py_ssize_t>_read_compact(buf, buflen, pos)  # number of bits
+        count = _read_compact_len(buf, buflen, pos)  # number of bits
         total = (count + 7) // 8
         p = pos[0]
         _need(p, total, buflen)
         pos[0] = p + total
-        v = int.from_bytes(PyBytes_FromStringAndSize(<const char*>(buf + p), total), 'little')
+        v = _PyLong_FromByteArray(buf + p, total, 1, 0)
         return '0b' + bin(v)[2:].zfill(count)
     elif op == OP_NULL:
         return None
@@ -339,11 +574,11 @@ cdef object _dec(_Node nd, const unsigned char* buf, Py_ssize_t buflen, Py_ssize
         memcpy(&f64val, buf + p, 8)
         return f64val
     elif op == OP_HEXBYTES:
-        count = <Py_ssize_t>_read_compact(buf, buflen, pos)
+        count = _read_compact_len(buf, buflen, pos)
         p = pos[0]
         _need(p, count, buflen)
         pos[0] = p + count
-        return '0x' + PyBytes_FromStringAndSize(<const char*>(buf + p), count).hex()
+        return _hex0x(buf + p, count)
     elif op == OP_SET:
         v = _dec(<_Node>nd.children[0], buf, buflen, pos)
         out = []
@@ -465,14 +700,23 @@ cdef class ValueDecoder:
     cdef _Node _node
 
     def __call__(self, data):
-        cdef const unsigned char[:] mv = data
-        cdef Py_ssize_t buflen = mv.shape[0]
+        # `data` is a live argument reference for the whole call, so borrowing
+        # the internal buffer of bytes/bytearray directly is safe and skips
+        # the (comparatively expensive) memoryview acquisition
+        cdef const unsigned char[:] mv
         cdef const unsigned char* buf
+        cdef Py_ssize_t buflen
         cdef Py_ssize_t pos = 0
-        if buflen == 0:
-            buf = NULL
+        if PyBytes_Check(data):
+            buf = <const unsigned char*>PyBytes_AS_STRING(data)
+            buflen = PyBytes_GET_SIZE(data)
+        elif PyByteArray_Check(data):
+            buf = <const unsigned char*>PyByteArray_AS_STRING(data)
+            buflen = PyByteArray_GET_SIZE(data)
         else:
-            buf = &mv[0]
+            mv = data
+            buflen = mv.shape[0]
+            buf = &mv[0] if buflen else NULL
         result = _dec(self._node, buf, buflen, &pos)
         if pos != buflen:
             raise RemainingScaleBytesNotEmptyException(
@@ -488,14 +732,20 @@ cdef class ValueDecoder:
         component in the middle of a larger stream (e.g. the Call enum inside
         an extrinsic).
         """
-        cdef const unsigned char[:] mv = data
-        cdef Py_ssize_t buflen = mv.shape[0]
+        cdef const unsigned char[:] mv
         cdef const unsigned char* buf
+        cdef Py_ssize_t buflen
         cdef Py_ssize_t pos = offset
-        if buflen == 0:
-            buf = NULL
+        if PyBytes_Check(data):
+            buf = <const unsigned char*>PyBytes_AS_STRING(data)
+            buflen = PyBytes_GET_SIZE(data)
+        elif PyByteArray_Check(data):
+            buf = <const unsigned char*>PyByteArray_AS_STRING(data)
+            buflen = PyByteArray_GET_SIZE(data)
         else:
-            buf = &mv[0]
+            mv = data
+            buflen = mv.shape[0]
+            buf = &mv[0] if buflen else NULL
         result = _dec(self._node, buf, buflen, &pos)
         return result, pos
 

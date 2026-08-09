@@ -77,7 +77,9 @@ class B58EncodeBytesTestCase(unittest.TestCase):
     def test_known_short_values(self):
         # Spot checks against the canonical alphabet ordering.
         self.assertEqual(b58encode_bytes(b"\x00\xff"), b"15Q")
-        self.assertEqual(b58encode_bytes(b"Hello, World!"), b58encode_bytes(b"Hello, World!"))
+        self.assertEqual(
+            b58encode_bytes(b"Hello, World!"), b58encode_bytes(b"Hello, World!")
+        )
 
     def test_various_lengths(self):
         rng = random.Random(0xCAFEBABE)
@@ -131,7 +133,9 @@ class B58DecodeBytesTestCase(unittest.TestCase):
     def test_strips_trailing_whitespace(self):
         encoded = base58.b58encode(b"\xde\xad\xbe\xef")
         self.assertEqual(b58decode_bytes(encoded + b"  \n"), b"\xde\xad\xbe\xef")
-        self.assertEqual(b58decode_bytes(encoded.decode() + "  \n"), b"\xde\xad\xbe\xef")
+        self.assertEqual(
+            b58decode_bytes(encoded.decode() + "  \n"), b"\xde\xad\xbe\xef"
+        )
 
     def test_invalid_character_raises(self):
         with self.assertRaises(ValueError):
@@ -237,9 +241,7 @@ class SS58EncodeFastTestCase(unittest.TestCase):
     def test_fuzz_matches_reference(self):
         rng = random.Random(0x5A5A5A5A)
         valid_addr_lengths = (1, 2, 4, 8, 32, 33)
-        valid_formats = [
-            f for f in range(0, 16384, 173) if f not in (46, 47)
-        ]
+        valid_formats = [f for f in range(0, 16384, 173) if f not in (46, 47)]
         for _ in range(150):
             length = rng.choice(valid_addr_lengths)
             data = bytes(rng.randint(0, 255) for _ in range(length))

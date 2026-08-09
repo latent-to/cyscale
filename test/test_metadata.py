@@ -133,11 +133,13 @@ class TestMetadataRegistry(unittest.TestCase):
         restored = pickle.loads(pickle.dumps(metadata_obj))
 
         u8_classes = [
-            c for c in RuntimeConfigurationObject.all_subclasses(U8.__mro__[1])
+            c
+            for c in RuntimeConfigurationObject.all_subclasses(U8.__mro__[1])
             if c.__name__ == "U8"
         ]
         self.assertEqual(
-            u8_classes, [U8],
+            u8_classes,
+            [U8],
             f"Unpickling synthesized duplicate U8 classes: {u8_classes}",
         )
         self.assertIsNotNone(restored)
